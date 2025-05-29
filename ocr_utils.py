@@ -76,6 +76,11 @@ def parse_receipt_text(text):
     import time
     start_time = time.time()
     print("\nStarting receipt text parsing...")
+    
+    if not text:
+        print("Empty text received")
+        return {"items": [], "total_tax": "0.0", "total_tip": "0.0"}
+
     """
     Parses the raw text extracted from a receipt to find items, quantities, prices,
     and automatically detect tax based on keywords.
@@ -101,10 +106,10 @@ def parse_receipt_text(text):
 
     i = 0
 
-    # Regex patterns for parsing
-    price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,.]+)\s*$", re.IGNORECASE)
-    quantity_pattern = re.compile(r"^\s*([\d,.]+)\s*$", re.IGNORECASE)
-    single_line_pattern = re.compile(r"(.+?)\s+(\d+(?:\.\d+)?)\s+([0-9,.]+)", re.IGNORECASE)
+    # Pre-compile regex patterns for better performance
+    price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,]+(?:\.\d+)?)\s*$", re.IGNORECASE)
+    quantity_pattern = re.compile(r"^\s*(\d+(?:[.,]\d+)?)\s*$")
+    single_line_pattern = re.compile(r"^(.*?)\s+(\d+(?:[.,]\d+)?)\s+([\d,]+(?:\.\d+)?)\s*$", re.IGNORECASE)
 
     # Regex for quantity: digits, optional dot/comma and digits, potentially at the start/end of the line
     # Captures the number part including commas/dots
@@ -134,13 +139,12 @@ def parse_receipt_text(text):
     while i < len(lines):
         line = lines[i].strip()
         
-        # First try single-line pattern matching
-        single_match = single_line_pattern.search(line)
+        # First try optimized single-line pattern matching
+        single_match = single_line_pattern.match(line)
         if single_match:
             item_name = single_match.group(1).strip()
-            qty = single_match.group(2)
-            price = single_match.group(3)
-            price = price.replace(",", "").replace(".", "") if "," in price else price
+            qty = single_match.group(2).replace(',', '.')  # Convert decimals like "1,0" to "1.0"
+            price = single_match.group(3).replace(',', '')  # Remove thousands separators
             
             # Convert numeric values and format
             try:
@@ -275,8 +279,13 @@ def parse_receipt_text(text):
                   # Fall through to general increment i += 1
 
 
-        # If none of the patterns matched starting at line i, just move to the next line
-        i += 1
+        # Early exit if we're stuck on unparseable lines
+        if lines_processed > 50 and len(items) == 0:
+            print(f"Warning: No items parsed after 50 lines, skipping remaining")
+            break
+            
+        i += 1  # Move to next line
+        lines_processed += 1
 
     # print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'") # Removed debug print
     # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
