@@ -83,7 +83,9 @@ def parse_receipt_text(text):
 
     i = 0
 
-    # Improved regex for price, quantity and name extraction
+    # Regex patterns for parsing
+    price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,.]+)\s*$", re.IGNORECASE)
+    quantity_pattern = re.compile(r"^\s*([\d,.]+)\s*$", re.IGNORECASE)
     single_line_pattern = re.compile(r"(.+?)\s+(\d+(?:\.\d+)?)\s+([0-9,.]+)", re.IGNORECASE)
 
     # Regex for quantity: digits, optional dot/comma and digits, potentially at the start/end of the line
@@ -119,7 +121,8 @@ def parse_receipt_text(text):
         if single_match:
             item_name = single_match.group(1).strip()
             qty = single_match.group(2)
-            price = single_match.group(3).replace(",", "").replace(".", "") if "," in price else price
+            price = single_match.group(3)
+            price = price.replace(",", "").replace(".", "") if "," in price else price
             
             # Convert numeric values and format
             try:
