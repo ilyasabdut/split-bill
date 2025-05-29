@@ -1,39 +1,59 @@
 import easyocr
 import re
-from PIL import Image # PIL is imported but not used in extract_text_from_image, could be removed if not needed elsewhere
+import cv2
+import numpy as np
+from PIL import Image
+
+def preprocess_image(image_bytes):
+    """Clean and enhance the image before OCR"""
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    thresh = cv2.resize(thresh, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
+    return Image.fromarray(thresh)
+
+def group_ocr_lines(lines):
+    """Group broken lines into logical item blocks"""
+    grouped_items = []
+    current_item = ""
+
+    for line in lines:
+        if any(char.isdigit() for char in line) and "x" not in line:
+            # Likely a quantity/price line
+            current_item += f" {line}"
+            grouped_items.append(current_item.strip())
+            current_item = ""
+        else:
+            # Likely item name or description
+            current_item += f" {line}"
+    
+    return grouped_items
 
 def extract_text_from_image(uploaded_file):
     """
-    Extracts text from an uploaded image file using EasyOCR.
+    Extracts text from an uploaded image file using enhanced OCR pipeline.
 
     Args:
-        uploaded_file (streamlit.runtime.uploaded_file_manager.UploadedFile): The file uploaded via Streamlit.
+        uploaded_file: The file uploaded via Streamlit.
 
     Returns:
-        str: The extracted text.
+        str: The extracted and grouped text
     """
-    # Initialize EasyOCR reader for English.
-    # Consider moving this outside the function or using caching (st.cache_resource)
-    # if initialization is slow and happens frequently.
-    # Note: The main.py file now has a cached reader function, but this function
-    # currently initializes its own. For performance, this function should ideally
-    # accept the cached reader as an argument.
-    reader = easyocr.Reader(['en'])
-
-    # Read the content of the uploaded file as bytes
+    reader = easyocr.Reader(['en'], gpu=False)
     image_bytes = uploaded_file.getvalue()
-
-    # Pass the bytes content to EasyOCR's readtext function
-    results = reader.readtext(image_bytes)
-
-    text = ""
-    # Sort results by vertical position to improve text flow
-    # Sort by y-coordinate of the top-left corner of the bounding box
-    results.sort(key=lambda r: r[0][0][1])
-
-    for (bbox, text_content, prob) in results:
-        text += text_content + "\n"
-    return text
+    
+    # Preprocess image
+    processed_img = preprocess_image(image_bytes)
+    
+    # OCR with optimized settings
+    lines = reader.readtext(np.array(processed_img), detail=0, paragraph=False)
+    
+    # Group lines into logical items
+    grouped_lines = group_ocr_lines(lines)
+    
+    # Join with newlines for the parser
+    return "\n".join(grouped_lines)
 
 def parse_receipt_text(text):
     """
@@ -63,10 +83,8 @@ def parse_receipt_text(text):
 
     i = 0
 
-    # Regex for price: digits, commas, dots, potentially at the start/end of the line
-    # Allows for optional currency symbols or spaces
-    # Captures the number part including commas/dots
-    price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,.]+)\s*$", re.IGNORECASE)
+    # Improved regex for price, quantity and name extraction
+    single_line_pattern = re.compile(r"(.+?)\s+(\d+(?:\.\d+)?)\s+([0-9,.]+)", re.IGNORECASE)
 
     # Regex for quantity: digits, optional dot/comma and digits, potentially at the start/end of the line
     # Captures the number part including commas/dots
@@ -95,10 +113,25 @@ def parse_receipt_text(text):
 
     while i < len(lines):
         line = lines[i].strip()
-        # print(f"Debug: Processing line {i+1}: '{line}'") # Too verbose
-
-        # --- Attempt to match the multi-line item pattern 1: Price -> Item Name -> Quantity ---
-        # Check if current line is a price, next is item name, line after is quantity
+        
+        # First try single-line pattern matching
+        single_match = single_line_pattern.search(line)
+        if single_match:
+            item_name = single_match.group(1).strip()
+            qty = single_match.group(2)
+            price = single_match.group(3).replace(",", "").replace(".", "") if "," in price else price
+            
+            # Convert numeric values and format
+            try:
+                qty = float(qty)
+                price = float(price) / 100  # Handle IDR format
+            except ValueError:
+                continue
+                
+            if item_name.upper() not in non_item_keywords:
+                items.append({"item": item_name, "qty": qty, "price": price})
+                i += 1
+                continue
         if i + 2 < len(lines):
             price_match = price_pattern.match(line)
             if price_match:
