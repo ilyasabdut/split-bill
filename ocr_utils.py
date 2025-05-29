@@ -12,8 +12,8 @@ def extract_text_from_image(image_path):
 
 def parse_receipt_text(text):
     items = []
-    # Regex to find lines with item name, quantity, and price
-    pattern = re.compile(r"([A-Za-z\s]+)\s+(\d+)\s+x\s+([\d.]+)")
+    # Regex to find lines with item name, quantity, and price.  More robust.
+    pattern = re.compile(r"([A-Za-z0-9\s&]+)\s+(\d+)\s*x\s*([\d.]+)", re.IGNORECASE)
     for match in pattern.finditer(text):
         item_name = match.group(1).strip()
         quantity = int(match.group(2))
