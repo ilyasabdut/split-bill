@@ -37,16 +37,17 @@ def extract_text_from_image(uploaded_file):
 
 def parse_receipt_text(text):
     """
-    Parses the raw text extracted from a receipt to find items, quantities, and prices.
-    This version attempts to handle price-item-quantity across multiple lines
-    based on the provided example text structure, with more flexible number parsing.
+    Parses the raw text extracted from a receipt to find items, quantities, prices,
+    and automatically detect tax based on keywords.
 
     Args:
         text (str): The raw text extracted from the receipt.
 
     Returns:
-        list: A list of dictionaries, where each dictionary represents an item
-              with keys 'item', 'qty', and 'price'.
+        dict: A dictionary containing:
+              - 'items' (list): List of dictionaries for each item.
+              - 'total_tax' (float): The sum of detected tax amounts.
+              - 'total_tip' (float): Placeholder for detected tip amount (not implemented yet).
     """
     print("\n--- Raw Text for Parsing ---")
     print(text)
@@ -54,6 +55,9 @@ def parse_receipt_text(text):
 
     lines = text.strip().splitlines()
     items = []
+    total_tax = 0.0
+    total_tip = 0.0 # Placeholder for tip detection
+
     i = 0
 
     # Regex for price: digits, commas, dots, potentially at the start/end of the line
@@ -68,9 +72,17 @@ def parse_receipt_text(text):
     # Regex for item name: looks like text, contains at least two letters, not just numbers or symbols
     item_name_pattern = re.compile(r"[A-Za-z]{2,}")
 
-    # Helper function to clean and convert number strings (price/quantity)
+    # Keywords for tax detection
+    tax_keywords = ["SVC CHG", "PB1", "PPH", "PPN"]
+    # Keywords for tip detection (add more as needed)
+    tip_keywords = ["TIP", "GRATUITY"] # Placeholder keywords
+
+    # Helper function to clean and convert number strings (price/quantity/tax/tip)
     def clean_and_convert_number(num_str):
         """Removes commas and converts string to float."""
+        if not isinstance(num_str, str):
+            return None # Ensure input is a string
+
         # Remove thousands separators (commas)
         cleaned_str = num_str.replace(',', '')
         # Handle potential decimal comma if no dot is present (simple heuristic)
@@ -84,7 +96,7 @@ def parse_receipt_text(text):
     while i < len(lines):
         line = lines[i].strip()
 
-        # Attempt to match the multi-line pattern: Price -> Item Name -> Quantity
+        # --- Attempt to match the multi-line item pattern: Price -> Item Name -> Quantity ---
         # Check if current line is a price, next is item name, line after is quantity
         if i + 2 < len(lines):
             price_match = price_pattern.match(line)
@@ -128,10 +140,8 @@ def parse_receipt_text(text):
                              i += 3 # Consume these three lines and move to the next potential item start
                              continue # Successfully parsed a multi-line item, continue loop from new position
 
-        # If the multi-line pattern didn't match starting at line i,
-        # check for a single-line pattern as a fallback.
+        # --- Attempt to match single-line item pattern ---
         # This pattern looks for Item Name, Quantity, and Price all on the same line.
-        # It's less likely to match the provided receipt structure but good as a fallback.
         # Regex: Item Name (greedy) + spaces + Quantity + spaces + Price
         single_line_pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
         single_match = single_line_pattern.search(line)
@@ -160,12 +170,94 @@ def parse_receipt_text(text):
                  i += 1 # Consume this line
                  continue # Successfully parsed a single-line item, continue loop from new position
 
+        # --- Attempt to detect Tax/Tip amounts ---
+        # Check if the current line contains a tax or tip keyword
+        is_tax_keyword_line = any(keyword in line.upper() for keyword in tax_keywords)
+        is_tip_keyword_line = any(keyword in line.upper() for keyword in tip_keywords)
 
-        # If neither pattern matched starting at line i, just move to the next line
+        if (is_tax_keyword_line or is_tip_keyword_line) and i + 1 < len(lines):
+            # If a keyword is found, check the next line for a number (the amount)
+            next_line = lines[i+1].strip()
+            amount = clean_and_convert_number(next_line)
+
+            if amount is not None:
+                if is_tax_keyword_line:
+                    total_tax += amount
+                    print(f"Detected Tax: {amount} (from line {i+2})") # Print line number of the amount
+                    i += 2 # Consume keyword line and amount line
+                    continue # Continue loop
+                elif is_tip_keyword_line:
+                    total_tip += amount
+                    print(f"Detected Tip: {amount} (from line {i+2})") # Print line number of the amount
+                    i += 2 # Consume keyword line and amount line
+                    continue # Continue loop
+            else:
+                 print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.")
+
+
+        # If none of the patterns matched starting at line i, just move to the next line
         i += 1
 
-    # Optional: Add logic here to try and identify TAX, TIP, SUBTOTAL, TOTAL lines
-    # based on keywords and price patterns, and return them separately or store them.
-    # For now, focusing on item parsing.
+    # Optional: Add logic here to try and identify SUBTOTAL, TOTAL lines
+    # based on keywords and price patterns.
 
-    return items
+    return {"items": items, "total_tax": total_tax, "total_tip": total_tip}
+
+
+# Example usage (for testing the function independently if needed)
+if __name__ == '__main__':
+    sample_text = """
+STUBE
+SpUKT
+poncuk   INAH GOLEGALERY
+MEtRO PONDOk  INDAH
+JL
+JAKARTA
+Pax
+Table 404
+A178622
+BILL
+edi
+Server
+Cashier: melia
+Customer
+DINEIN
+202505241
+SDC |
+24/05/2025 21;08
+165,000
+PORK  BELLY SAMBAL MATA
+1.0
+210,000
+promo guiness stout
+1.0
+140,000
+pink Iove sour
+1,0
+90 ,000
+SCRAMBLED PANCAKE LARG
+1.0
+120,000
+PIZZAS SPORT  STUBE
+1.0
+30 ,000
+1.0
+ice tea
+70,000
+caramel
+latte
+1,0
+SUBTTL
+825 , Q0Q
+SVC CHG 97
+74,250
+PBI107
+89,925
+989
+TOTAL
+175
+"""
+    parsed_data = parse_receipt_text(sample_text)
+    import json
+    print("\n--- Parsed Data ---")
+    print(json.dumps(parsed_data, indent=2))

@@ -17,6 +17,8 @@ def main():
     uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"])
 
     items = [] # Initialize items list outside the if block
+    detected_tax = 0.0 # Initialize detected_tax
+    detected_tip = 0.0 # Initialize detected_tip
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
@@ -42,15 +44,17 @@ def main():
         # st.text(text)
 
         with st.spinner('Parsing extracted text...'):
-             items = ocr_utils.parse_receipt_text(text)
+             # Update to receive the dictionary from parse_receipt_text
+             parsed_data = ocr_utils.parse_receipt_text(text)
+             items = parsed_data.get("items", [])
+             detected_tax = parsed_data.get("total_tax", 0.0)
+             detected_tip = parsed_data.get("total_tip", 0.0) # Get detected tip (currently always 0.0)
+
 
         # Removed the "Parsed Items:" subheader and the conditional if items: block
         # The following UI elements will now always appear after parsing
 
         st.subheader("Bill Splitting")
-
-        # Input for number of people (still useful for initial setup)
-        # num_people = st.number_input("Number of people splitting the bill", min_value=1, value=1, step=1, key="num_people_input")
 
         # Input for person names
         person_names_input = st.text_input(
@@ -104,9 +108,9 @@ def main():
             item_assignments.append({"item_details": item, "assigned_to": assigned_to})
 
         st.subheader("Tax & Tip")
-        # Input for tax and tip (manual for now)
-        tax_amount = st.number_input("Tax Amount", min_value=0.0, value=0.0, step=0.01, key="tax_input")
-        tip_amount = st.number_input("Tip Amount", min_value=0.0, value=0.0, step=0.01, key="tip_input")
+        # Input for tax and tip (manual for now, default to detected)
+        tax_amount = st.number_input("Tax Amount", min_value=0.0, value=detected_tax, step=0.01, key="tax_input")
+        tip_amount = st.number_input("Tip Amount", min_value=0.0, value=detected_tip, step=0.01, key="tip_input")
 
 
         # Button to calculate split
