@@ -41,7 +41,7 @@ def parse_receipt_text(text):
     and automatically detect tax based on keywords.
     This version attempts to handle price-item-quantity across multiple lines
     based on the provided example text structure, with more flexible number parsing
-    and added debugging prints. Returns numbers as cleaned strings (without separators).
+    and added debugging prints. Returns numbers as cleaned strings (without thousands separators).
 
     Args:
         text (str): The raw text extracted from the receipt.
@@ -58,8 +58,8 @@ def parse_receipt_text(text):
 
     lines = text.strip().splitlines()
     items = []
-    total_tax_str = "0" # Store as string, default to "0"
-    total_tip_str = "0" # Store as string (Placeholder for tip detection), default to "0"
+    total_tax_str = "0.0" # Store as string, default to "0.0"
+    total_tip_str = "0.0" # Store as string (Placeholder for tip detection), default to "0.0"
 
     i = 0
 
@@ -87,23 +87,32 @@ def parse_receipt_text(text):
     # Helper function to clean number strings (price/quantity/tax/tip)
     # Returns cleaned string, does NOT convert to float here
     def clean_number_string(num_str):
-        """Removes spaces, commas, and dots, returns cleaned string."""
+        """Removes spaces and thousands commas, keeps decimal dots, returns cleaned string."""
         if not isinstance(num_str, str):
             # print(f"Debug: clean_number_string received non-string: {num_str}") # Avoid excessive prints
-            return "0" # Return default string for non-strings
+            return "0.0" # Return default string for non-strings
 
         num_str = num_str.strip() # Strip leading/trailing spaces
 
-        # Remove ALL commas and dots
-        cleaned_str = num_str.replace(',', '').replace('.', '')
+        # Remove thousands separators (commas)
+        cleaned_str = num_str.replace(',', '')
 
-        # Remove any characters that are not digits after removing separators
-        cleaned_str = re.sub(r'[^\d]', '', cleaned_str)
-
+        # Remove any characters that are not digits or dots after removing commas
+        cleaned_str = re.sub(r'[^\d.]', '', cleaned_str)
 
         # Ensure it's not an empty string after cleaning
         if not cleaned_str:
-             return "0" # Return "0" for empty string
+             return "0.0" # Return "0.0" for empty string
+
+        # Handle cases like "1." -> "1.0" or ".5" -> "0.5" if necessary,
+        # but float() conversion in split_logic handles many of these.
+        # Ensure there's at most one dot
+        if cleaned_str.count('.') > 1:
+             # Simple approach: keep only the last dot, remove others
+             parts = cleaned_str.split('.')
+             cleaned_str = ''.join(parts[:-1]) + '.' + parts[-1]
+             # Or more strictly, return "0.0" if multiple dots indicate invalid format
+             # return "0.0"
 
         return cleaned_str
 
