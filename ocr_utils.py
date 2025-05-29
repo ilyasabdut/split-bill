@@ -81,9 +81,7 @@ def parse_receipt_text(text):
               - 'total_tax' (str): The detected total tax amount as a string.
               - 'total_tip' (str): Placeholder for detected tip amount as a string (not implemented yet).
     """
-    print("\n--- Raw Text for Parsing ---")
-    print(text)
-    print("----------------------------\n")
+    text = text.strip()
 
     lines = text.strip().splitlines()
     items = []
@@ -273,8 +271,7 @@ def parse_receipt_text(text):
     # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
     return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
 
-
-# Example usage (for testing the function independently if needed)
+# Keep example usage section for debugging but commented out
 if __name__ == '__main__':
     sample_text = """
 STUBE

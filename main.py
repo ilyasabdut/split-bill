@@ -59,8 +59,12 @@ def main():
                 progress_bar.progress(100, "Done!")
                 progress_bar.empty()
 
-            # Store parsed data (with numbers as strings) in session state
+            # Store parsed data and show success message
             st.session_state.parsed_data = parsed_data
+            if parsed_data.get('items'):
+                st.success(f"Successfully parsed {len(parsed_data['items'])} items from receipt!")
+            else:
+                st.warning("Parsing complete but no items found - please check receipt format")
 
         # Retrieve data from session state for display and interaction
         # This block runs on every rerun after a file is uploaded
