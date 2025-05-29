@@ -2,27 +2,18 @@
 import re
 
 def clean_and_convert_number(num_str):
-    """Removes spaces and thousands commas, handles decimal comma, converts string to float."""
+    """Removes spaces and thousands commas, converts string to float."""
     if not isinstance(num_str, str):
         # print(f"Debug: clean_and_convert_number received non-string: {num_str}") # Avoid excessive prints
         return None # Ensure input is a string
 
     num_str = num_str.strip() # Strip leading/trailing spaces
 
-    # Remove any characters that are not digits, commas, or dots
-    cleaned_str = re.sub(r'[^\d,.]', '', num_str)
+    # Remove thousands separators (commas)
+    cleaned_str = num_str.replace(',', '')
 
-    # Handle comma/dot ambiguity
-    if '.' in cleaned_str and ',' in cleaned_str:
-         # Assume comma is thousands separator, remove it
-         cleaned_str = cleaned_str.replace(',', '')
-    elif ',' in cleaned_str and '.' not in cleaned_str:
-         # Assume comma is decimal separator if it's the only separator
-         if cleaned_str.count(',') == 1:
-              cleaned_str = cleaned_str.replace(',', '.')
-         else: # Multiple commas, assume thousands
-              cleaned_str = cleaned_str.replace(',', '')
-    # else: # Only dots, or no commas/dots - no change needed
+    # Remove any characters that are not digits or dots after removing commas
+    cleaned_str = re.sub(r'[^\d.]', '', cleaned_str)
 
     # Ensure it's not an empty string after cleaning
     if not cleaned_str:
@@ -190,6 +181,7 @@ if __name__ == '__main__':
         {"item_details": {"item": "Salad", "qty": "1", "price": "10.00"}, "assigned_to": []},
         {"item_details": {"item": "Item with comma price", "qty": "1", "price": "1,234.56"}, "assigned_to": ["Alice"]},
         {"item_details": {"item": "Item with comma qty", "qty": "1,0", "price": "5.00"}, "assigned_to": ["Bob"]},
+        {"item_details": {"item": "Large Item", "qty": "1", "price": "165,000"}, "assigned_to": ["Alice"]}, # Test case for 165,000
     ]
     sample_tax_str = "5.00"
     sample_tip_str = "3.00"
