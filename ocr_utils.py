@@ -298,9 +298,9 @@ def parse_receipt_text(text):
         print(f"No pattern matched for line {i+1}. Skipping.")
         i += 1
 
-            # Debug output every 10 lines (using i)
-            if i > 0 and i % 10 == 0:
-                print(f"Processed {i} lines, {len(items)} items found so far")
+        # Debug output every 10 lines (using i)
+        if i > 0 and i % 10 == 0:
+            print(f"Processed {i} lines, {len(items)} items found so far")
 
         print(f"Successfully parsed {len(items)} items from receipt!")
         parse_time = time.time() - start_time
