@@ -29,17 +29,21 @@ def main():
 
     # Initialize session state for parsed data and file info
     st.session_state.setdefault('parsed_data', None)
-    st.session_state.setdefault('last_uploaded_file_info', None) # Store (name, size) tuple
-    st.session_state.setdefault('ocr_backend', 'Detecting...') # Initialize backend state
+    st.session_state.setdefault('last_uploaded_file_info', None)  # Store (name, size) tuple
+    st.session_state.setdefault('ocr_backend', 'Detecting...')  # Initialize backend state
 
     # Get the cached reader
-    reader = get_easyocr_reader() # Get the reader here
+    reader = get_easyocr_reader()  # Get the reader here
 
     uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"])
 
-    items = [] # Initialize items list
-    detected_tax_str = "0.0" # Initialize detected_tax as string
-    detected_tip_str = "0.0" # Initialize detected_tip as string
+    # Initialize variables
+    store_name = None
+    date = None
+    time = None
+    items = []  # Initialize items list
+    detected_tax_str = "0.0"  # Initialize detected_tax as string
+    detected_tip_str = "0.0"  # Initialize detected_tip as string
 
     # Check if a file is uploaded AND if it's a new file or no data is parsed yet
     if uploaded_file is not None:
@@ -47,7 +51,7 @@ def main():
 
         # Only run OCR and parsing if it's a new file or no data is cached
         if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
-            st.session_state.last_uploaded_file_info = current_file_info # Store current file info
+            st.session_state.last_uploaded_file_info = current_file_info  # Store current file info
 
             # Display the image immediately after upload
             image = Image.open(uploaded_file)
@@ -59,12 +63,12 @@ def main():
 
                 print("Starting OCR processing...")
                 # Pass the reader object to the OCR function
-                text = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
+                ocr_result = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
                 print(f"OCR completed in {time.time() - start_time:.2f} seconds")
 
                 progress_bar.progress(90, "Parsing text...")
                 parse_start = time.time()
-                parsed_data = ocr_utils.parse_receipt_text(text)
+                parsed_data = ocr_utils.parse_receipt_text(ocr_result)
                 print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
 
                 progress_bar.progress(100, "Done!")
@@ -81,13 +85,28 @@ def main():
         # Retrieve data from session state for display and interaction
         # This block runs on every rerun after a file is uploaded
         parsed_data_from_state = st.session_state.parsed_data
-        items = parsed_data_from_state.get("items", [])
-        detected_tax_str = parsed_data_from_state.get("total_tax", "0.0") # Get as string
-        detected_tip_str = parsed_data_from_state.get("total_tip", "0.0") # Get as string
 
-        # Display the image again if it was already processed (it's displayed above now)
-        # image = Image.open(uploaded_file) # Re-opening might be slightly less efficient if not needed
-        # st.image(image, caption="Uploaded Receipt", width=300) # Displayed above now
+        # Extract data from parsed_data_from_state
+        if parsed_data_from_state:
+            store_name = parsed_data_from_state.get("store_name")
+            date = parsed_data_from_state.get("date")
+            time = parsed_data_from_state.get("time")
+            items = parsed_data_from_state.get("items", [])
+            detected_tax_str = parsed_data_from_state.get("total_tax", "0.0")  # Get as string
+            detected_tip_str = parsed_data_from_state.get("total_tip", "0.0")  # Get as string
+        else:
+            # Handle the case where parsed_data_from_state is None
+            items = []
+            detected_tax_str = "0.0"
+            detected_tip_str = "0.0"
+
+        # Display extracted information
+        if store_name:
+            st.subheader(store_name)
+        if date:
+            st.write(f"Date: {date}")
+        if time:
+            st.write(f"Time: {time}")
 
         # --- Start of Bill Splitting UI (always shown if file is uploaded and parsed_data exists) ---
         if st.session_state.parsed_data is not None:
@@ -239,6 +258,14 @@ def main():
     # Added an else block for the initial state before file upload
     else:
         st.info("Please upload a receipt image to begin.")
+        st.markdown("""
+        **How to use this app:**
+        1.  Upload a receipt image.
+        2.  The app will automatically extract the items, tax, and tip.
+        3.  Enter the names of the people splitting the bill.
+        4.  Assign each item to the people who consumed it.
+        5.  Click the 'Calculate Split' button to see the results.
+        """)
 
 
 if __name__ == "__main__":

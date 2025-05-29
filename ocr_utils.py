@@ -46,13 +46,6 @@ def preprocess_image(image_bytes):
     thresh = cv2.resize(thresh, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
     return Image.fromarray(thresh)
 
-# This function is currently not used in extract_text_from_image with detail=0
-# Keeping it in case the OCR strategy changes.
-def group_ocr_lines(lines):
-    """Group broken lines into logical item blocks"""
-    grouped_items = []
-    current_item = ""
-
     for line in lines:
         if any(char.isdigit() for char in line) and "x" not in line:
             # Likely a quantity/price line
@@ -95,10 +88,11 @@ def extract_text_from_image(reader, uploaded_file, progress_callback=None):
     if progress_callback:
         progress_callback(10)
     print("Running EasyOCR readtext...")
-    # Use the reader object passed to the function
+
+    # Use the reader object passed to the function, request detailed output
     ocr_result = reader.readtext(
         np.array(processed_img),
-        detail=0, # Returns list of strings
+        detail=1,  # Returns list of (bbox, text, conf)
         paragraph=False,
         batch_size=4  # Smaller batches for progress updates
     )
@@ -107,13 +101,9 @@ def extract_text_from_image(reader, uploaded_file, progress_callback=None):
     if progress_callback:
         progress_callback(80)
 
-    # Group lines function is not used with detail=0
     # The lines list already contains one string per detected line.
-
-    # Join with newlines for the parser
-    ocr_text = "\n".join(ocr_result)
-    print("OCR Result:\n", ocr_text)  # Print the OCR result
-    return ocr_text
+    print("OCR Result:\n", ocr_result)  # Print the OCR result
+    return ocr_result
 
 
 def parse_receipt_text(text):
@@ -123,9 +113,13 @@ def parse_receipt_text(text):
 
     if not text:
         print("Empty text received")
-        return {"items": [], "total_tax": "0.0", "total_tip": "0.0"}
+        return {"store_name": None, "date": None, "time": None, "items": [], "total_tax": "0.0", "total_tip": "0.0"}
 
-    lines = text.strip().splitlines()
+    # Initialize variables for store name, date, and time
+    store_name = None
+    date = None
+    time = None
+
     items = []
     total_tax_amount = 0.0 # Use float for summing tax
     total_tip_amount = 0.0 # Use float for summing tip
@@ -134,13 +128,35 @@ def parse_receipt_text(text):
     # Regex patterns are pre-compiled globally
 
     i = 0
-    print(f"Starting to parse {len(lines)} lines of text...")
-    while i < len(lines):
-        line = lines[i].strip()
+    print(f"Starting to parse {len(text)} lines of text...")
+    while i < len(text):
+        bbox, line, confidence = text[i]
+        line = line.strip()
         # Avoid printing potentially very long lines
-        print(f"Processing line {i+1}/{len(lines)}: {line[:100]}{'...' if len(line) > 100 else ''}")
+        print(f"Processing line {i+1}/{len(text)}: {line[:100]}{'...' if len(line) > 100 else ''}")
 
         line_upper = line.upper()
+
+        # --- Attempt to extract store name, date, and time ---
+        if store_name is None:
+            # Look for store name in the first few lines
+            if i < 5 and _item_name_pattern.search(line):
+                store_name = line
+                print(f"Detected store name: {store_name}")
+
+        if date is None:
+            # Look for date patterns
+            date_match = re.search(r"(\d{2}[/\-]\d{2}[/\-]\d{4})", line)
+            if date_match:
+                date = date_match.group(1)
+                print(f"Detected date: {date}")
+
+        if time is None:
+            # Look for time patterns
+            time_match = re.search(r"(\d{2}:\d{2}(?::\d{2})?)", line)
+            if time_match:
+                time = time_match.group(1)
+                print(f"Detected time: {time}")
 
         # Skip short lines and other garbage
         if len(line) < 2:
