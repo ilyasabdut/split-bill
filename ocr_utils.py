@@ -96,7 +96,7 @@ def extract_text_from_image(reader, uploaded_file, progress_callback=None):
         progress_callback(10)
     print("Running EasyOCR readtext...")
     # Use the reader object passed to the function
-    lines = reader.readtext(
+    ocr_result = reader.readtext(
         np.array(processed_img),
         detail=0, # Returns list of strings
         paragraph=False,
@@ -111,7 +111,9 @@ def extract_text_from_image(reader, uploaded_file, progress_callback=None):
     # The lines list already contains one string per detected line.
 
     # Join with newlines for the parser
-    return "\n".join(lines)
+    ocr_text = "\n".join(ocr_result)
+    print("OCR Result:\n", ocr_text)  # Print the OCR result
+    return ocr_text
 
 
 def parse_receipt_text(text):
