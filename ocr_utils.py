@@ -105,6 +105,7 @@ def parse_receipt_text(text):
     total_tip_str = "0.0" # Store as string (Placeholder for tip detection), default to "0.0"
 
     i = 0
+    lines_processed = 0
 
     # Pre-compile regex patterns for better performance
     price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,]+(?:\.\d+)?)\s*$", re.IGNORECASE)
