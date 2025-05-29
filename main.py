@@ -2,14 +2,12 @@ import streamlit as st
 import ocr_utils
 from PIL import Image
 import split_logic # Import the new split logic file
-# Removed: import easyocr # Moved inside the cached function
+import easyocr # Moved import back to the top
 
 # Cache the EasyOCR reader to avoid re-initializing it every time
 @st.cache_resource
 def get_easyocr_reader():
     """Caches the EasyOCR reader initialization."""
-    # Import easyocr here so it's available within the cached function's scope
-    import easyocr
     # This will download models the first time it's run
     return easyocr.Reader(['en'])
 
