@@ -41,16 +41,23 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
 
         # If no one is assigned, this item's cost is not included in the split calculation
         if not assigned_to:
-            print(f"Warning: Item '{item_name}' is not assigned to anyone. Its cost (${item_total_cost:.2f}) will not be included in the split.")
+            print(f"Warning: Item '{item_name}' is not assigned to anyone. Its cost ({item_total_cost:.2f}) will not be included in the split.")
             continue # Skip to the next assignment
 
         # Calculate the cost share for this item per person assigned
-        cost_per_share = item_total_cost / len(assigned_to)
+        # Avoid division by zero if assigned_to is somehow empty despite the check above
+        if len(assigned_to) > 0:
+             cost_per_share = item_total_cost / len(assigned_to)
+        else:
+             print(f"Warning: Item '{item_name}' has an empty assigned_to list unexpectedly.")
+             continue
+
 
         # Add the cost share to the subtotal of each assigned person
         for person in assigned_to:
             if person in split_results:
-                split_results[person]["items"].append({"item": item_name, "qty": quantity, "price": price, "share_cost": round(cost_per_share, 2)})
+                # Store original price and quantity for breakdown display
+                split_results[person]["items"].append({"item": item_name, "qty": quantity, "price": price, "share_cost": cost_per_share}) # Don't round yet
                 split_results[person]["subtotal"] += cost_per_share
             else:
                 # This case should ideally not happen if person_names is correctly generated
@@ -64,12 +71,18 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
          # If there's tax/tip but no items, distribute tax/tip evenly
          if tax_amount > 0 or tip_amount > 0:
              print("No items assigned, distributing tax/tip evenly.")
-             tax_per_person_even = tax_amount / len(person_names) if person_names else 0
-             tip_per_person_even = tip_amount / len(person_names) if person_names else 0
+             num_people = len(person_names)
+             tax_per_person_even = tax_amount / num_people if num_people > 0 else 0
+             tip_per_person_even = tip_amount / num_people if num_people > 0 else 0
              for person in person_names:
-                 split_results[person]["tax"] = round(tax_per_person_even, 2)
-                 split_results[person]["tip"] = round(tip_per_person_even, 2)
-                 split_results[person]["total"] = round(tax_per_person_even + tip_per_person_even, 2)
+                 split_results[person]["tax"] = tax_per_person_even
+                 split_results[person]["tip"] = tip_per_person_even
+                 split_results[person]["total"] = tax_per_person_even + tip_per_person_even
+             # Round values before returning
+             for person, data in split_results.items():
+                 data["tax"] = round(data["tax"], 2)
+                 data["tip"] = round(data["tip"], 2)
+                 data["total"] = round(data["total"], 2)
              return split_results # Return results with only tax/tip distributed evenly
          else:
              # If no items and no tax/tip, everyone owes 0
@@ -98,6 +111,7 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
         data["total"] = data["subtotal"] + data["tax"] + data["tip"]
 
     # --- Step 4: Round all monetary values for display ---
+    # Rounding is done at the very end to minimize floating point errors
     for person, data in split_results.items():
         data["subtotal"] = round(data["subtotal"], 2)
         data["tax"] = round(data["tax"], 2)
@@ -105,7 +119,12 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
         data["total"] = round(data["total"], 2)
         # Round share_cost within items list
         for item_share in data["items"]:
-             item_share["share_cost"] = round(item_share["share_cost"], 2)
+             # Ensure 'share_cost' key exists before rounding
+             if 'share_cost' in item_share:
+                 item_share["share_cost"] = round(item_share["share_cost"], 2)
+             # Also round original price if needed for display consistency (though main.py formats it)
+             if 'price' in item_share:
+                  item_share['price'] = round(item_share['price'], 2)
 
 
     return split_results
