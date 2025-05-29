@@ -123,9 +123,19 @@ def main():
             item_assignments = []
 
             if not items:
-                 st.info("No items were automatically parsed from the receipt. You can manually add items below (feature not yet implemented) or try a different receipt.")
-                 # Placeholder for manual item entry (future feature)
-                 # st.button("Add Item Manually") # Example
+                 st.info("No items were automatically parsed from the receipt. You can manually add items below.")
+
+                 # Manual Item Entry Form
+                 with st.form("manual_item_entry"):
+                     item_name = st.text_input("Item Name")
+                     item_quantity = st.number_input("Quantity", min_value=0.0, step=0.1)
+                     item_price = st.number_input("Price", min_value=0.0, step=0.01)
+                     submitted = st.form_submit_button("Add Item")
+
+                     if submitted:
+                         items.append({"item": item_name, "qty": str(item_quantity), "price": str(item_price)})
+                         st.success("Item added manually!")
+                         st.rerun() # Refresh the app to show the new item
 
             # Iterate through parsed items and add assignment widgets
             for i, item in enumerate(items):
