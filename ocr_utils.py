@@ -87,27 +87,18 @@ def parse_receipt_text(text):
     # Helper function to clean number strings (price/quantity/tax/tip)
     # Returns cleaned string, does NOT convert to float here
     def clean_number_string(num_str):
-        """Removes spaces and thousands commas, handles decimal comma, returns cleaned string."""
+        """Removes spaces and thousands commas, returns cleaned string."""
         if not isinstance(num_str, str):
-            print(f"Debug: clean_number_string received non-string: {num_str}")
+            # print(f"Debug: clean_number_string received non-string: {num_str}") # Avoid excessive prints
             return "0.0" # Return default string for non-strings
 
         num_str = num_str.strip() # Strip leading/trailing spaces
 
-        # Remove any characters that are not digits, commas, or dots
-        cleaned_str = re.sub(r'[^\d,.]', '', num_str)
+        # Remove thousands separators (commas)
+        cleaned_str = num_str.replace(',', '')
 
-        # Handle comma/dot ambiguity
-        if '.' in cleaned_str and ',' in cleaned_str:
-             # Assume comma is thousands separator, remove it
-             cleaned_str = cleaned_str.replace(',', '')
-        elif ',' in cleaned_str and '.' not in cleaned_str:
-             # Assume comma is decimal separator if it's the only separator
-             if cleaned_str.count(',') == 1:
-                  cleaned_str = cleaned_str.replace(',', '.')
-             else: # Multiple commas, assume thousands
-                  cleaned_str = cleaned_str.replace(',', '')
-        # else: # Only dots, or no commas/dots - no change needed
+        # Remove any characters that are not digits or dots after removing commas
+        cleaned_str = re.sub(r'[^\d.]', '', cleaned_str)
 
         # Ensure it's not an empty string after cleaning
         if not cleaned_str:
@@ -146,11 +137,11 @@ def parse_receipt_text(text):
                         if item_name.upper() not in non_item_keywords:
                             # Store cleaned strings
                             items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-                            print(f"Debug: Parsed P->I->Q item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})")
+                            # print(f"Debug: Parsed P->I->Q item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})") # Removed debug print
                             i += 3 # Consume these three lines and move to the next potential item start
                             continue # Successfully parsed a multi-line item, continue loop from new position
-                        else:
-                           print(f"Debug: P->I->Q pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
+                        # else:
+                           # print(f"Debug: P->I->Q pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.") # Removed debug print
 
 
         # --- Attempt to match the multi-line item pattern 2: Price -> Quantity -> Item Name ---
@@ -179,11 +170,11 @@ def parse_receipt_text(text):
                           if item_name.upper() not in non_item_keywords:
                                # Store cleaned strings
                                items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-                               print(f"Debug: Parsed P->Q->I item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})")
+                               # print(f"Debug: Parsed P->Q->I item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})") # Removed debug print
                                i += 3 # Consume these three lines and move to the next potential item start
                                continue # Successfully parsed, continue loop from new position
-                          else:
-                               print(f"Debug: P->Q->I pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
+                          # else:
+                               # print(f"Debug: P->Q->I pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.") # Removed debug print
 
 
         # --- Attempt to match single-line item pattern ---
@@ -204,11 +195,11 @@ def parse_receipt_text(text):
             if item_name.upper() not in non_item_keywords:
                # Store cleaned strings
                items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-               print(f"Debug: Parsed single-line item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from line {i+1})")
+               # print(f"Debug: Parsed single-line item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from line {i+1})") # Removed debug print
                i += 1 # Consume this line
                continue # Successfully parsed a single-line item, continue loop from new position
-            else:
-               print(f"Debug: Single-line pattern matched line {i+1}, but item name '{item_name}' is a non-item keyword. Skipping.")
+            # else:
+               # print(f"Debug: Single-line pattern matched line {i+1}, but item name '{item_name}' is a non-item keyword. Skipping.") # Removed debug print
 
 
         # --- Attempt to detect Tax/Tip amounts ---
@@ -217,37 +208,37 @@ def parse_receipt_text(text):
         is_tip_keyword_line = any(keyword in line.upper() for keyword in tip_keywords)
 
         if (is_tax_keyword_line or is_tip_keyword_line): # Check keyword first
-             print(f"Debug: Found potential tax/tip keyword on line {i+1}: '{line}'")
+             # print(f"Debug: Found potential tax/tip keyword on line {i+1}: '{line}'") # Removed debug print
              if i + 1 < len(lines):
                 next_line = lines[i+1].strip()
-                print(f"Debug: Checking next line {i+2} for amount: '{next_line}'")
+                # print(f"Debug: Checking next line {i+2} for amount: '{next_line}'") # Removed debug print
                 cleaned_amount_str = clean_number_string(next_line)
 
                 # We don't sum here, just store the last detected amount for now
                 # More sophisticated logic might sum multiple tax lines
                 if is_tax_keyword_line:
                     total_tax_str = cleaned_amount_str
-                    print(f"Detected Tax: '{total_tax_str}' (from line {i+2})")
+                    # print(f"Detected Tax: '{total_tax_str}' (from line {i+2})") # Removed debug print
                     i += 2 # Consume keyword line and amount line
                     continue # Continue loop
                 elif is_tip_keyword_line:
                     total_tip_str = cleaned_amount_str
-                    print(f"Detected Tip: '{total_tip_str}' (from line {i+2})")
+                    # print(f"Detected Tip: '{total_tip_str}' (from line {i+2})") # Removed debug print
                     i += 2 # Consume keyword line and amount line
                     continue # Continue loop
-                else:
-                     print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.")
+                # else:
+                     # print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.") # Removed debug print
                      # Fall through to general increment i += 1
-             else:
-                  print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but no next line to check for amount.")
+             # else:
+                  # print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but no next line to check for amount.") # Removed debug print
                   # Fall through to general increment i += 1
 
 
         # If none of the patterns matched starting at line i, just move to the next line
         i += 1
 
-    print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'")
-    print(f"Debug: Parsed items (strings): {items}") # Print the final list of parsed items
+    # print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'") # Removed debug print
+    # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
     return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
 
 
