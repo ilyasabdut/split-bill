@@ -7,8 +7,9 @@ def clean_number_string(num_str: str) -> str:
     return re.sub(r'[^\d.]', '', num_str.replace(',', ''))
 
 def parse_quantity(num_str: str) -> Optional[float]:
-    """Parse quantity string to float, handling common formats like '1.0'"""
-    match = re.match(r'^(\d+)[.,]0$', num_str.strip())
+    """Parse quantity string to float, handling common formats."""
+    num_str = num_str.replace("x", "").strip()  # Remove "x" and spaces
+    match = re.match(r'^(\d+)[.,]?\d*$', num_str)  # Match integer or decimal
     return float(match.group(1)) if match else None
 
 def clean_and_convert_number(num_str: Union[str, int, float], is_quantity: bool = False) -> Optional[float]:
