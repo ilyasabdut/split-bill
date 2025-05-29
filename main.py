@@ -73,9 +73,9 @@ def main():
                 parsed_data = ocr_utils.parse_receipt_text(ocr_result)
                 print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
 
-                    progress_bar.progress(100, "Done!")
-                    progress_bar.empty()
-                    print(f"Total processing time: {time.time() - start_time:.2f} seconds")
+                progress_bar.progress(100, "Done!")
+                progress_bar.empty()
+                print(f"Total processing time: {time.time() - start_time:.2f} seconds")
 
                 # Store parsed data and show success message
                 st.session_state.parsed_data = parsed_data
