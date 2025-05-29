@@ -1,16 +1,16 @@
 import streamlit as st
 import ocr_utils
 from PIL import Image
-import split_logic # Import the new split logic file
-import easyocr # Moved import back to the top
-import pandas as pd # Import pandas for dataframe display
+import split_logic
+import easyocr
+import pandas as pd
+import numpy as np
 
 # Cache the EasyOCR reader to avoid re-initializing it every time
 @st.cache_resource
 def get_easyocr_reader():
-    """Caches the EasyOCR reader initialization."""
-    # This will download models the first time it's run
-    return easyocr.Reader(['en'])
+    """Caches the EasyOCR reader initialization with optimized settings."""
+    return easyocr.Reader(['en'], gpu=False)
 
 def main():
     st.title("Receipt OCR and Bill Splitter")
@@ -39,11 +39,10 @@ def main():
             # you would put st.image here and remove the one below.
             # But the standard pattern is to display it after upload.
 
-            with st.spinner('Extracting text from receipt...'):
+            with st.spinner('Processing receipt image...'):
+                # Extract and parse with improved OCR pipeline
                 text = ocr_utils.extract_text_from_image(uploaded_file)
-
-            with st.spinner('Parsing extracted text...'):
-                 parsed_data = ocr_utils.parse_receipt_text(text)
+                parsed_data = ocr_utils.parse_receipt_text(text)
 
             # Store parsed data (with numbers as strings) in session state
             st.session_state.parsed_data = parsed_data
