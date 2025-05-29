@@ -8,7 +8,7 @@ import split_logic # Import split_logic for number cleaning
 
 # Pre-compile regex patterns outside the function for efficiency
 # Price pattern: number (with optional comma/dot) potentially with currency, entire line
-_price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,]+(?:[\.,]\d+)?)\s*$", re.IGNORECASE)
+_price_pattern = re.compile(r"^\s*([\d,]+(?:[\.,]\d+)?)\s*$", re.IGNORECASE)
 # Quantity pattern: number (with optional comma/dot), optionally with "x" prefix, entire line
 _quantity_pattern = re.compile(r"^\s*(\d+)\s*x\s*$", re.IGNORECASE)
 # Item name pattern: contains at least two letters
@@ -234,17 +234,24 @@ def parse_receipt_text(text):
                                       _quantity_pattern.match(potential_item_name_line) is None and
                                       not any(keyword in potential_item_name_line.upper() for keyword in _tax_keywords + _tip_keywords + _non_item_keywords))
 
-            # Modified price check: look for "IDR" and number on the next line
+            # Modified price check: look for a number on the next line
             price_match = re.search(r"([\d,]+(?:[\.,]\d+)?)$", potential_price_line, re.IGNORECASE)
 
             if is_potential_item_name and price_match:
                 # Found the sequence: Item Name (line i), Price (line i+1)
                 item_name = potential_item_name_line
                 price_str = price_match.group(1)
-                quantity_str = "1"  # Assume quantity 1 if not specified on item line
+
+                # Try to extract quantity from the item name line
+                qty_match = re.search(r"^(\d+\.?\d*)\s+(.+)", item_name)
+                if qty_match:
+                    quantity_str = qty_match.group(1)
+                    item_name = qty_match.group(2).strip()
+                else:
+                    quantity_str = "1"  # Assume quantity 1 if not specified
 
                 cleaned_price_str = clean_number_string_basic(price_str)
-                cleaned_quantity_str = "1"  # quantity is always 1 in this case
+                cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
                 items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
                 print(f"Matched Item -> Price pattern: Item='{item_name}', Qty='{cleaned_quantity_str}', Price='{cleaned_price_str}'")
