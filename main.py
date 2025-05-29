@@ -1,16 +1,11 @@
 # main.py
 import streamlit as st
-# from PIL import Image # PIL.Image is now used within gemini_ocr
 import split_logic
-# import easyocr # No longer needed for OCR
 import pandas as pd
-# import numpy as np # Might not be needed directly here anymore
 import time
-import gemini_ocr # Import our new module
-import io # For image bytes handling
-
-# @st.cache_resource # Caching the reader is no longer needed for EasyOCR
-# def get_easyocr_reader(): ... # Remove this function
+import gemini_ocr
+import io
+from PIL import Image
 
 def main():
     st.set_page_config(layout="wide")
