@@ -1,68 +1,106 @@
 # split_logic.py
 import re
+from typing import Optional, Union
 
-def clean_and_convert_number(num_str, is_quantity=False):
-    """
-    Removes spaces and thousands commas, handles decimal comma/dot,
-    converts string to float. Includes specific handling for quantity formats.
+def clean_number_string(num_str: str) -> str:
+    """Clean number string by removing non-numeric characters (except .)"""
+    return re.sub(r'[^\d.]', '', num_str.replace(',', ''))
+
+def parse_quantity(num_str: str) -> Optional[float]:
+    """Parse quantity string to float, handling common formats like '1.0'"""
+    match = re.match(r'^(\d+)[.,]0$', num_str.strip())
+    return float(match.group(1)) if match else None
+
+def clean_and_convert_number(num_str: Union[str, int, float], is_quantity: bool = False) -> Optional[float]:
+    """Clean and convert number string to float, with special handling for quantities.
+    
+    Args:
+        num_str: Input string/number to convert
+        is_quantity: Whether to use quantity parsing rules
+        
+    Returns:
+        Converted float or None if invalid
     """
     if not isinstance(num_str, str):
-        # print(f"Debug: clean_and_convert_number received non-string: {num_str}") # Avoid excessive prints
-        return None # Ensure input is a string
+        return float(num_str) if isinstance(num_str, (int, float)) else None
+        
+    num_str = num_str.strip()
+    if not num_str:
+        return None
 
-    num_str = num_str.strip() # Strip leading/trailing spaces
-
-    # Specific handling for quantities like "1.0" or "1,0"
-    # If it looks like digits followed by .0 or ,0, treat it as an integer quantity
+    # Try quantity-specific parsing first
     if is_quantity:
-        qty_match = re.match(r'^(\d+)[.,]0$', num_str)
-        if qty_match:
-            try:
-                # Convert the captured digits to float (e.g., "1" -> 1.0)
-                return float(qty_match.group(1))
-            except ValueError:
-                pass # Fall through to general cleaning if conversion fails
+        quantity = parse_quantity(num_str)
+        if quantity is not None:
+            return quantity
 
-    # General number cleaning: remove thousands separators (commas)
-    cleaned_str = num_str.replace(',', '')
-
-    # Remove any characters that are not digits or dots after removing commas
-    cleaned_str = re.sub(r'[^\d.]', '', cleaned_str)
-
-    # Ensure it's not an empty string after cleaning
-    if not cleaned_str:
-         return None # Return None for empty string
-
+    cleaned = clean_number_string(num_str)
     try:
-        float_val = float(cleaned_str)
-        return float_val
+        return float(cleaned) if cleaned else None
     except ValueError:
-        # print(f"Debug: clean_and_convert_number failed to convert '{num_str}' (cleaned to '{cleaned_str}') to float.") # Avoid excessive prints
         return None
 
 
-def calculate_split(item_assignments, tax_amount_str, tip_amount_str, person_names):
-    """
-    Calculates the bill split based on item assignments, tax, tip, and people.
-    Expects tax_amount_str and tip_amount_str as strings.
+from typing import List, Dict, Any, Union
 
+def validate_inputs(person_names: List[str]) -> Dict[str, Any]:
+    """Validate people names input"""
+    if not person_names:
+        return {"Error": "Please enter names for the people splitting the bill."}
+    return {"people": person_names}
+
+def initialize_results(person_names: List[str]) -> Dict[str, Dict[str, Any]]:
+    """Initialize empty results structure"""
+    return {
+        name: {"items": [], "subtotal": 0.0, "tax": 0.0, "tip": 0.0, "total": 0.0} 
+        for name in person_names
+    }
+
+def process_item_assignment(
+    assignment: Dict[str, Any], 
+    results: Dict[str, Dict[str, Any]], 
+    total_bill_subtotal: float
+) -> float:
+    """Process a single item assignment and update results"""
+    item = assignment["item_details"]
+    assigned_to = assignment.get("assigned_to", [])
+    
+    qty = clean_and_convert_number(item.get("qty", "0"), is_quantity=True) or 0.0
+    price = clean_and_convert_number(item.get("price", "0.0")) or 0.0
+    item_total = qty * price
+    
+    if price <= 0 or qty <= 0 or not assigned_to:
+        return total_bill_subtotal
+        
+    cost_per_share = item_total / len(assigned_to) if assigned_to else 0
+    for person in assigned_to:
+        if person in results:
+            results[person]["items"].append({
+                "item": item.get("item", "Unknown Item"),
+                "qty": qty,
+                "price": price,
+                "share_cost": cost_per_share
+            })
+            results[person]["subtotal"] += cost_per_share
+    
+    return total_bill_subtotal + item_total
+
+def calculate_split(
+    item_assignments: List[Dict[str, Any]], 
+    tax_amount_str: str, 
+    tip_amount_str: str, 
+    person_names: List[str]
+) -> Dict[str, Any]:
+    """Calculate bill split based on item assignments, tax, tip and people.
+    
     Args:
-        item_assignments (list): List of dictionaries like
-                                 [{"item_details": {"item": "Burger", "qty": "2", "price": "7.99"},
-                                   "assigned_to": ["Person 1", "Person 2"]}]
-                                 'qty' and 'price' are expected as strings.
-        tax_amount_str (str): Total tax amount as a string.
-        tip_amount_str (str): Total tip amount as a string.
-        person_names (list): List of names of people splitting the bill.
-
+        item_assignments: List of item assignments with 'item_details' and 'assigned_to'
+        tax_amount_str: Tax amount as string
+        tip_amount_str: Tip amount as string 
+        person_names: List of names of people splitting
+        
     Returns:
-        dict: A dictionary representing the split results per person.
-              Example:
-              {
-                "Alice": {"items": [...], "subtotal": 12.49, "tax": 1.24, "tip": 1.00, "total": 14.73},
-                ...
-              }
-              Returns {"Error": "..."} if there's an issue.
+        Dictionary with split results per person or error
     """
     if not person_names:
         return {"Error": "Please enter names for the people splitting the bill."}
