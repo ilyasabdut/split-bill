@@ -38,6 +38,8 @@ def extract_text_from_image(uploaded_file):
 def parse_receipt_text(text):
     """
     Parses the raw text extracted from a receipt to find items, quantities, and prices.
+    This version attempts to handle price-item-quantity across multiple lines
+    based on the provided example text structure.
 
     Args:
         text (str): The raw text extracted from the receipt.
@@ -50,49 +52,106 @@ def parse_receipt_text(text):
     print(text)
     print("----------------------------\n")
 
+    lines = text.strip().splitlines()
     items = []
-    # Updated regex pattern to handle commas and dots in the price part.
-    # Looks for:
-    # 1. Item name (any characters, non-greedy) - captured in group 1
-    # 2. One or more spaces
-    # 3. Quantity (one or more digits) - captured in group 2
-    # 4. One or more spaces (allowing for no 'x' or other separators)
-    # 5. Price (digits, commas, or dots) - captured as a string in group 3
-    # We will clean the price string after matching.
-    pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
+    i = 0
 
-    # Alternative pattern if quantity is often 1 and not explicitly listed,
-    # looking for Item Name followed by Price near the end of the line.
-    # pattern_no_qty = re.compile(r"(.+?)\s+([\d]+\.?\d*)$", re.IGNORECASE)
+    # Regex for price: digits, commas, dots, potentially at the start/end of the line
+    # Allows for optional currency symbols or spaces
+    price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,.]+)\s*$", re.IGNORECASE)
+    # Regex for quantity: digits, optional dot and digits, potentially at the start/end of the line
+    quantity_pattern = re.compile(r"^\s*(\d+\.?\d*)\s*$", re.IGNORECASE)
+    # Regex for item name: looks like text, contains at least two letters, not just numbers or symbols
+    item_name_pattern = re.compile(r"[A-Za-z]{2,}")
+
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Attempt to match the multi-line pattern: Price -> Item Name -> Quantity
+        # Check if current line is a price, next is item name, line after is quantity
+        if i + 2 < len(lines):
+            price_match = price_pattern.match(line)
+            if price_match:
+                potential_item_name_line = lines[i+1].strip()
+                potential_quantity_line = lines[i+2].strip()
+
+                # Check if the next line looks like an item name
+                if item_name_pattern.search(potential_item_name_line):
+                     # Check if the line after that looks like a quantity
+                     quantity_match = quantity_pattern.match(potential_quantity_line)
+
+                     if quantity_match:
+                        # Found the sequence: Price (line i), Item Name (line i+1), Quantity (line i+2)
+                        price_str = price_match.group(1)
+                        item_name = potential_item_name_line
+                        quantity_str = quantity_match.group(1)
+
+                        # Clean and convert price
+                        cleaned_price_str = price_str.replace(',', '') # Remove thousands separators
+                        try:
+                            price = float(cleaned_price_str)
+                        except ValueError:
+                            print(f"Warning: Could not convert price '{price_str}' to float after cleaning. Skipping sequence starting at line {i+1}.")
+                            i += 1 # Move to the next line
+                            continue # Continue loop
+
+                        # Convert quantity
+                        try:
+                            quantity = float(quantity_str) # Use float for 1.0, 2.0 etc.
+                            # Convert to int if it's a whole number like 1.0 -> 1
+                            if quantity.is_integer():
+                                quantity = int(quantity)
+                        except ValueError:
+                             print(f"Warning: Could not convert quantity '{quantity_str}' to number. Skipping sequence starting at line {i+1}.")
+                             i += 1 # Move to the next line
+                             continue # Continue loop
 
 
-    for line in text.splitlines():
-        match = pattern.search(line)
-        if match:
-            item_name = match.group(1).strip()
-            quantity = int(match.group(2))
-            price_str = match.group(3)
+                        # Basic validation: price and quantity should be > 0
+                        if price > 0 and quantity > 0:
+                             items.append({"item": item_name, "qty": quantity, "price": price})
+                             i += 3 # Consume these three lines and move to the next potential item start
+                             continue # Successfully parsed a multi-line item, continue loop from new position
 
-            # Clean the price string: remove commas, ensure decimal is a dot
-            cleaned_price_str = price_str.replace(',', '') # Remove thousands separators
-            # If the last character before potential decimal is a comma, assume it's a decimal comma
-            # This is a simple heuristic, might need refinement for different locales
-            if '.' not in cleaned_price_str and ',' in price_str:
-                 # If original had comma but cleaned doesn't have dot, and comma was last non-digit/dot char
-                 # This logic is tricky. Let's assume comma is always thousands separator for now.
-                 pass # Commas are just removed
+        # If the multi-line pattern didn't match starting at line i,
+        # check for a single-line pattern as a fallback.
+        # This pattern looks for Item Name, Quantity, and Price all on the same line.
+        # It's less likely to match the provided receipt structure but good as a fallback.
+        single_line_pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
+        single_match = single_line_pattern.search(line)
+        if single_match:
+            item_name = single_match.group(1).strip()
+            quantity_str = single_match.group(2)
+            price_str = single_match.group(3)
 
+            # Clean and convert price
+            cleaned_price_str = price_str.replace(',', '')
             try:
                 price = float(cleaned_price_str)
             except ValueError:
-                print(f"Warning: Could not convert price '{price_str}' to float after cleaning.")
-                continue # Skip this item if price is invalid
+                print(f"Warning: Could not convert price '{price_str}' to float after cleaning. Skipping single-line match on line {i+1}.")
+                i += 1 # Move to the next line
+                continue # Continue loop
 
-            # Basic validation: price should probably be > 0
-            if price > 0:
+            # Convert quantity
+            try:
+                quantity = int(quantity_str) # Single line pattern often implies integer quantity
+            except ValueError:
+                 print(f"Warning: Could not convert quantity '{quantity_str}' to integer. Skipping single-line match on line {i+1}.")
+                 i += 1 # Move to the next line
+                 continue # Continue loop
+
+            if price > 0 and quantity > 0:
                  items.append({"item": item_name, "qty": quantity, "price": price})
-        # Add logic here to try alternative patterns if the first one fails on a line
-        # elif pattern_no_qty.search(line):
-        #    ... handle items with implied quantity 1 ...
+                 i += 1 # Consume this line
+                 continue # Successfully parsed a single-line item, continue loop from new position
+
+
+        # If neither pattern matched starting at line i, just move to the next line
+        i += 1
+
+    # Optional: Add logic here to try and identify TAX, TIP, SUBTOTAL, TOTAL lines
+    # based on keywords and price patterns, and return them separately or store them.
+    # For now, focusing on item parsing.
 
     return items
