@@ -137,8 +137,10 @@ def parse_receipt_text(text):
         return num_str.strip()
 
 
+    print(f"Starting to parse {len(lines)} lines of text...")
     while i < len(lines):
         line = lines[i].strip()
+        print(f"Processing line {i+1}/{len(lines)}: {line[:50]}...")  # Print first 50 chars of line
         
         # First try optimized single-line pattern matching
         single_match = single_line_pattern.match(line)
@@ -280,9 +282,10 @@ def parse_receipt_text(text):
                   # Fall through to general increment i += 1
 
 
-        # Always increment to avoid infinite loop
+        # Always increment counters
         i += 1  
         lines_processed += 1
+        print(f"Completed line {i}/{len(lines)} - Total items found: {len(items)}")  # Show progress
         
         # Early exit if we're stuck on unparseable lines
         if lines_processed > len(lines) * 2:
@@ -295,7 +298,9 @@ def parse_receipt_text(text):
 
     # print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'") # Removed debug print
     # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
-    print(f"Receipt parsing completed in {time.time() - start_time:.2f} seconds")
+    parse_time = time.time() - start_time
+    parse_rate = len(lines)/parse_time if parse_time > 0 else 0
+    print(f"Receipt parsing completed in {parse_time:.2f} seconds ({parse_rate:.1f} lines/sec)")
     print(f"Found {len(items)} items, tax: {total_tax_str}, tip: {total_tip_str}")
     return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
 
