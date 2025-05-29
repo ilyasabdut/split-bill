@@ -56,97 +56,53 @@ bill-splitter/
 *   Access to a MinIO server (or other S3-compatible storage) and its credentials
 *   A registered domain or IP address for your VPS (for `APP_BASE_URL` in production)
 
-### 1. Clone the Repository
+## 🚀 Setup and Installation
+
+### Prerequisites
+
+- Python 3.12+
+- Docker & Docker Compose (optional)
+- Google Gemini API key
+- MinIO server access
+
+### Quick Start
+
+1. **Clone & Setup**
+   ```bash
+   git clone <repository-url>
+   cd <repository-name>
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Configure Environment**
+   - Copy `.env.example` to `.env`
+   - Add your API keys and MinIO credentials:
+     ```env
+     GEMINI_API_KEY=your_key
+     MINIO_ENDPOINT=your_minio:9000
+     MINIO_ACCESS_KEY=your_access_key
+     MINIO_SECRET_KEY=your_secret_key
+     MINIO_BUCKET_NAME=split-bill
+     MINIO_USE_SSL=False
+     APP_BASE_URL=http://localhost:8501
+     ```
+
+3. **Run the App**
+   ```bash
+   streamlit run main.py
+   ```
+
+### Docker Deployment
 
 ```bash
-git clone <your-repository-url>
-cd <your-repository-name>
-Use code with caution.
-2. Environment Variables
-This application requires several environment variables to be set for API keys and service configurations.
-Create a .env file in the root of the project (for local development) or directly on your server in the deployment directory (e.g., /home/ubuntu/composes/bill-splitter-app/.env). Do NOT commit your actual .env file to Git.
-Use .env.example (you should create this file) as a template:
-# .env.example - Copy to .env and fill in your actual values
+docker compose up -d
+```
 
-# Google Gemini API Configuration
-GEMINI_API_KEY="YOUR_GOOGLE_GEMINI_API_KEY"
-GEMINI_MODEL_NAME="gemini-1.5-flash-latest" # Or your preferred Gemini model
+Access the app at `http://localhost:8501` or your configured URL.
 
-# MinIO Object Storage Configuration
-MINIO_ENDPOINT="your_minio_ip_or_domain:9000" # IMPORTANT: Use the API port (default 9000)
-MINIO_ACCESS_KEY="YOUR_MINIO_ACCESS_KEY"
-MINIO_SECRET_KEY="YOUR_MINIO_SECRET_KEY"
-MINIO_BUCKET_NAME="split-bill" # The bucket must exist or be creatable by the keys
-MINIO_USE_SSL="False" # Set to "True" if your MinIO endpoint uses HTTPS
-
-# Application Configuration
-APP_BASE_URL="http://localhost:8501" # For local dev. For deployment, use your public URL (e.g., http://your.vps.ip:8501)
-Use code with caution.
-Env
-3. Local Development (using Python Virtual Environment)
-This is useful for testing and development without Docker.
-# Create a virtual environment (Python 3.12 recommended)
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Ensure your .env file is in the project root and populated with your keys
-
-# Run the Streamlit application
-streamlit run main.py
-Use code with caution.
-Bash
-The app should now be accessible at http://localhost:8501.
-4. Dockerized Deployment (Recommended for VPS)
-This guide assumes you have Docker and Docker Compose installed on your VPS.
-Prepare Project on VPS:
-Clone your Git repository to your VPS, for example, into /home/ubuntu/apps/bill-splitter-app.
-Alternatively, your CI/CD pipeline will handle checking out the code.
-Create Docker Compose Directory and Configuration on VPS:
-It's good practice to have a separate directory for your Docker Compose setup if deploying multiple apps. Let's assume your CI/CD deploys to a directory like /home/ubuntu/deploy/bill-splitter-app where the docker-compose.yml and .env specific to this deployment will reside. The Dockerfile and app code context will be referenced from where the CI/CD checks out the code.
-On your VPS, ensure the directory for compose files exists, e.g.:
-mkdir -p /home/ubuntu/composes/bill-splitter-app
-Your CI/CD will typically place the docker-compose.yml here or you can place it manually.
-Crucially, create the .env file (as described in "Environment Variables" above) in this same directory (/home/ubuntu/composes/bill-splitter-app/.env) with your actual production credentials and URLs. This file is not in Git.
-Build and Run with Docker Compose (typically handled by CI/CD):
-If deploying manually or for the first time via CI/CD:
-# On your VPS, in the directory with your project code (where Dockerfile is)
-# cd /home/ubuntu/apps/bill-splitter-app 
-
-# If building locally on VPS (less common if using CI/CD for builds)
-# docker build -t your-registry/bill-splitter-app:latest .
-
-# Then, in the directory with docker-compose.yml and .env
-cd /home/ubuntu/composes/bill-splitter-app
-
-# Login to your private registry (if image is private and not built locally)
-# echo "YOUR_REGISTRY_PASSWORD" | docker login your-registry.com -u YOUR_USERNAME --password-stdin
-
-# Pull the image (if built and pushed by CI/CD)
-docker compose pull bill-splitter-app 
-
-# Start the application
-docker compose up -d bill-splitter-app # Add --build if building locally via compose
-Use code with caution.
-Bash
-The application should now be accessible via your VPS IP/domain at the mapped port (e.g., http://your_vps_ip:8501).
-5. CI/CD with GitHub Actions
-An example GitHub Actions workflow (e.g., .github/workflows/deploy.yml) is provided in this repository (or you can adapt the one discussed). It typically handles:
-Building the Docker image.
-Pushing the image to a private Docker registry.
-Connecting to the VPS and instructing Docker Compose to pull the new image and restart the service.
-You will need to configure the following GitHub Secrets in your repository:
-REGISTRY_USERNAME: Username for your Docker registry.
-REGISTRY_PASSWORD: Password/token for your Docker registry.
-VPS_HOST: IP address or hostname of your VPS.
-VPS_USER: SSH username for your VPS.
-VPS_SSH_KEY: SSH private key to access your VPS.
-(Optional) TAILSCALE_AUTHKEY (if using Tailscale for SSH access from Actions runner).
-And ensure the deployment script within the GitHub Action correctly:
-Navigates to the directory on your VPS where the docker-compose.yml and .env for this app are located (e.g., /home/ubuntu/composes/bill-splitter-app).
-Uses the correct service name from your docker-compose.yml (e.g., bill-splitter-app).
+For detailed deployment guides and CI/CD setup, see our [Deployment Documentation](deployment.md).
 Usage
 Step 1: Upload Receipt
 Click "Select a receipt image" and choose a JPG, JPEG, or PNG file (max 2MB, as per app setting).
