@@ -26,20 +26,26 @@ This Streamlit application allows users to upload a receipt image, automatically
 *   **Containerization:** Docker, Docker Compose
 *   **CI/CD:** GitHub Actions (example provided)
 
-## Project Structure
-Use code with caution.
-Markdown
-.
-├── .github/workflows/ # GitHub Actions workflows (e.g., deploy.yml)
-├── .env.example # Example environment variables file
-├── Dockerfile # Defines the Docker image for the application
-├── docker-compose.yml # Defines the Docker services for deployment
+## 📁 Project Structure
+
+```
+bill-splitter/
+│
+├── .github/
+│   └── workflows/    # CI/CD configuration
+│
+├── src/
+│   ├── main.py      # Main Streamlit application
+│   ├── gemini_ocr.py# AI integration logic
+│   ├── minio_utils.py# Storage utilities
+│   └── split_logic.py# Bill splitting core logic
+│
+├── .env.example     # Environment template
+├── Dockerfile       # Container definition
+├── docker-compose.yml# Service orchestration
 ├── requirements.txt # Python dependencies
-├── main.py # Main Streamlit application script
-├── gemini_ocr.py # Logic for interacting with Google Gemini API
-├── minio_utils.py # Utilities for MinIO object storage interaction
-├── split_logic.py # Core logic for calculating bill splits
-└── README.md # This file
+└── README.md       # Documentation
+```
 ## Setup and Installation
 
 ### Prerequisites
