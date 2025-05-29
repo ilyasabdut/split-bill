@@ -39,7 +39,7 @@ def parse_receipt_text(text):
     """
     Parses the raw text extracted from a receipt to find items, quantities, and prices.
     This version attempts to handle price-item-quantity across multiple lines
-    based on the provided example text structure.
+    based on the provided example text structure, with more flexible number parsing.
 
     Args:
         text (str): The raw text extracted from the receipt.
@@ -58,11 +58,28 @@ def parse_receipt_text(text):
 
     # Regex for price: digits, commas, dots, potentially at the start/end of the line
     # Allows for optional currency symbols or spaces
+    # Captures the number part including commas/dots
     price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,.]+)\s*$", re.IGNORECASE)
-    # Regex for quantity: digits, optional dot and digits, potentially at the start/end of the line
-    quantity_pattern = re.compile(r"^\s*(\d+\.?\d*)\s*$", re.IGNORECASE)
+
+    # Regex for quantity: digits, optional dot/comma and digits, potentially at the start/end of the line
+    # Captures the number part including commas/dots
+    quantity_pattern = re.compile(r"^\s*([\d,.]+)\s*$", re.IGNORECASE)
+
     # Regex for item name: looks like text, contains at least two letters, not just numbers or symbols
     item_name_pattern = re.compile(r"[A-Za-z]{2,}")
+
+    # Helper function to clean and convert number strings (price/quantity)
+    def clean_and_convert_number(num_str):
+        """Removes commas and converts string to float."""
+        # Remove thousands separators (commas)
+        cleaned_str = num_str.replace(',', '')
+        # Handle potential decimal comma if no dot is present (simple heuristic)
+        # For now, assuming comma is always thousands separator based on example
+        # If decimal comma is possible, more complex logic is needed.
+        try:
+            return float(cleaned_str)
+        except ValueError:
+            return None # Return None if conversion fails
 
     while i < len(lines):
         line = lines[i].strip()
@@ -87,24 +104,22 @@ def parse_receipt_text(text):
                         quantity_str = quantity_match.group(1)
 
                         # Clean and convert price
-                        cleaned_price_str = price_str.replace(',', '') # Remove thousands separators
-                        try:
-                            price = float(cleaned_price_str)
-                        except ValueError:
-                            print(f"Warning: Could not convert price '{price_str}' to float after cleaning. Skipping sequence starting at line {i+1}.")
+                        price = clean_and_convert_number(price_str)
+                        if price is None:
+                            print(f"Warning: Could not convert price '{price_str}' to number. Skipping sequence starting at line {i+1}.")
                             i += 1 # Move to the next line
                             continue # Continue loop
 
-                        # Convert quantity
-                        try:
-                            quantity = float(quantity_str) # Use float for 1.0, 2.0 etc.
-                            # Convert to int if it's a whole number like 1.0 -> 1
-                            if quantity.is_integer():
-                                quantity = int(quantity)
-                        except ValueError:
+                        # Clean and convert quantity
+                        quantity = clean_and_convert_number(quantity_str)
+                        if quantity is None:
                              print(f"Warning: Could not convert quantity '{quantity_str}' to number. Skipping sequence starting at line {i+1}.")
                              i += 1 # Move to the next line
                              continue # Continue loop
+
+                        # Convert quantity to int if it's a whole number like 1.0 -> 1
+                        if quantity.is_integer():
+                            quantity = int(quantity)
 
 
                         # Basic validation: price and quantity should be > 0
@@ -117,6 +132,7 @@ def parse_receipt_text(text):
         # check for a single-line pattern as a fallback.
         # This pattern looks for Item Name, Quantity, and Price all on the same line.
         # It's less likely to match the provided receipt structure but good as a fallback.
+        # Regex: Item Name (greedy) + spaces + Quantity + spaces + Price
         single_line_pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
         single_match = single_line_pattern.search(line)
         if single_match:
@@ -125,17 +141,15 @@ def parse_receipt_text(text):
             price_str = single_match.group(3)
 
             # Clean and convert price
-            cleaned_price_str = price_str.replace(',', '')
-            try:
-                price = float(cleaned_price_str)
-            except ValueError:
-                print(f"Warning: Could not convert price '{price_str}' to float after cleaning. Skipping single-line match on line {i+1}.")
+            price = clean_and_convert_number(price_str)
+            if price is None:
+                print(f"Warning: Could not convert price '{price_str}' to number. Skipping single-line match on line {i+1}.")
                 i += 1 # Move to the next line
                 continue # Continue loop
 
-            # Convert quantity
+            # Convert quantity (assuming integer for single line)
             try:
-                quantity = int(quantity_str) # Single line pattern often implies integer quantity
+                quantity = int(quantity_str)
             except ValueError:
                  print(f"Warning: Could not convert quantity '{quantity_str}' to integer. Skipping single-line match on line {i+1}.")
                  i += 1 # Move to the next line

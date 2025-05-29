@@ -35,8 +35,9 @@ def main():
             # The get_easyocr_reader function is still useful if we refactor ocr_utils later.
             text = ocr_utils.extract_text_from_image(uploaded_file)
 
-        st.subheader("Extracted Text:")
-        st.text(text)
+        # Commented out the raw text display
+        # st.subheader("Extracted Text:")
+        # st.text(text)
 
         with st.spinner('Parsing extracted text...'):
              items = ocr_utils.parse_receipt_text(text)
