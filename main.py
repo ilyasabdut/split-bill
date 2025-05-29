@@ -5,6 +5,7 @@ import split_logic
 import easyocr
 import pandas as pd
 import numpy as np
+import time # Import time for timing
 
 # Cache the EasyOCR reader to avoid re-initializing it every time
 @st.cache_resource
@@ -15,13 +16,13 @@ def get_easyocr_reader():
         use_gpu = torch.cuda.is_available()
     except ImportError:
         use_gpu = False
-        
-    if use_gpu:
-        st.session_state['ocr_backend'] = "GPU"
-    else:
-        st.session_state['ocr_backend'] = "CPU"
-    
-    return easyocr.Reader(['en'], gpu=use_gpu)
+
+    # Store backend info in session state for display
+    st.session_state['ocr_backend'] = "GPU" if use_gpu else "CPU"
+
+    # Initialize reader with detected GPU status
+    reader = easyocr.Reader(['en'], gpu=use_gpu)
+    return reader
 
 def main():
     st.title("Receipt OCR and Bill Splitter")
@@ -29,6 +30,10 @@ def main():
     # Initialize session state for parsed data and file info
     st.session_state.setdefault('parsed_data', None)
     st.session_state.setdefault('last_uploaded_file_info', None) # Store (name, size) tuple
+    st.session_state.setdefault('ocr_backend', 'Detecting...') # Initialize backend state
+
+    # Get the cached reader
+    reader = get_easyocr_reader() # Get the reader here
 
     uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"])
 
@@ -44,26 +49,24 @@ def main():
         if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
             st.session_state.last_uploaded_file_info = current_file_info # Store current file info
 
-            # The image was previously displayed here and also below.
-            # We are now restoring the display below this block.
-            # If you wanted to display it *only* during processing,
-            # you would put st.image here and remove the one below.
-            # But the standard pattern is to display it after upload.
+            # Display the image immediately after upload
+            image = Image.open(uploaded_file)
+            st.image(image, caption="Uploaded Receipt", width=300)
 
             with st.spinner(f'Processing receipt image (using {st.session_state.get("ocr_backend", "CPU")})...'):
-                import time
                 start_time = time.time()
                 progress_bar = st.progress(0)
-                
+
                 print("Starting OCR processing...")
-                text = ocr_utils.extract_text_from_image(uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
+                # Pass the reader object to the OCR function
+                text = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
                 print(f"OCR completed in {time.time() - start_time:.2f} seconds")
-                
+
                 progress_bar.progress(90, "Parsing text...")
                 parse_start = time.time()
                 parsed_data = ocr_utils.parse_receipt_text(text)
                 print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
-                
+
                 progress_bar.progress(100, "Done!")
                 progress_bar.empty()
                 print(f"Total processing time: {time.time() - start_time:.2f} seconds")
@@ -82,11 +85,9 @@ def main():
         detected_tax_str = parsed_data_from_state.get("total_tax", "0.0") # Get as string
         detected_tip_str = parsed_data_from_state.get("total_tip", "0.0") # Get as string
 
-        # Restore the st.image call here. This displays the image once after upload
-        # and keeps it visible during subsequent interactions.
-        image = Image.open(uploaded_file) # Re-open the file object (Streamlit handles this efficiently)
-        st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
-
+        # Display the image again if it was already processed (it's displayed above now)
+        # image = Image.open(uploaded_file) # Re-opening might be slightly less efficient if not needed
+        # st.image(image, caption="Uploaded Receipt", width=300) # Displayed above now
 
         # --- Start of Bill Splitting UI (always shown if file is uploaded and parsed_data exists) ---
         if st.session_state.parsed_data is not None:
@@ -136,7 +137,7 @@ def main():
                      try:
                          # Use split_logic's cleaner for consistency
                          qty_float = split_logic.clean_and_convert_number(item.get('qty', '0'), is_quantity=True) or 0.0 # Use quantity flag
-                         qty_display = int(qty_float) if qty_float.is_integer() else qty_float # Display as int if whole number
+                         qty_display = int(qty_float) if qty_float == int(qty_float) else qty_float # Display as int if whole number
                      except Exception: # Catch any conversion error
                          qty_display = item.get('qty', '0') # Display as string if conversion fails
                      try:
