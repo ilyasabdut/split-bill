@@ -16,9 +16,9 @@ _item_name_pattern = re.compile(r"[A-Za-z]{2,}", re.IGNORECASE)
 
 # New patterns for single-line items
 # Pattern 1: Qty Item Price (e.g., 1.0 PORK BELLY SAMBAL MATA 165,000)
-_qty_item_price_pattern = re.compile(r"^\s*(\d+\.?\d*)\s+(.+?)\s+([\d,.]+)\s*$", re.IGNORECASE)
+_qty_item_price_pattern = re.compile(r"^\s*(\d+\.?\d*)\s+(.+?)\s+([\d,]+(?:[\.,]\d+)?)\s*$", re.IGNORECASE)
 # Pattern 2: Item Qty Price (e.g., Item Name 1.0 120,000) - less common on this receipt but useful
-_item_qty_price_pattern = re.compile(r"^\s*(.+?)\s+(\d+\.?\d*)\s+([\d,.]+)\s*$", re.IGNORECASE)
+_item_qty_price_pattern = re.compile(r"^\s*(.+?)\s+(\d+\.?\d*)\s+([\d,]+(?:[\.,]\d+)?)\s*$", re.IGNORECASE)
 
 
 # Keywords for tax detection - Added "PBI"
@@ -232,10 +232,10 @@ def parse_receipt_text(text):
             is_potential_item_name = (_item_name_pattern.search(potential_item_name_line) is not None and
                                       _price_pattern.match(potential_item_name_line) is None and
                                       _quantity_pattern.match(potential_item_name_line) is None and
-                                      not any(keyword in potential_item_name_line.upper() for keyword in _tax_keywords + _tip_keywords + _non_item_keywords)) # Exclude all known keywords
+                                      not any(keyword in potential_item_name_line.upper() for keyword in _tax_keywords + _tip_keywords + _non_item_keywords))
 
             # Modified price check: look for "IDR" and number on the next line
-            price_match = re.search(r"IDR\s*([\d,]+(?:[\.,]\d+)?)", potential_price_line, re.IGNORECASE)
+            price_match = re.search(r"([\d,]+(?:[\.,]\d+)?)$", potential_price_line, re.IGNORECASE)
 
             if is_potential_item_name and price_match:
                 # Found the sequence: Item Name (line i), Price (line i+1)
@@ -244,12 +244,12 @@ def parse_receipt_text(text):
                 quantity_str = "1"  # Assume quantity 1 if not specified on item line
 
                 cleaned_price_str = clean_number_string_basic(price_str)
-                cleaned_quantity_str = "1" # quantity is always 1 in this case
+                cleaned_quantity_str = "1"  # quantity is always 1 in this case
 
                 items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
                 print(f"Matched Item -> Price pattern: Item='{item_name}', Qty='{cleaned_quantity_str}', Price='{cleaned_price_str}'")
-                i += 2 # Consume these two lines
-                continue # Move to the next iteration
+                i += 2  # Consume these two lines
+                continue  # Move to the next iteration
 
         # --- If none of the specific patterns matched, move to the next line ---
         print(f"No pattern matched for line {i+1}. Skipping.")
@@ -259,7 +259,7 @@ def parse_receipt_text(text):
         if i > 0 and i % 10 == 0:
             print(f"Processed {i} lines, {len(items)} items found so far")
 
-
+    print(f"Successfully parsed {len(items)} items from receipt!")
     parse_time = time.time() - start_time
     parse_rate = len(lines)/parse_time if parse_time > 0 else 0
     print(f"Receipt parsing completed in {parse_time:.2f} seconds ({parse_rate:.1f} lines/sec)")
