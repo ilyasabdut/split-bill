@@ -13,6 +13,8 @@ _price_pattern = re.compile(r"^\s*([\d,]+(?:[\.,]\d+)?)\s*$", re.IGNORECASE)
 _quantity_pattern = re.compile(r"^\s*(\d+)\s*x\s*$", re.IGNORECASE)
 # Item name pattern: contains at least two letters
 _item_name_pattern = re.compile(r"[A-Za-z]{2,}", re.IGNORECASE)
+# Non-item line pattern: contains only digits and special characters
+_non_item_line_pattern = re.compile(r"^[\d\s:\/\-]+$")
 
 # New patterns for single-line items
 # Pattern 1: Qty Item Price (e.g., 1.0 PORK BELLY SAMBAL MATA 165,000)
@@ -138,9 +140,21 @@ def parse_receipt_text(text):
 
         line_upper = line.upper()
 
-        # Skip single character lines and other garbage
+        # Skip short lines and other garbage
         if len(line) < 2:
-            print(f"Skipping single character line: '{line}'")
+            print(f"Skipping short line: '{line}'")
+            i += 1
+            continue
+
+        # Skip non-item lines based on keywords
+        if any(keyword in line_upper for keyword in ["BILL", "DINEIN", "SDC1", "TABLE"]):
+            print(f"Skipping non-item keyword line: '{line}'")
+            i += 1
+            continue
+
+        # Skip lines that contain only digits and special characters
+        if _non_item_line_pattern.match(line):
+            print(f"Skipping non-item line: '{line}'")
             i += 1
             continue
 
@@ -243,7 +257,7 @@ def parse_receipt_text(text):
                 price_str = price_match.group(1)
 
                 # Try to extract quantity from the item name line
-                qty_match = re.search(r"^(\d+\.?\d*)\s+(.+)", item_name)
+                qty_match = re.search(r"^(\d+\.?\d*)\s+(.+)", item_name, re.IGNORECASE)
                 if qty_match:
                     quantity_str = qty_match.group(1)
                     item_name = qty_match.group(2).strip()
