@@ -1,3 +1,4 @@
-[watcher]
+[server]
 # Disable the file watcher to avoid conflicts with libraries like torch
-watchAppDir = false
+# Use "none" to disable the watcher entirely
+fileWatcherType = "none"

@@ -28,7 +28,8 @@ def extract_text_from_image(uploaded_file):
 
     text = ""
     # Sort results by vertical position to improve text flow
-    results.sort(key=lambda r: r[0][0][1]) # Sort by y-coordinate of the first point
+    # Sort by y-coordinate of the top-left corner of the bounding box
+    results.sort(key=lambda r: r[0][0][1])
 
     for (bbox, text_content, prob) in results:
         text += text_content + "\n"
@@ -50,16 +51,15 @@ def parse_receipt_text(text):
     print("----------------------------\n")
 
     items = []
-    # More flexible regex pattern:
+    # Updated regex pattern to handle commas and dots in the price part.
     # Looks for:
     # 1. Item name (any characters, non-greedy) - captured in group 1
     # 2. One or more spaces
     # 3. Quantity (one or more digits) - captured in group 2
     # 4. One or more spaces (allowing for no 'x' or other separators)
-    # 5. Price (digits, optionally with a decimal point and digits after) - captured in group 3
-    # This pattern is more lenient with separators between Qty and Price.
-    # It assumes the order is Item Name, Quantity, Price.
-    pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d]+\.?\d*)", re.IGNORECASE)
+    # 5. Price (digits, commas, or dots) - captured as a string in group 3
+    # We will clean the price string after matching.
+    pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
 
     # Alternative pattern if quantity is often 1 and not explicitly listed,
     # looking for Item Name followed by Price near the end of the line.
@@ -71,7 +71,23 @@ def parse_receipt_text(text):
         if match:
             item_name = match.group(1).strip()
             quantity = int(match.group(2))
-            price = float(match.group(3))
+            price_str = match.group(3)
+
+            # Clean the price string: remove commas, ensure decimal is a dot
+            cleaned_price_str = price_str.replace(',', '') # Remove thousands separators
+            # If the last character before potential decimal is a comma, assume it's a decimal comma
+            # This is a simple heuristic, might need refinement for different locales
+            if '.' not in cleaned_price_str and ',' in price_str:
+                 # If original had comma but cleaned doesn't have dot, and comma was last non-digit/dot char
+                 # This logic is tricky. Let's assume comma is always thousands separator for now.
+                 pass # Commas are just removed
+
+            try:
+                price = float(cleaned_price_str)
+            except ValueError:
+                print(f"Warning: Could not convert price '{price_str}' to float after cleaning.")
+                continue # Skip this item if price is invalid
+
             # Basic validation: price should probably be > 0
             if price > 0:
                  items.append({"item": item_name, "qty": quantity, "price": price})
