@@ -35,7 +35,8 @@ def main():
 
             image = Image.open(uploaded_file)
             # Display the image immediately when a new file is uploaded
-            st.image(image, caption="Uploaded Receipt", use_container_width=True)
+            # Changed image display to a fixed smaller width
+            st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
 
             with st.spinner('Extracting text from receipt...'):
                 text = ocr_utils.extract_text_from_image(uploaded_file)
@@ -56,7 +57,8 @@ def main():
         # Display the image again if data is loaded from state (needed on reruns)
         # This ensures the image stays visible after interactions
         image = Image.open(uploaded_file) # Re-open the file object (Streamlit handles this efficiently)
-        st.image(image, caption="Uploaded Receipt", use_container_width=True)
+        # Changed image display to a fixed smaller width
+        st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
 
 
         # --- Start of Bill Splitting UI (always shown if file is uploaded and parsed_data exists) ---
@@ -103,10 +105,11 @@ def main():
                 with col1:
                     st.write(f"**{item['item']}**")
                 with col2:
-                     # Changed currency symbol from $ to IDR
-                     st.write(f"{item['qty']} x IDR {item['price']:.2f}")
+                     # Changed currency formatting to IDR with thousands separator
+                     st.write(f"{item['qty']} x IDR {item['price']:,.2f}")
                 with col3:
                     # Multiselect for assigning people to this item
+                    # Note: Streamlit's multiselect does not auto-close after selection.
                     assigned_to = st.multiselect(
                         "Assigned to:",
                         person_names,
@@ -118,8 +121,8 @@ def main():
 
             st.subheader("Tax & Tip")
             # Input for tax and tip (manual for now, default to detected)
-            tax_amount = st.number_input("Tax Amount (IDR)", min_value=0.0, value=detected_tax, step=0.01, key="tax_input")
-            tip_amount = st.number_input("Tip Amount (IDR)", min_value=0.0, value=detected_tip, step=0.01, key="tip_input")
+            tax_amount = st.number_input("Tax Amount (IDR)", min_value=0.0, value=detected_tax, step=0.01, key="tax_input", format="%.2f") # Added format for consistency
+            tip_amount = st.number_input("Tip Amount (IDR)", min_value=0.0, value=detected_tip, step=0.01, key="tip_input", format="%.2f") # Added format for consistency
 
 
             # Button to calculate split
@@ -147,9 +150,9 @@ def main():
 
                     # Use pandas DataFrame for a nice table display
                     summary_df = pd.DataFrame(summary_data)
-                    # Format currency columns - Changed currency symbol from $ to IDR
+                    # Format currency columns - Changed currency symbol from $ to IDR and added thousands separator
                     for col in ["Subtotal", "Tax", "Tip", "Total"]:
-                         summary_df[col] = summary_df[col].apply(lambda x: f"IDR {x:.2f}")
+                         summary_df[col] = summary_df[col].apply(lambda x: f"IDR {x:,.2f}")
 
                     st.dataframe(summary_df.set_index("Person")) # Set Person as index
 
@@ -163,10 +166,10 @@ def main():
                                     item_breakdown_data.append({
                                         "Item": item_share["item"],
                                         "Qty": item_share["qty"],
-                                        # Changed currency symbol from $ to IDR
-                                        "Original Price": f"IDR {item_share['price']:.2f}",
-                                        # Changed currency symbol from $ to IDR
-                                        "Your Share Cost": f"IDR {item_share['share_cost']:.2f}"
+                                        # Changed currency formatting to IDR with thousands separator
+                                        "Original Price": f"IDR {item_share['price']:,.2f}",
+                                        # Changed currency formatting to IDR with thousands separator
+                                        "Your Share Cost": f"IDR {item_share['share_cost']:,.2f}"
                                     })
                                 item_breakdown_df = pd.DataFrame(item_breakdown_data)
                                 st.dataframe(item_breakdown_df)
