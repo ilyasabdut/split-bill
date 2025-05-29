@@ -283,12 +283,14 @@ def parse_receipt_text(text):
 
 
         # Always increment counters
-        i += 1  
+        if i < len(lines):
+            i += 1
         lines_processed += 1
         print(f"Completed line {i}/{len(lines)} - Total items found: {len(items)}")  # Show progress
         
         # Early exit if we're stuck on unparseable lines
-        if lines_processed > len(lines) * 2:
+        if lines_processed > len(lines) * 3:
+            print(f"Warning: Processed {lines_processed} lines without finishing. Remaining lines will be skipped.")
             print(f"Warning: Processed {lines_processed} lines without finishing, possible infinite loop. Skipping remaining.")
             break
             
