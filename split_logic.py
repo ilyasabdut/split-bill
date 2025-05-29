@@ -1,15 +1,29 @@
 # split_logic.py
 import re
 
-def clean_and_convert_number(num_str):
-    """Removes spaces and thousands commas, converts string to float."""
+def clean_and_convert_number(num_str, is_quantity=False):
+    """
+    Removes spaces and thousands commas, handles decimal comma/dot,
+    converts string to float. Includes specific handling for quantity formats.
+    """
     if not isinstance(num_str, str):
         # print(f"Debug: clean_and_convert_number received non-string: {num_str}") # Avoid excessive prints
         return None # Ensure input is a string
 
     num_str = num_str.strip() # Strip leading/trailing spaces
 
-    # Remove thousands separators (commas)
+    # Specific handling for quantities like "1.0" or "1,0"
+    # If it looks like digits followed by .0 or ,0, treat it as an integer quantity
+    if is_quantity:
+        qty_match = re.match(r'^(\d+)[.,]0$', num_str)
+        if qty_match:
+            try:
+                # Convert the captured digits to float (e.g., "1" -> 1.0)
+                return float(qty_match.group(1))
+            except ValueError:
+                pass # Fall through to general cleaning if conversion fails
+
+    # General number cleaning: remove thousands separators (commas)
     cleaned_str = num_str.replace(',', '')
 
     # Remove any characters that are not digits or dots after removing commas
@@ -70,9 +84,9 @@ def calculate_split(item_assignments, tax_amount_str, tip_amount_str, person_nam
         quantity_str = item.get("qty", "0") # Expect string
         price_str = item.get("price", "0.0") # Expect string
 
-        # Convert quantity and price strings to numbers
-        quantity = clean_and_convert_number(quantity_str) or 0.0
-        price = clean_and_convert_number(price_str) or 0.0
+        # Convert quantity and price strings to numbers using the robust cleaner
+        quantity = clean_and_convert_number(quantity_str, is_quantity=True) or 0.0 # Use quantity flag
+        price = clean_and_convert_number(price_str, is_quantity=False) or 0.0 # Don't use quantity flag for price
 
         # Basic validation: price and quantity should be > 0 for calculation
         if price <= 0 or quantity <= 0:
@@ -182,6 +196,7 @@ if __name__ == '__main__':
         {"item_details": {"item": "Item with comma price", "qty": "1", "price": "1,234.56"}, "assigned_to": ["Alice"]},
         {"item_details": {"item": "Item with comma qty", "qty": "1,0", "price": "5.00"}, "assigned_to": ["Bob"]},
         {"item_details": {"item": "Large Item", "qty": "1", "price": "165,000"}, "assigned_to": ["Alice"]}, # Test case for 165,000
+        {"item_details": {"item": "Another Item", "qty": "2.0", "price": "50,000"}, "assigned_to": ["Charlie"]}, # Test case for 2.0
     ]
     sample_tax_str = "5.00"
     sample_tip_str = "3.00"

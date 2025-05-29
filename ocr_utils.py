@@ -40,8 +40,8 @@ def parse_receipt_text(text):
     Parses the raw text extracted from a receipt to find items, quantities, prices,
     and automatically detect tax based on keywords.
     This version attempts to handle price-item-quantity across multiple lines
-    based on the provided example text structure, with more flexible number parsing
-    and added debugging prints. Returns numbers as cleaned strings (without thousands separators).
+    based on the provided example text structure, with more flexible number parsing.
+    Returns numbers as raw strings (with spaces, commas, dots).
 
     Args:
         text (str): The raw text extracted from the receipt.
@@ -85,36 +85,13 @@ def parse_receipt_text(text):
 
 
     # Helper function to clean number strings (price/quantity/tax/tip)
-    # Returns cleaned string, does NOT convert to float here
-    def clean_number_string(num_str):
-        """Removes spaces and thousands commas, keeps decimal dots, returns cleaned string."""
+    # Returns cleaned string (only spaces removed), does NOT convert to float here
+    def clean_number_string_basic(num_str):
+        """Removes spaces, keeps commas and dots, returns cleaned string."""
         if not isinstance(num_str, str):
-            # print(f"Debug: clean_number_string received non-string: {num_str}") # Avoid excessive prints
             return "0.0" # Return default string for non-strings
+        return num_str.strip()
 
-        num_str = num_str.strip() # Strip leading/trailing spaces
-
-        # Remove thousands separators (commas)
-        cleaned_str = num_str.replace(',', '')
-
-        # Remove any characters that are not digits or dots after removing commas
-        cleaned_str = re.sub(r'[^\d.]', '', cleaned_str)
-
-        # Ensure it's not an empty string after cleaning
-        if not cleaned_str:
-             return "0.0" # Return "0.0" for empty string
-
-        # Handle cases like "1." -> "1.0" or ".5" -> "0.5" if necessary,
-        # but float() conversion in split_logic handles many of these.
-        # Ensure there's at most one dot
-        if cleaned_str.count('.') > 1:
-             # Simple approach: keep only the last dot, remove others
-             parts = cleaned_str.split('.')
-             cleaned_str = ''.join(parts[:-1]) + '.' + parts[-1]
-             # Or more strictly, return "0.0" if multiple dots indicate invalid format
-             # return "0.0"
-
-        return cleaned_str
 
     while i < len(lines):
         line = lines[i].strip()
@@ -139,9 +116,9 @@ def parse_receipt_text(text):
                         item_name = potential_item_name_line
                         quantity_str = quantity_match.group(1)
 
-                        # Clean price and quantity strings
-                        cleaned_price_str = clean_number_string(price_str)
-                        cleaned_quantity_str = clean_number_string(quantity_str)
+                        # Clean price and quantity strings (basic cleaning)
+                        cleaned_price_str = clean_number_string_basic(price_str)
+                        cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
                         # Check if item name is a non-item keyword
                         if item_name.upper() not in non_item_keywords:
@@ -172,9 +149,9 @@ def parse_receipt_text(text):
                           quantity_str = quantity_match.group(1)
                           item_name = potential_item_name_line
 
-                          # Clean price and quantity strings
-                          cleaned_price_str = clean_number_string(price_str)
-                          cleaned_quantity_str = clean_number_string(quantity_str)
+                          # Clean price and quantity strings (basic cleaning)
+                          cleaned_price_str = clean_number_string_basic(price_str)
+                          cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
                           # Check if item name is a non-item keyword
                           if item_name.upper() not in non_item_keywords:
@@ -197,9 +174,9 @@ def parse_receipt_text(text):
             quantity_str = single_match.group(2)
             price_str = single_match.group(3)
 
-            # Clean price and quantity strings
-            cleaned_price_str = clean_number_string(price_str)
-            cleaned_quantity_str = clean_number_string(quantity_str)
+            # Clean price and quantity strings (basic cleaning)
+            cleaned_price_str = clean_number_string_basic(price_str)
+            cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
             # Check if item name is a non-item keyword
             if item_name.upper() not in non_item_keywords:
@@ -222,7 +199,7 @@ def parse_receipt_text(text):
              if i + 1 < len(lines):
                 next_line = lines[i+1].strip()
                 # print(f"Debug: Checking next line {i+2} for amount: '{next_line}'") # Removed debug print
-                cleaned_amount_str = clean_number_string(next_line)
+                cleaned_amount_str = clean_number_string_basic(next_line)
 
                 # We don't sum here, just store the last detected amount for now
                 # More sophisticated logic might sum multiple tax lines

@@ -108,13 +108,13 @@ def main():
                      # Convert qty and price strings to numbers for display formatting
                      try:
                          # Use split_logic's cleaner for consistency
-                         qty_float = split_logic.clean_and_convert_number(item.get('qty', '0')) or 0.0
+                         qty_float = split_logic.clean_and_convert_number(item.get('qty', '0'), is_quantity=True) or 0.0 # Use quantity flag
                          qty_display = int(qty_float) if qty_float.is_integer() else qty_float # Display as int if whole number
                      except Exception: # Catch any conversion error
                          qty_display = item.get('qty', '0') # Display as string if conversion fails
                      try:
                          # Use split_logic's cleaner for consistency
-                         price_display = split_logic.clean_and_convert_number(item.get('price', '0.0')) or 0.0
+                         price_display = split_logic.clean_and_convert_number(item.get('price', '0.0'), is_quantity=False) or 0.0 # Don't use quantity flag
                      except Exception: # Catch any conversion error
                          price_display = 0.0 # Use 0.0 if conversion fails
 
