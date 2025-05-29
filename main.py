@@ -10,7 +10,18 @@ import numpy as np
 @st.cache_resource
 def get_easyocr_reader():
     """Caches the EasyOCR reader initialization with optimized settings."""
-    return easyocr.Reader(['en'], gpu=True)
+    try:
+        import torch
+        use_gpu = torch.cuda.is_available()
+    except ImportError:
+        use_gpu = False
+        
+    if use_gpu:
+        st.session_state['ocr_backend'] = "GPU"
+    else:
+        st.session_state['ocr_backend'] = "CPU"
+    
+    return easyocr.Reader(['en'], gpu=use_gpu)
 
 def main():
     st.title("Receipt OCR and Bill Splitter")
@@ -39,10 +50,14 @@ def main():
             # you would put st.image here and remove the one below.
             # But the standard pattern is to display it after upload.
 
-            with st.spinner('Processing receipt image...'):
-                # Extract and parse with improved OCR pipeline
-                text = ocr_utils.extract_text_from_image(uploaded_file)
+            with st.spinner(f'Processing receipt image (using {st.session_state.get("ocr_backend", "CPU")})...'):
+                progress_bar = st.progress(0)
+                # Extract text with progress feedback
+                text = ocr_utils.extract_text_from_image(uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
+                progress_bar.progress(90, "Parsing text...")
                 parsed_data = ocr_utils.parse_receipt_text(text)
+                progress_bar.progress(100, "Done!")
+                progress_bar.empty()
 
             # Store parsed data (with numbers as strings) in session state
             st.session_state.parsed_data = parsed_data

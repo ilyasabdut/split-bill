@@ -30,7 +30,7 @@ def group_ocr_lines(lines):
     
     return grouped_items
 
-def extract_text_from_image(uploaded_file):
+def extract_text_from_image(uploaded_file, progress_callback=None):
     """
     Extracts text from an uploaded image file using enhanced OCR pipeline.
 
@@ -46,8 +46,17 @@ def extract_text_from_image(uploaded_file):
     # Preprocess image
     processed_img = preprocess_image(image_bytes)
     
-    # OCR with optimized settings
-    lines = reader.readtext(np.array(processed_img), detail=0, paragraph=False)
+    # OCR with optimized settings and progress updates
+    if progress_callback:
+        progress_callback(10)
+    lines = reader.readtext(
+        np.array(processed_img), 
+        detail=0, 
+        paragraph=False,
+        batch_size=4  # Smaller batches for progress updates
+    )
+    if progress_callback:
+        progress_callback(80)
     
     # Group lines into logical items
     grouped_lines = group_ocr_lines(lines)
