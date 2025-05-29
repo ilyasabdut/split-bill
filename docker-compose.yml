@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  bill-splitter-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: registry.ilyasabdut.loseyourip.com/bill-splitter-app:latest # CHANGE IMAGE NAME
+    container_name: bill-splitter-app # CHANGE CONTAINER NAME
+    ports:
+      - "8501:8501" # Map host port 8501 to container port 8501 (Streamlit default)
+    environment:
+      # Gemini API Configuration
+      - GEMINI_API_KEY=${GEMINI_API_KEY} # Will take from .env file or host environment
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-1.5-flash-latest} # Default if not set
+
+      # MinIO Configuration
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT} # e.g., your_minio_ip:9000 (API PORT!)
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
+
+      # Application Configuration
+      - APP_BASE_URL=${APP_BASE_URL} # e.g., http://yourdomain.com or http://your_vps_ip:8501
+
+      # Streamlit specific environment variables (already set in Dockerfile but can be overridden)
+      # - STREAMLIT_SERVER_PORT=8501
+      # - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    restart: unless-stopped
+    # healthcheck: # Docker Compose can also use the Dockerfile's healthcheck
+    #   test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 20s

@@ -1,0 +1,94 @@
+name: Build and Deploy Bill Splitter
+
+on:
+  push:
+    branches:
+      - master # Or 'main'
+
+jobs:
+  build-and-push-image: # Renamed job for clarity
+    name: Build and Push Bill Splitter Image
+    runs-on: self-hosted # Using your self-hosted runner
+    environment: master # Assuming secrets are scoped to this environment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        # Ensure your self-hosted runner has buildx capabilities.
+        # If not, you might need to install/configure it on the runner.
+
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.ilyasabdut.loseyourip.com
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: . # Root of your bill-splitter-app repository
+          dockerfile: Dockerfile # Assuming Dockerfile is in the root
+          platforms: linux/arm64 # As per your example, adjust if needed
+          push: true
+          tags: registry.ilyasabdut.loseyourip.com/bill-splitter-app:latest # IMPORTANT: Use the correct image name for this app
+          # Optional: Build caching for self-hosted runners can be more complex.
+          # Consider local Docker layer caching on the runner itself if buildx gha cache isn't suitable.
+          # cache-from: type=registry,ref=registry.ilyasabdut.loseyourip.com/bill-splitter-app:buildcache
+          # cache-to: type=registry,ref=registry.ilyasabdut.loseyourip.com/bill-splitter-app:buildcache,mode=max
+
+  deploy-on-vps: # Renamed job for clarity
+    name: Deploy Bill Splitter to VPS
+    needs: build-and-push-image # Depends on the image being built and pushed
+    runs-on: self-hosted # This runner IS your VPS or has direct docker-compose access to it
+    environment: master
+
+    steps:
+      - name: Log in to Docker Registry (on deployment runner/VPS)
+        # This step is crucial if your self-hosted runner for deployment
+        # needs to re-authenticate to pull the image.
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry.ilyasabdut.loseyourip.com -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Deploy Bill Splitter App
+        run: |
+          echo "Deploying Bill Splitter on $(hostname)"
+          
+          # IMPORTANT: Navigate to the directory on your VPS where 
+          # the docker-compose.yml and .env file for bill-splitter-app are located.
+          APP_COMPOSE_DIR="/home/ubuntu/composes/bill-splitter-app" # ADJUST THIS PATH
+          
+          if [ ! -d "${APP_COMPOSE_DIR}" ]; then
+            echo "ERROR: Deployment directory ${APP_COMPOSE_DIR} does not exist!"
+            exit 1
+          fi
+          cd "${APP_COMPOSE_DIR}"
+          echo "Changed directory to $(pwd)"
+
+          echo "Ensuring .env file exists..."
+          if [ ! -f .env ]; then
+            echo "ERROR: .env file not found in ${APP_COMPOSE_DIR}. Deployment requires this for configurations."
+            # Consider creating a template .env if it's missing and failing, 
+            # but it's better to ensure it's pre-configured on the VPS.
+            exit 1
+          fi
+
+          echo "Pulling latest image: registry.ilyasabdut.loseyourip.com/bill-splitter-app:latest"
+          # Pull the specific service from your bill-splitter docker-compose.yml
+          # The service name is 'bill-splitter-app' in the docker-compose.yml I provided.
+          docker compose pull bill-splitter-app 
+          
+          echo "Restarting container(s) using docker compose..."
+          # This will stop, remove, and recreate the container(s) for the service if the image changed.
+          docker compose up -d --force-recreate --remove-orphans bill-splitter-app
+
+          echo "Cleaning up unused Docker images (optional)..."
+          docker image prune -af
+
+          echo "Bill Splitter deployment finished!"
+        env: # Pass secrets to the script execution environment if needed by docker login itself
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
