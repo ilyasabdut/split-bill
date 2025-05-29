@@ -116,10 +116,11 @@ def parse_receipt_text(text):
 
     i = 0
     print(f"Starting to parse {len(text)} lines of text...")
-    while i < len(text):
-        bbox, line, confidence = text[i]
-        line = line.strip()
-        # Avoid printing potentially very long lines
+    try:
+        while i < len(text):
+            bbox, line, confidence = text[i]
+            line = line.strip()
+            # Avoid printing potentially very long lines
         print(f"Processing line {i+1}/{len(text)}: {line[:100]}{'...' if len(line) > 100 else ''}")
 
         try:
@@ -299,3 +300,6 @@ def parse_receipt_text(text):
     final_tip_str = str(round(total_tip_amount, 2)) # Round to 2 decimal places
     print(f"Found {len(items)} items, total tax: {final_tax_str}, total tip: {final_tip_str}")
     return {"items": items, "total_tax": final_tax_str, "total_tip": final_tip_str}
+except Exception as e:
+    print("Error during parsing:", e)
+    return {"Error": str(e)}
