@@ -1,278 +1,240 @@
+# main.py
 import streamlit as st
-import ocr_utils
-from PIL import Image
+# from PIL import Image # PIL.Image is now used within gemini_ocr
 import split_logic
-import easyocr
+# import easyocr # No longer needed for OCR
 import pandas as pd
-import numpy as np
-import time # Import time for timing
+# import numpy as np # Might not be needed directly here anymore
+import time
+import gemini_ocr # Import our new module
+import io # For image bytes handling
 
-# Cache the EasyOCR reader to avoid re-initializing it every time
-@st.cache_resource
-def get_easyocr_reader():
-    """Caches the EasyOCR reader initialization with optimized settings."""
-    try:
-        import torch
-        use_gpu = torch.cuda.is_available()
-    except ImportError:
-        use_gpu = False
-
-    # Store backend info in session state for display
-    st.session_state['ocr_backend'] = "GPU" if use_gpu else "CPU"
-
-    # Initialize reader with detected GPU status
-    reader = easyocr.Reader(['en'], gpu=use_gpu)
-    return reader
+# @st.cache_resource # Caching the reader is no longer needed for EasyOCR
+# def get_easyocr_reader(): ... # Remove this function
 
 def main():
-    st.title("Receipt OCR and Bill Splitter")
+    st.set_page_config(layout="wide")
+    st.title("🧾 Gemini Powered Receipt Splitter")
 
-    # Initialize session state for parsed data and file info
+    # Initialize session state
     st.session_state.setdefault('parsed_data', None)
-    st.session_state.setdefault('last_uploaded_file_info', None)  # Store (name, size) tuple
-    st.session_state.setdefault('ocr_backend', 'Detecting...')  # Initialize backend state
+    st.session_state.setdefault('last_uploaded_file_info', None)
+    # st.session_state.setdefault('ocr_backend', 'Detecting...') # Not relevant anymore
 
-    # Get the cached reader
-    reader = get_easyocr_reader()  # Get the reader here
+    # --- UI Layout ---
+    col_upload, col_display = st.columns([1, 2])
 
-    uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"])
+    with col_upload:
+        st.header("1. Upload Receipt")
+        uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
+        st.caption("Powered by Google Gemini")
+
 
     # Initialize variables
     store_name = None
-    date = None
-    time = None
-    items = []  # Initialize items list
-    detected_tax_str = "0.0"  # Initialize detected_tax as string
-    detected_tip_str = "0.0"  # Initialize detected_tip as string
+    receipt_date = None # Renamed from 'date' for clarity
+    receipt_time_val = None
+    items = []
+    detected_tax_str = "0.0" # We'll derive this from Gemini's output
+    detected_tip_str = "0.0" # We'll derive this from Gemini's output
 
-    # Check if a file is uploaded AND if it's a new file or no data is parsed yet
     if uploaded_file is not None:
         current_file_info = (uploaded_file.name, uploaded_file.size)
 
-        # Only run OCR and parsing if it's a new file or no data is cached
         if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
-            st.session_state.last_uploaded_file_info = current_file_info  # Store current file info
+            st.session_state.last_uploaded_file_info = current_file_info
+            st.session_state.parsed_data = None # Reset for new file
 
-            # Display the image immediately after upload
-            image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Receipt", width=300)
+            with col_upload:
+                # Display image using PIL directly for consistency
+                from PIL import Image as PILImage # Alias to avoid conflict if Image was used elsewhere
+                try:
+                    image_bytes_for_display = uploaded_file.getvalue() # Get bytes for display
+                    pil_image = PILImage.open(io.BytesIO(image_bytes_for_display))
+                    st.image(pil_image, caption="Uploaded Receipt", use_column_width=True)
+                except Exception as e:
+                    st.error(f"Could not display image: {e}")
 
-            # Only process if a file was actually uploaded
-            if uploaded_file is not None:
-                with st.spinner(f'Processing receipt image (using {st.session_state.get("ocr_backend", "CPU")})...'):
-                    start_time = time.time()
-                    progress_bar = st.progress(0)
 
-                    print("Starting OCR processing...")
-                    # Pass the reader object to the OCR function
-                    ocr_result = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
-                    print(f"OCR completed in {time.time() - start_time:.2f} seconds")
+            with st.spinner(f'⚙️ Processing receipt with Gemini... This may take a few moments.'):
+                processing_start_time = time.time()
+                
+                # Get image bytes for Gemini
+                # uploaded_file.seek(0) # Reset file pointer if already read by st.image
+                image_bytes_for_gemini = uploaded_file.getvalue() # Get fresh bytes
 
-                if ocr_result is None:
-                    st.error("OCR failed to extract text from the image. Please try a different image or adjust settings.")
-                    parsed_data = {}  # Initialize parsed_data to avoid further errors
+                # Call Gemini OCR
+                parsed_data_dict = gemini_ocr.extract_receipt_data_with_gemini(image_bytes_for_gemini)
+                
+                st.session_state.parsed_data = parsed_data_dict
+
+                if "Error" in parsed_data_dict:
+                    st.error(f"Gemini processing error: {parsed_data_dict['Error']}")
+                elif not parsed_data_dict.get('line_items') and not parsed_data_dict.get('total_amount'):
+                    st.warning("Gemini processed the image, but could not extract significant details (e.g., no items or total amount found). Please check the receipt quality or prompt.")
                 else:
-                    progress_bar.progress(90, "Parsing text...")
-                    parse_start = time.time()
-                    parsed_data = ocr_utils.parse_receipt_text(ocr_result)
-                    print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
+                    num_items_found = len(parsed_data_dict.get('line_items', []))
+                    st.success(f"Gemini successfully processed the receipt! Found {num_items_found} line item(s).")
+                
+                print(f"Total Gemini processing time: {time.time() - processing_start_time:.2f} seconds")
+                print("Data from Gemini:", parsed_data_dict)
 
-                    progress_bar.progress(100, "Done!")
-                    progress_bar.empty()
-                    print(f"Total processing time: {time.time() - start_time:.2f} seconds")
 
-                    # Store parsed data and show success message
-                    st.session_state.parsed_data = parsed_data
-                    if parsed_data.get('items'):
-                        st.success(f"Successfully parsed {len(parsed_data['items'])} items from receipt!")
-                    else:
-                        st.warning("Parsing complete but no items found - please check receipt format")
+    # --- Display and Interaction Logic (largely the same, but fed by Gemini's output) ---
+    parsed_data_from_state = st.session_state.get('parsed_data')
 
-        # Retrieve data from session state for display and interaction
-        # This block runs on every rerun after a file is uploaded
-        parsed_data_from_state = st.session_state.parsed_data
-
-        # Extract data from parsed_data_from_state
+    with col_display:
+        st.header("2. Review & Split Bill")
         if parsed_data_from_state:
+            if "Error" in parsed_data_from_state:
+                # Error already shown above, could add more specific instructions here
+                st.info("Please review any error messages or try uploading again.")
+            
+            # Extract data from Gemini's structured output
             store_name = parsed_data_from_state.get("store_name")
-            date = parsed_data_from_state.get("date")
-            time = parsed_data_from_state.get("time")
-            items = parsed_data_from_state.get("items", [])
-            detected_tax_str = parsed_data_from_state.get("total_tax", "0.0")  # Get as string
-            detected_tip_str = parsed_data_from_state.get("total_tip", "0.0")  # Get as string
-        else:
-            # Handle the case where parsed_data_from_state is None
+            receipt_date = parsed_data_from_state.get("transaction_date")
+            receipt_time_val = parsed_data_from_state.get("transaction_time")
+            
+            # Convert Gemini's line_items to the format expected by the rest of the app
+            gemini_line_items = parsed_data_from_state.get("line_items", [])
             items = []
-            detected_tax_str = "0.0"
-            detected_tip_str = "0.0"
+            if isinstance(gemini_line_items, list):
+                for g_item in gemini_line_items:
+                    if isinstance(g_item, dict): # Ensure item is a dict
+                        items.append({
+                            "item": g_item.get("item_description", "Unknown Item"),
+                            "qty": str(g_item.get("quantity", 1.0)), # Ensure qty is string for split_logic initially
+                            "price": str(g_item.get("item_total_price", 0.0)) # Ensure price is string
+                        })
+            
+            # Aggregate tax from tax_details
+            total_tax_from_gemini = 0.0
+            if isinstance(parsed_data_from_state.get("tax_details"), list):
+                for tax_item in parsed_data_from_state["tax_details"]:
+                    if isinstance(tax_item, dict) and isinstance(tax_item.get("tax_amount"), (int, float)):
+                        total_tax_from_gemini += tax_item.get("tax_amount", 0.0)
+            detected_tax_str = str(total_tax_from_gemini)
+            
+            # Get tip
+            tip_from_gemini = parsed_data_from_state.get("tip_amount", 0.0)
+            detected_tip_str = str(tip_from_gemini if isinstance(tip_from_gemini, (int, float)) else 0.0)
 
-        # Display extracted information
-        if store_name:
-            st.subheader(store_name)
-        if date:
-            st.write(f"Date: {date}")
-        if time:
-            st.write(f"Time: {time}")
+            # Display extracted information
+            if store_name: st.subheader(f"🏪 Store: {store_name}")
+            if receipt_date or receipt_time_val:
+                st.write(f"🗓️ Date: {receipt_date if receipt_date else 'N/A'} | 🕒 Time: {receipt_time_val if receipt_time_val else 'N/A'}")
 
-        # --- Start of Bill Splitting UI (always shown if file is uploaded and parsed_data exists) ---
-        if st.session_state.parsed_data is not None:
-
-            st.subheader("Bill Splitting")
-
-            # Input for person names
+            # --- Bill Splitting UI (mostly unchanged from your previous version) ---
+            st.markdown("---")
+            st.subheader("👥 People Splitting")
             person_names_input = st.text_input(
-                "Enter names of people splitting (comma-separated)",
-                value="Person 1, Person 2", # Default value
-                key="person_names_input"
+                "Enter names (comma-separated)", value="Person 1, Person 2", key="person_names_input"
             )
-
-            # Generate person names list from input
-            if person_names_input.strip():
-                person_names = [name.strip() for name in person_names_input.split(',') if name.strip()]
-            else:
-                # Fallback to a default if input is empty
-                person_names = ["Person 1"]
-
-            # Ensure at least one person exists
-            if not person_names:
-                 person_names = ["Person 1"]
-
-            # Update num_people based on the number of names entered
+            person_names = [name.strip() for name in person_names_input.split(',') if name.strip()] or ["Person 1"]
             num_people = len(person_names)
-            st.write(f"Splitting among: {', '.join(person_names)}")
+            st.write(f"Splitting among: **{', '.join(person_names)}** ({num_people} people)")
 
-
-            st.subheader("Assign Items")
-
-            # List to store item assignments
+            st.subheader("🛒 Assign Items")
             item_assignments = []
 
             if not items:
-                 st.info("No items were automatically parsed from the receipt. You can manually add items below.")
+                st.info("No items extracted by Gemini or an error occurred. You can manually add items below.")
 
-                 # Manual Item Entry Form
-                 with st.form("manual_item_entry"):
-                     item_name = st.text_input("Item Name")
-                     item_quantity = st.number_input("Quantity", min_value=0.0, step=0.1)
-                     item_price = st.number_input("Price", min_value=0.0, step=0.01)
-                     submitted = st.form_submit_button("Add Item")
+            with st.expander("Manually Add Item", expanded=(not items)):
+                with st.form("manual_item_entry", clear_on_submit=True):
+                    manual_item_name = st.text_input("Item Name")
+                    manual_item_qty = st.number_input("Quantity", min_value=1.0, value=1.0, step=1.0)
+                    manual_item_price = st.number_input("Total Price for this quantity", min_value=0.0, step=1000.0, format="%.2f")
+                    
+                    submitted_manual = st.form_submit_button("➕ Add Manual Item")
+                    if submitted_manual and manual_item_name and manual_item_price >= 0:
+                        # Ensure items list exists in session state for manual additions
+                        if st.session_state.parsed_data is None: st.session_state.parsed_data = {}
+                        current_items_list = st.session_state.parsed_data.get("items_for_ui", []) # Use a different key if needed
+                        if not isinstance(current_items_list, list): current_items_list = []
+                        
+                        current_items_list.append({
+                            "item": manual_item_name, "qty": str(manual_item_qty), "price": str(manual_item_price)
+                        })
+                        st.session_state.parsed_data["items_for_ui"] = current_items_list # Update the list
+                        # We also need to update the 'items' variable used by the loop below
+                        items = current_items_list # This updates the local 'items'
+                        st.success(f"Added '{manual_item_name}' manually!")
+                        st.rerun()
 
-                     if submitted:
-                         items.append({"item": item_name, "qty": str(item_quantity), "price": str(item_price)})
-                         st.success("Item added manually!")
-                         st.rerun() # Refresh the app to show the new item
-
-            # Iterate through parsed items and add assignment widgets
-            for i, item in enumerate(items):
-                col1, col2, col3 = st.columns([3, 1, 2]) # Adjust column widths as needed
-                with col1:
-                    st.write(f"**{item['item']}**")
-                with col2:
-                     # Convert qty and price strings to numbers for display formatting
-                     try:
-                         # Use split_logic's cleaner for consistency
-                         qty_float = split_logic.clean_and_convert_number(item.get('qty', '0'), is_quantity=True) or 0.0 # Use quantity flag
-                         qty_display = int(qty_float) if qty_float == int(qty_float) else qty_float # Display as int if whole number
-                     except Exception: # Catch any conversion error
-                         qty_display = item.get('qty', '0') # Display as string if conversion fails
-                     try:
-                         # Use split_logic's cleaner for consistency
-                         price_display = split_logic.clean_and_convert_number(item.get('price', '0.0'), is_quantity=False) or 0.0 # Don't use quantity flag
-                     except Exception: # Catch any conversion error
-                         price_display = 0.0 # Use 0.0 if conversion fails
-
-
-                     # Changed currency formatting to IDR with thousands separator
-                     st.write(f"{qty_display} x IDR {price_display:,.2f}")
-                with col3:
-                    # Multiselect for assigning people to this item
-                    # Note: Streamlit's multiselect does not auto-close after selection.
-                    assigned_to = st.multiselect(
-                        "Assigned to:",
-                        person_names,
-                        default=person_names if num_people == 1 else [], # Default to all if only 1 person
-                        key=f"assign_{i}" # Unique key for each widget
-                    )
-                # Store the item details (with original strings) and who it's assigned to
-                item_assignments.append({"item_details": item, "assigned_to": assigned_to})
-
-            st.subheader("Tax & Tip")
-            # Input for tax and tip (manual for now, default to detected)
-            # Convert detected tax/tip strings to float for the number_input value
+            if items:
+                for i, item_data in enumerate(items):
+                    item_key_suffix = item_data.get('item', f'unknown_item_{i}')
+                    col_item, col_qty_price, col_assign = st.columns([3, 2, 3])
+                    with col_item: st.write(f"**{item_data.get('item', 'Unknown Item')}**")
+                    with col_qty_price:
+                        try:
+                            qty_float = split_logic.clean_and_convert_number(item_data.get('qty', '1'), is_quantity=True) or 1.0
+                            qty_display = int(qty_float) if qty_float == int(qty_float) else qty_float
+                            price_float = split_logic.clean_and_convert_number(item_data.get('price', '0.0')) or 0.0
+                        except Exception as e:
+                            qty_display = item_data.get('qty', '1'); price_float = 0.0
+                            print(f"Error converting qty/price for display: {e}")
+                        st.write(f"{qty_display} x IDR {price_float:,.2f}")
+                    with col_assign:
+                        assigned_to = st.multiselect(
+                            "Assigned to:", person_names,
+                            default=person_names if num_people == 1 else [],
+                            key=f"assign_{i}_{item_key_suffix.replace(' ', '_').replace('.', '_')}" # Sanitize key
+                        )
+                    item_assignments.append({"item_details": item_data, "assigned_to": assigned_to})
+            
+            st.subheader("💸 Tax & Tip")
             default_tax_value = split_logic.clean_and_convert_number(detected_tax_str) or 0.0
             default_tip_value = split_logic.clean_and_convert_number(detected_tip_str) or 0.0
 
-            tax_amount = st.number_input("Tax Amount (IDR)", min_value=0.0, value=default_tax_value, step=0.01, key="tax_input", format="%.2f") # Added format for consistency
-            tip_amount = st.number_input("Tip Amount (IDR)", min_value=0.0, value=default_tip_value, step=0.01, key="tip_input", format="%.2f") # Added format for consistency
+            tax_amount_input = st.number_input("Tax Amount (IDR)", min_value=0.0, value=default_tax_value, step=100.0, key="tax_input", format="%.2f")
+            tip_amount_input = st.number_input("Tip Amount (IDR)", min_value=0.0, value=default_tip_value, step=100.0, key="tip_input", format="%.2f")
 
+            if st.button("🧮 Calculate Split", type="primary", use_container_width=True):
+                # ... (The rest of your calculate split and display logic from previous main.py can go here) ...
+                # Ensure it correctly uses 'item_assignments', 'tax_amount_input', 'tip_amount_input', 'person_names'
+                if not item_assignments and (tax_amount_input == 0 and tip_amount_input == 0) :
+                    st.warning("Please add/assign items or enter tax/tip before calculating.")
+                elif not item_assignments and (tax_amount_input > 0 or tip_amount_input > 0):
+                    st.info("No items assigned. Tax/tip will be split evenly among all people.")
+                    split_results = split_logic.calculate_split([], str(tax_amount_input), str(tip_amount_input), person_names)
+                else: # Items are assigned
+                    split_results = split_logic.calculate_split(item_assignments, str(tax_amount_input), str(tip_amount_input), person_names)
 
-            # Button to calculate split
-            if st.button("Calculate Split"):
-                # Call the split logic function with assignments
-                # Pass item_assignments (contains strings), tax, tip (from number_inputs, are floats), and person_names
-                # split_logic.calculate_split now expects tax/tip as strings, so convert them back
-                split_results = split_logic.calculate_split(item_assignments, str(tax_amount), str(tip_amount), person_names)
+                if 'split_results' in locals(): # Check if split_results was defined
+                    st.subheader("📊 Split Results")
+                    if isinstance(split_results, dict) and "Error" in split_results:
+                        st.error(split_results["Error"])
+                    else:
+                        summary_data = []
+                        for person, data in split_results.items():
+                            summary_data.append({
+                                "Person": person, "Subtotal": data.get("subtotal", 0.0),
+                                "Tax": data.get("tax", 0.0), "Tip": data.get("tip", 0.0), "Total": data.get("total", 0.0)
+                            })
+                        summary_df = pd.DataFrame(summary_data)
+                        for col_format in ["Subtotal", "Tax", "Tip", "Total"]:
+                            summary_df[col_format] = summary_df[col_format].apply(lambda x: f"IDR {x:,.2f}")
+                        st.dataframe(summary_df.set_index("Person"), use_container_width=True)
 
-                st.subheader("Split Results:")
-                # Display the results in a more readable format
-                if isinstance(split_results, dict) and "Error" in split_results:
-                     st.error(split_results["Error"])
-                else:
-                    # Create a list of dictionaries for the summary table
-                    summary_data = []
-                    for person, data in split_results.items():
-                        summary_data.append({
-                            "Person": person,
-                            "Subtotal": data["subtotal"],
-                            "Tax": data["tax"],
-                            "Tip": data["tip"],
-                            "Total": data["total"]
-                        })
-
-                    # Use pandas DataFrame for a nice table display
-                    summary_df = pd.DataFrame(summary_data)
-                    # Format currency columns - Changed currency symbol from $ to IDR and added thousands separator
-                    for col in ["Subtotal", "Tax", "Tip", "Total"]:
-                         summary_df[col] = summary_df[col].apply(lambda x: f"IDR {x:,.2f}")
-
-                    st.dataframe(summary_df.set_index("Person")) # Set Person as index
-
-                    # Optional: Display item details per person using expanders
-                    st.subheader("Item Breakdown per Person")
-                    for person, data in split_results.items():
-                        if data["items"]:
-                            with st.expander(f"{person}'s Items"):
-                                item_breakdown_data = []
-                                for item_share in data["items"]:
-                                    # item_share contains numbers (converted in split_logic)
-                                    item_breakdown_data.append({
-                                        "Item": item_share["item"],
-                                        "Qty": item_share["qty"],
-                                        # Changed currency formatting to IDR with thousands separator
-                                        "Original Price": f"IDR {item_share['price']:,.2f}",
-                                        # Changed currency formatting to IDR with thousands separator
-                                        "Your Share Cost": f"IDR {item_share['share_cost']:,.2f}"
-                                    })
-                                item_breakdown_df = pd.DataFrame(item_breakdown_data)
-                                st.dataframe(item_breakdown_df)
-                        else:
-                             st.write(f"{person} has no assigned items.")
-
-        # --- End of Bill Splitting UI ---
-
-
-    # Added an else block for the initial state before file upload
-    else:
-        st.info("Please upload a receipt image to begin.")
-        st.markdown("""
-        **How to use this app:**
-        1.  Upload a receipt image.
-        2.  The app will automatically extract the items, tax, and tip.
-        3.  Enter the names of the people splitting the bill.
-        4.  Assign each item to the people who consumed it.
-        5.  Click the 'Calculate Split' button to see the results.
-        """)
-
+                        st.subheader("🧾 Item Breakdown per Person")
+                        for person, data in split_results.items():
+                            if data.get("items"):
+                                with st.expander(f"{person}'s Items ({len(data['items'])} items) - Subtotal: IDR {data.get('subtotal', 0):,.2f}"):
+                                    item_breakdown_data = []
+                                    for item_share in data["items"]:
+                                        item_breakdown_data.append({
+                                            "Item": item_share.get("item", "N/A"),
+                                            "Qty Shared": f"{item_share.get('qty_share', 0):.2f}",
+                                            "Unit Price": f"IDR {item_share.get('price_per_unit', 0):,.2f}",
+                                            "Your Cost": f"IDR {item_share.get('share_cost', 0):,.2f}"
+                                        })
+                                    item_breakdown_df = pd.DataFrame(item_breakdown_data)
+                                    st.dataframe(item_breakdown_df, use_container_width=True)
+        else:
+            st.info("👋 Welcome! Please upload a receipt image to start splitting your bill.")
+            # ... (Your welcome message) ...
 
 if __name__ == "__main__":
     main()
