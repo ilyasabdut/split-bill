@@ -10,7 +10,7 @@ import numpy as np
 @st.cache_resource
 def get_easyocr_reader():
     """Caches the EasyOCR reader initialization with optimized settings."""
-    return easyocr.Reader(['en'], gpu=False)
+    return easyocr.Reader(['en'], gpu=True)
 
 def main():
     st.title("Receipt OCR and Bill Splitter")
