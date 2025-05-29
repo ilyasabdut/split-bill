@@ -3,6 +3,7 @@ import ocr_utils
 from PIL import Image
 import split_logic # Import the new split logic file
 import easyocr # Moved import back to the top
+import pandas as pd # Import pandas for dataframe display
 
 # Cache the EasyOCR reader to avoid re-initializing it every time
 @st.cache_resource
@@ -121,12 +122,47 @@ def main():
             split_results = split_logic.calculate_split(item_assignments, tax_amount, tip_amount, person_names)
 
             st.subheader("Split Results:")
-            # Display the results
+            # Display the results in a more readable format
             if isinstance(split_results, dict) and "Error" in split_results:
                  st.error(split_results["Error"])
             else:
-                # Display results in a more readable format (e.g., table)
-                st.json(split_results) # Using json for now, can format better later
+                # Create a list of dictionaries for the summary table
+                summary_data = []
+                for person, data in split_results.items():
+                    summary_data.append({
+                        "Person": person,
+                        "Subtotal": data["subtotal"],
+                        "Tax": data["tax"],
+                        "Tip": data["tip"],
+                        "Total": data["total"]
+                    })
+
+                # Use pandas DataFrame for a nice table display
+                summary_df = pd.DataFrame(summary_data)
+                # Format currency columns
+                for col in ["Subtotal", "Tax", "Tip", "Total"]:
+                     summary_df[col] = summary_df[col].apply(lambda x: f"${x:.2f}")
+
+                st.dataframe(summary_df.set_index("Person")) # Set Person as index
+
+                # Optional: Display item details per person using expanders
+                st.subheader("Item Breakdown per Person")
+                for person, data in split_results.items():
+                    if data["items"]:
+                        with st.expander(f"{person}'s Items"):
+                            item_breakdown_data = []
+                            for item_share in data["items"]:
+                                item_breakdown_data.append({
+                                    "Item": item_share["item"],
+                                    "Qty": item_share["qty"],
+                                    "Original Price": f"${item_share['price']:.2f}",
+                                    "Your Share Cost": f"${item_share['share_cost']:.2f}"
+                                })
+                            item_breakdown_df = pd.DataFrame(item_breakdown_data)
+                            st.dataframe(item_breakdown_df)
+                    else:
+                         st.write(f"{person} has no assigned items.")
+
 
     # Added an else block for the initial state before file upload
     else:

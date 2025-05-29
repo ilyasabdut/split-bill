@@ -39,6 +39,9 @@ def parse_receipt_text(text):
     """
     Parses the raw text extracted from a receipt to find items, quantities, prices,
     and automatically detect tax based on keywords.
+    This version attempts to handle price-item-quantity across multiple lines
+    based on the provided example text structure, with more flexible number parsing
+    and added debugging prints.
 
     Args:
         text (str): The raw text extracted from the receipt.
@@ -81,20 +84,23 @@ def parse_receipt_text(text):
     def clean_and_convert_number(num_str):
         """Removes commas and converts string to float."""
         if not isinstance(num_str, str):
+            print(f"Debug: clean_and_convert_number received non-string: {num_str}")
             return None # Ensure input is a string
 
         # Remove thousands separators (commas)
         cleaned_str = num_str.replace(',', '')
-        # Handle potential decimal comma if no dot is present (simple heuristic)
-        # For now, assuming comma is always thousands separator based on example
-        # If decimal comma is possible, more complex logic is needed.
+        # print(f"Debug: clean_and_convert_number cleaning '{num_str}' to '{cleaned_str}'") # Too verbose
         try:
-            return float(cleaned_str)
+            float_val = float(cleaned_str)
+            # print(f"Debug: clean_and_convert_number converted '{cleaned_str}' to {float_val}") # Too verbose
+            return float_val
         except ValueError:
+            print(f"Debug: clean_and_convert_number failed to convert '{cleaned_str}' to float.")
             return None # Return None if conversion fails
 
     while i < len(lines):
         line = lines[i].strip()
+        # print(f"Debug: Processing line {i+1}: '{line}'") # Too verbose
 
         # --- Attempt to match the multi-line item pattern: Price -> Item Name -> Quantity ---
         # Check if current line is a price, next is item name, line after is quantity
@@ -130,15 +136,19 @@ def parse_receipt_text(text):
                              continue # Continue loop
 
                         # Convert quantity to int if it's a whole number like 1.0 -> 1
-                        if quantity.is_integer():
+                        if quantity is not None and quantity.is_integer():
                             quantity = int(quantity)
 
 
                         # Basic validation: price and quantity should be > 0
                         if price > 0 and quantity > 0:
                              items.append({"item": item_name, "qty": quantity, "price": price})
+                             print(f"Debug: Parsed multi-line item: '{item_name}', Qty: {quantity}, Price: {price} (from lines {i+1}-{i+3})")
                              i += 3 # Consume these three lines and move to the next potential item start
                              continue # Successfully parsed a multi-line item, continue loop from new position
+                        else:
+                             print(f"Debug: Multi-line pattern matched lines {i+1}-{i+3}, but price ({price}) or quantity ({quantity}) was not positive. Skipping.")
+
 
         # --- Attempt to match single-line item pattern ---
         # This pattern looks for Item Name, Quantity, and Price all on the same line.
@@ -167,40 +177,49 @@ def parse_receipt_text(text):
 
             if price > 0 and quantity > 0:
                  items.append({"item": item_name, "qty": quantity, "price": price})
+                 print(f"Debug: Parsed single-line item: '{item_name}', Qty: {quantity}, Price: {price} (from line {i+1})")
                  i += 1 # Consume this line
                  continue # Successfully parsed a single-line item, continue loop from new position
+            else:
+                 print(f"Debug: Single-line pattern matched line {i+1}, but price ({price}) or quantity ({quantity}) was not positive. Skipping.")
+
 
         # --- Attempt to detect Tax/Tip amounts ---
         # Check if the current line contains a tax or tip keyword
         is_tax_keyword_line = any(keyword in line.upper() for keyword in tax_keywords)
         is_tip_keyword_line = any(keyword in line.upper() for keyword in tip_keywords)
 
-        if (is_tax_keyword_line or is_tip_keyword_line) and i + 1 < len(lines):
-            # If a keyword is found, check the next line for a number (the amount)
-            next_line = lines[i+1].strip()
-            amount = clean_and_convert_number(next_line)
+        if (is_tax_keyword_line or is_tip_keyword_line): # Check keyword first
+             print(f"Debug: Found potential tax/tip keyword on line {i+1}: '{line}'")
+             if i + 1 < len(lines):
+                next_line = lines[i+1].strip()
+                print(f"Debug: Checking next line {i+2} for amount: '{next_line}'")
+                amount = clean_and_convert_number(next_line)
 
-            if amount is not None:
-                if is_tax_keyword_line:
-                    total_tax += amount
-                    print(f"Detected Tax: {amount} (from line {i+2})") # Print line number of the amount
-                    i += 2 # Consume keyword line and amount line
-                    continue # Continue loop
-                elif is_tip_keyword_line:
-                    total_tip += amount
-                    print(f"Detected Tip: {amount} (from line {i+2})") # Print line number of the amount
-                    i += 2 # Consume keyword line and amount line
-                    continue # Continue loop
-            else:
-                 print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.")
+                if amount is not None:
+                    if is_tax_keyword_line:
+                        total_tax += amount
+                        print(f"Detected Tax: {amount} (from line {i+2}). Total tax is now {total_tax}") # Print line number of the amount
+                        i += 2 # Consume keyword line and amount line
+                        continue # Continue loop
+                    elif is_tip_keyword_line:
+                        total_tip += amount
+                        print(f"Detected Tip: {amount} (from line {i+2}). Total tip is now {total_tip}") # Print line number of the amount
+                        i += 2 # Consume keyword line and amount line
+                        continue # Continue loop
+                else:
+                     print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.")
+                     # Fall through to general increment i += 1
+             else:
+                  print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but no next line to check for amount.")
+                  # Fall through to general increment i += 1
 
 
         # If none of the patterns matched starting at line i, just move to the next line
         i += 1
 
-    # Optional: Add logic here to try and identify SUBTOTAL, TOTAL lines
-    # based on keywords and price patterns.
-
+    print(f"Debug: Finished parsing. Total detected tax: {total_tax}, Total detected tip: {total_tip}")
+    print(f"Debug: Parsed items: {items}") # Print the final list of parsed items
     return {"items": items, "total_tax": total_tax, "total_tip": total_tip}
 
 
