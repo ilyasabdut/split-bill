@@ -47,24 +47,35 @@ def extract_text_from_image(uploaded_file, progress_callback=None):
     processed_img = preprocess_image(image_bytes)
     
     # OCR with optimized settings and progress updates
+    import time
+    start_time = time.time()
+    
     if progress_callback:
         progress_callback(10)
+    print("Running EasyOCR readtext...")
     lines = reader.readtext(
         np.array(processed_img), 
         detail=0, 
         paragraph=False,
         batch_size=4  # Smaller batches for progress updates
     )
+    print(f"EasyOCR readtext took {time.time() - start_time:.2f} seconds")
+    
     if progress_callback:
         progress_callback(80)
     
     # Group lines into logical items
+    start_time = time.time()
     grouped_lines = group_ocr_lines(lines)
+    print(f"Line grouping took {time.time() - start_time:.2f} seconds")
     
     # Join with newlines for the parser
     return "\n".join(grouped_lines)
 
 def parse_receipt_text(text):
+    import time
+    start_time = time.time()
+    print("\nStarting receipt text parsing...")
     """
     Parses the raw text extracted from a receipt to find items, quantities, prices,
     and automatically detect tax based on keywords.
@@ -269,6 +280,8 @@ def parse_receipt_text(text):
 
     # print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'") # Removed debug print
     # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
+    print(f"Receipt parsing completed in {time.time() - start_time:.2f} seconds")
+    print(f"Found {len(items)} items, tax: {total_tax_str}, tip: {total_tip_str}")
     return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
 
 # Keep example usage section for debugging but commented out

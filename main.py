@@ -51,13 +51,22 @@ def main():
             # But the standard pattern is to display it after upload.
 
             with st.spinner(f'Processing receipt image (using {st.session_state.get("ocr_backend", "CPU")})...'):
+                import time
+                start_time = time.time()
                 progress_bar = st.progress(0)
-                # Extract text with progress feedback
+                
+                print("Starting OCR processing...")
                 text = ocr_utils.extract_text_from_image(uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
+                print(f"OCR completed in {time.time() - start_time:.2f} seconds")
+                
                 progress_bar.progress(90, "Parsing text...")
+                parse_start = time.time()
                 parsed_data = ocr_utils.parse_receipt_text(text)
+                print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
+                
                 progress_bar.progress(100, "Done!")
                 progress_bar.empty()
+                print(f"Total processing time: {time.time() - start_time:.2f} seconds")
 
             # Store parsed data and show success message
             st.session_state.parsed_data = parsed_data
