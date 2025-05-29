@@ -280,13 +280,18 @@ def parse_receipt_text(text):
                   # Fall through to general increment i += 1
 
 
+        # Always increment to avoid infinite loop
+        i += 1  
+        lines_processed += 1
+        
         # Early exit if we're stuck on unparseable lines
-        if lines_processed > 50 and len(items) == 0:
-            print(f"Warning: No items parsed after 50 lines, skipping remaining")
+        if lines_processed > len(lines) * 2:
+            print(f"Warning: Processed {lines_processed} lines without finishing, possible infinite loop. Skipping remaining.")
             break
             
-        i += 1  # Move to next line
-        lines_processed += 1
+        # Debug output every 10 lines
+        if lines_processed % 10 == 0:
+            print(f"Processed {lines_processed} lines, {len(items)} items found so far")
 
     # print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'") # Removed debug print
     # print(f"Debug: Parsed items (strings): {items}") # Removed debug print
