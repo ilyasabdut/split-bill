@@ -108,12 +108,15 @@ def extract_text_from_image(reader, uploaded_file, progress_callback=None):
 
 def parse_receipt_text(text):
     import time
+    print("Starting parse_receipt_text")
     start_time = time.time()
-    print("\nStarting receipt text parsing...")
 
     if not text:
         print("Empty text received")
         return {"store_name": None, "date": None, "time": None, "items": [], "total_tax": "0.0", "total_tip": "0.0"}
+
+    # Debug the content of OCR result
+    print("OCR Result Sample:", text[:5])  # Show a few lines for verification
 
     # Initialize variables for store name, date, and time
     store_name = None
@@ -127,13 +130,14 @@ def parse_receipt_text(text):
 
     # Regex patterns are pre-compiled globally
 
-    i = 0
-    print(f"Starting to parse {len(text)} lines of text...")
-    while i < len(text):
-        bbox, line, confidence = text[i]
-        line = line.strip()
-        # Avoid printing potentially very long lines
-        print(f"Processing line {i+1}/{len(text)}: {line[:100]}{'...' if len(line) > 100 else ''}")
+    try:
+        i = 0
+        print(f"Starting to parse {len(text)} lines of text...")
+        while i < len(text):
+            bbox, line, confidence = text[i]
+            line = line.strip()
+            # Avoid printing potentially very long lines
+            print(f"Processing line {i+1}/{len(text)}: {line[:100]}{'...' if len(line) > 100 else ''}")
 
         line_upper = line.upper()
 
@@ -294,19 +298,22 @@ def parse_receipt_text(text):
         print(f"No pattern matched for line {i+1}. Skipping.")
         i += 1
 
-        # Debug output every 10 lines (using i)
-        if i > 0 and i % 10 == 0:
-            print(f"Processed {i} lines, {len(items)} items found so far")
+            # Debug output every 10 lines (using i)
+            if i > 0 and i % 10 == 0:
+                print(f"Processed {i} lines, {len(items)} items found so far")
 
-    print(f"Successfully parsed {len(items)} items from receipt!")
-    parse_time = time.time() - start_time
-    parse_rate = len(lines)/parse_time if parse_time > 0 else 0
-    print(f"Receipt parsing completed in {parse_time:.2f} seconds ({parse_rate:.1f} lines/sec)")
-    # Convert final sums back to strings for the return dict
-    final_tax_str = str(round(total_tax_amount, 2)) # Round to 2 decimal places
-    final_tip_str = str(round(total_tip_amount, 2)) # Round to 2 decimal places
-    print(f"Found {len(items)} items, total tax: {final_tax_str}, total tip: {final_tip_str}")
-    return {"items": items, "total_tax": final_tax_str, "total_tip": final_tip_str}
+        print(f"Successfully parsed {len(items)} items from receipt!")
+        parse_time = time.time() - start_time
+        parse_rate = len(text)/parse_time if parse_time > 0 else 0
+        print(f"Receipt parsing completed in {parse_time:.2f} seconds ({parse_rate:.1f} lines/sec)")
+        # Convert final sums back to strings for the return dict
+        final_tax_str = str(round(total_tax_amount, 2)) # Round to 2 decimal places
+        final_tip_str = str(round(total_tip_amount, 2)) # Round to 2 decimal places
+        print(f"Found {len(items)} items, total tax: {final_tax_str}, total tip: {final_tip_str}")
+        return {"items": items, "total_tax": final_tax_str, "total_tip": final_tip_str}
+    except Exception as e:
+        print("Error during parsing:", e)
+        return {"Error": str(e)}
 
 # Keep example usage section for debugging but commented out
 if __name__ == '__main__':
@@ -337,7 +344,9 @@ PBI 10% 89,925
 ---------
 TOTAL 989,175
 """
-    parsed_data = parse_receipt_text(sample_text)
-    import json
-    print("\n--- Parsed Data ---")
-    print(json.dumps(parsed_data, indent=2))
+    # lines = [entry[1] for entry in ocr_result]
+    # print("First 3 OCR lines:", [entry[1] for entry in ocr_result[:3]])
+    # parsed_data = parse_receipt_text(sample_text)
+    # import json
+    # print("\n--- Parsed Data ---")
+    # print(json.dumps(parsed_data, indent=2))
