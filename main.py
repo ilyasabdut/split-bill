@@ -1,15 +1,20 @@
 import streamlit as st
 import ocr_utils
 from PIL import Image
+import split_logic # Import the new split logic file
 
 def main():
-    st.title("Receipt OCR")
+    st.title("Receipt OCR and Bill Splitter")
 
     uploaded_file = st.file_uploader("Upload a receipt image", type=["jpg", "jpeg", "png"])
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Receipt", use_column_width=True)
+
+        # Use a unique key for the uploader to allow re-uploading the same file
+        # This is not strictly necessary for this change but good practice
+        # st.session_state['uploaded_file'] = uploaded_file
 
         text = ocr_utils.extract_text_from_image(uploaded_file)
         st.subheader("Extracted Text:")
@@ -19,9 +24,32 @@ def main():
 
         st.subheader("Parsed Items:")
         if items:
-            st.write(items)
+            # Display items in a more structured way, maybe preparing for assignment later
+            st.dataframe(items) # Using dataframe for better display
+
+            st.subheader("Bill Splitting")
+
+            # Input for number of people
+            num_people = st.number_input("Number of people splitting the bill", min_value=1, value=1, step=1)
+
+            # Input for tax and tip (manual for now)
+            tax_amount = st.number_input("Tax Amount", min_value=0.0, value=0.0, step=0.01)
+            tip_amount = st.number_input("Tip Amount", min_value=0.0, value=0.0, step=0.01)
+
+            # Placeholder for item assignment UI (will be added later)
+            st.info("Item assignment UI will go here.")
+
+            # Button to calculate split
+            if st.button("Calculate Split"):
+                # Call the split logic function (placeholder for now)
+                split_results = split_logic.calculate_split(items, tax_amount, tip_amount, num_people)
+
+                st.subheader("Split Results:")
+                # Display the results (placeholder for now)
+                st.write(split_results)
+
         else:
-            st.write("No items found.  Please ensure the receipt is clear and the format is supported.")
+            st.write("No items found. Please ensure the receipt is clear and the format is supported.")
 
 if __name__ == "__main__":
     main()
