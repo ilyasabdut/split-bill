@@ -68,20 +68,25 @@ def main():
                     ocr_result = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
                     print(f"OCR completed in {time.time() - start_time:.2f} seconds")
 
-                progress_bar.progress(90, "Parsing text...")
-                parse_start = time.time()
-                parsed_data = ocr_utils.parse_receipt_text(ocr_result)
-                print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
+                if ocr_result is None:
+                    st.error("OCR failed to extract text from the image. Please try a different image or adjust settings.")
+                    parsed_data = {}  # Initialize parsed_data to avoid further errors
+                else:
+                    progress_bar.progress(90, "Parsing text...")
+                    parse_start = time.time()
+                    parsed_data = ocr_utils.parse_receipt_text(ocr_result)
+                    print(f"Text parsing completed in {time.time() - parse_start:.2f} seconds")
 
-                progress_bar.progress(100, "Done!")
-                progress_bar.empty()
-                print(f"Total processing time: {time.time() - start_time:.2f} seconds")
+                    progress_bar.progress(100, "Done!")
+                    progress_bar.empty()
+                    print(f"Total processing time: {time.time() - start_time:.2f} seconds")
 
-                # Store parsed data and show success message
-                st.session_state.parsed_data = parsed_data
-                if parsed_data.get('items'):
-                    st.success(f"Successfully parsed {len(parsed_data['items'])} items from receipt!")
-                    st.warning("Parsing complete but no items found - please check receipt format")
+                    # Store parsed data and show success message
+                    st.session_state.parsed_data = parsed_data
+                    if parsed_data.get('items'):
+                        st.success(f"Successfully parsed {len(parsed_data['items'])} items from receipt!")
+                    else:
+                        st.warning("Parsing complete but no items found - please check receipt format")
 
         # Retrieve data from session state for display and interaction
         # This block runs on every rerun after a file is uploaded
