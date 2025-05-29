@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from typing import List, Dict, Any, Optional, Union # Keep imports from split_logic summary
+import split_logic # Import split_logic for number cleaning
 
 # Pre-compile regex patterns outside the function for efficiency
 # Price pattern: number (with optional comma/dot) potentially with currency, entire line
@@ -12,17 +13,22 @@ _price_pattern = re.compile(r"^\s*[\$\£\€]?\s*([\d,]+(?:\.\d+)?)\s*$", re.IGN
 _quantity_pattern = re.compile(r"^\s*([\d,.]+)\s*$", re.IGNORECASE)
 # Item name pattern: contains at least two letters
 _item_name_pattern = re.compile(r"[A-Za-z]{2,}")
-# Single line item pattern: Item Name + Quantity + Price anywhere on the line
-_single_line_item_pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d,.]+)", re.IGNORECASE)
 
-# Keywords for tax detection
-_tax_keywords = ["SVC CHG", "PB1", "PPH", "PPN"]
+# New patterns for single-line items
+# Pattern 1: Qty Item Price (e.g., 1.0 PORK BELLY SAMBAL MATA 165,000)
+_qty_item_price_pattern = re.compile(r"^\s*(\d+\.?\d*)\s+(.+?)\s+([\d,.]+)\s*$", re.IGNORECASE)
+# Pattern 2: Item Qty Price (e.g., Item Name 1.0 120,000) - less common on this receipt but useful
+_item_qty_price_pattern = re.compile(r"^\s*(.+?)\s+(\d+\.?\d*)\s+([\d,.]+)\s*$", re.IGNORECASE)
+
+
+# Keywords for tax detection - Added "PBI"
+_tax_keywords = ["SVC CHG", "PB1", "PBI", "PPH", "PPN"]
 # Keywords for tip detection (add more as needed)
 _tip_keywords = ["TIP", "GRATUITY"]
-# Keywords that should NOT be parsed as items
-_non_item_keywords = ["SUBTTL", "SVC CHG", "PBI", "PPN", "TOTAL"]
+# Keywords that should NOT be parsed as items (excluding tax/tip keywords handled separately)
+_non_item_keywords = ["SUBTTL", "TOTAL"] # Removed SVC CHG, PB1, PBI, PPH, PPN as they are handled in tax/tip logic
 
-# Helper function to clean number strings (price/quantity/tax/tip)
+# Helper function to clean number strings (price/quantity/tax/tip) - Basic cleaning kept, but will use split_logic for conversion
 def clean_number_string_basic(num_str):
     """Removes spaces, keeps commas and dots, returns cleaned string."""
     if not isinstance(num_str, str):
@@ -117,8 +123,9 @@ def parse_receipt_text(text):
 
     lines = text.strip().splitlines()
     items = []
-    total_tax_str = "0.0"
-    total_tip_str = "0.0"
+    total_tax_amount = 0.0 # Use float for summing tax
+    total_tip_amount = 0.0 # Use float for summing tip
+    # detected_total_str = "0.0" # Optional: for validation
 
     # Regex patterns are pre-compiled globally
 
@@ -129,106 +136,117 @@ def parse_receipt_text(text):
         # Avoid printing potentially very long lines
         print(f"Processing line {i+1}/{len(lines)}: {line[:100]}{'...' if len(line) > 100 else ''}")
 
-        # --- Attempt to match single-line item pattern ---
-        # Looks for Item Name, Quantity, and Price all on the same line.
-        single_match = _single_line_item_pattern.search(line) # Use pre-compiled pattern and search()
-        if single_match:
-            item_name = single_match.group(1).strip()
-            quantity_str = single_match.group(2)
-            price_str = single_match.group(3)
+        line_upper = line.upper()
 
-            # Clean price and quantity strings (basic cleaning)
+        # --- Attempt to detect Tax/Tip/Total amounts ---
+        # Check if the current line contains a tax or tip keyword
+        is_tax_keyword_line = any(keyword in line_upper for keyword in _tax_keywords)
+        is_tip_keyword_line = any(keyword in line_upper for keyword in _tip_keywords)
+        is_total_keyword_line = "TOTAL" in line_upper
+
+        if is_tax_keyword_line or is_tip_keyword_line or is_total_keyword_line:
+             # Try to find a number on the same line at the end
+             amount_match = re.search(r"([\d,]+(?:\.\d+)?)$", line)
+             if amount_match:
+                 cleaned_amount_str = clean_number_string_basic(amount_match.group(1))
+                 # Convert to float using split_logic's cleaner for consistency
+                 amount_float = split_logic.clean_and_convert_number(cleaned_amount_str) or 0.0
+
+                 if is_tax_keyword_line:
+                     total_tax_amount += amount_float # Add to total tax
+                     print(f"Detected tax line: '{line}', amount: {amount_float}. Total tax so far: {total_tax_amount}")
+                 elif is_tip_keyword_line:
+                     total_tip_amount += amount_float # Add to total tip
+                     print(f"Detected tip line: '{line}', amount: {amount_float}. Total tip so far: {total_tip_amount}")
+                 # Handle total line if needed for validation, but don't add to tax/tip sums
+                 # if is_total_keyword_line:
+                 #     detected_total_str = cleaned_amount_str
+                 #     print(f"Detected total line: '{line}', amount: {detected_total_str}")
+
+                 i += 1 # Consume this line
+                 continue # Move to the next iteration
+             # If no number found at the end of the current line, check the next line (for TOTAL split across lines)
+             elif is_total_keyword_line and i + 1 < len(lines):
+                 next_line = lines[i+1].strip()
+                 amount_match_next = _quantity_pattern.match(next_line) # Check if next line is just a number
+                 if amount_match_next:
+                     # Found TOTAL on line i, amount on line i+1
+                     # detected_total_str = clean_number_string_basic(amount_match_next.group(1))
+                     # print(f"Detected total split across lines: '{line}' and '{next_line}', amount: {detected_total_str}")
+                     i += 2 # Consume both lines
+                     continue # Move to the next iteration
+             # If keyword found but no amount found on this or next line, fall through
+
+        # Skip other non-item keywords that don't have amounts immediately following/on the same line
+        # This check should happen *after* the tax/tip/total check, but before item parsing
+        if any(keyword in line_upper for keyword in _non_item_keywords):
+             print(f"Skipping non-item keyword line: '{line}'")
+             i += 1
+             continue
+
+        # --- Attempt to match single-line item patterns ---
+        # Pattern 1: Qty Item Price (e.g., 1.0 PORK BELLY SAMBAL MATA 165,000)
+        qty_item_price_match = _qty_item_price_pattern.match(line)
+        if qty_item_price_match:
+            quantity_str = qty_item_price_match.group(1)
+            item_name = qty_item_price_match.group(2).strip()
+            price_str = qty_item_price_match.group(3)
+
             cleaned_price_str = clean_number_string_basic(price_str)
             cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
-            # Check if item name is a non-item keyword
-            if item_name.upper() not in _non_item_keywords:
-               items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-               i += 1 # Consume this line
-               continue # Move to the next iteration
+            items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+            print(f"Matched Qty Item Price pattern: Item='{item_name}', Qty='{cleaned_quantity_str}', Price='{cleaned_price_str}'")
+            i += 1 # Consume this line
+            continue # Move to the next iteration
 
-        # --- Attempt to match multi-line item pattern 1: Price -> Item Name -> Quantity ---
-        # Check if current line is a price, next is item name, line after is quantity
-        if i + 2 < len(lines):
-            price_match = _price_pattern.match(line) # Use pre-compiled pattern
-            if price_match:
-                potential_item_name_line = lines[i+1].strip()
-                potential_quantity_line = lines[i+2].strip()
+        # Pattern 2: Item Qty Price (e.g., Item Name 1.0 120,000) - less common on this receipt but useful
+        item_qty_price_match = _item_qty_price_pattern.match(line)
+        if item_qty_price_match:
+            item_name = item_qty_price_match.group(1).strip()
+            quantity_str = item_qty_price_match.group(2)
+            price_str = item_qty_price_match.group(3)
 
-                # Check if the next line looks like an item name
-                if _item_name_pattern.search(potential_item_name_line): # Use pre-compiled pattern
-                     # Check if the line after that looks like a quantity
-                     quantity_match = _quantity_pattern.match(potential_quantity_line) # Use pre-compiled pattern
+            cleaned_price_str = clean_number_string_basic(price_str)
+            cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
-                     if quantity_match:
-                        # Found the sequence: Price (line i), Item Name (line i+1), Quantity (line i+2)
-                        price_str = price_match.group(1)
-                        item_name = potential_item_name_line
-                        quantity_str = quantity_match.group(1)
+            items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+            print(f"Matched Item Qty Price pattern: Item='{item_name}', Qty='{cleaned_quantity_str}', Price='{cleaned_price_str}'")
+            i += 1 # Consume this line
+            continue # Move to the next iteration
 
-                        # Clean price and quantity strings (basic cleaning)
-                        cleaned_price_str = clean_number_string_basic(price_str)
-                        cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
-                        # Check if item name is a non-item keyword
-                        if item_name.upper() not in _non_item_keywords:
-                            items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-                            i += 3 # Consume these three lines
-                            continue # Move to the next iteration
+        # --- Attempt to match multi-line item pattern: Item Name -> Price ---
+        # Check if current line looks like an item name and next line looks like a price
+        if i + 1 < len(lines):
+            potential_item_name_line = line
+            potential_price_line = lines[i+1].strip()
 
-        # --- Attempt to match multi-line item pattern 2: Price -> Quantity -> Item Name ---
-        # Check if current line is a price, next is quantity, line after is item name
-        if i + 2 < len(lines):
-            price_match = _price_pattern.match(line) # Use pre-compiled pattern
-            if price_match:
-                potential_quantity_line = lines[i+1].strip()
-                potential_item_name_line = lines[i+2].strip()
+            # Check if current line contains letters and doesn't look like a number/price/known keyword
+            is_potential_item_name = (_item_name_pattern.search(potential_item_name_line) is not None and
+                                      _price_pattern.match(potential_item_name_line) is None and
+                                      _quantity_pattern.match(potential_item_name_line) is None and
+                                      not any(keyword in potential_item_name_line.upper() for keyword in _tax_keywords + _tip_keywords + _non_item_keywords)) # Exclude all known keywords
 
-                # Check if the next line looks like a quantity
-                quantity_match = _quantity_pattern.match(potential_quantity_line) # Use pre-compiled pattern
-                if quantity_match:
-                     # Check if the line after that looks like an item name
-                     if _item_name_pattern.search(potential_item_name_line): # Use pre-compiled pattern
-                          # Found the sequence: Price (line i), Quantity (line i+1), Item Name (line i+2)
-                          price_str = price_match.group(1)
-                          quantity_str = quantity_match.group(1)
-                          item_name = potential_item_name_line
+            # Check if the next line looks like a price
+            price_match = _price_pattern.match(potential_price_line)
 
-                          # Clean price and quantity strings (basic cleaning)
-                          cleaned_price_str = clean_number_string_basic(price_str)
-                          cleaned_quantity_str = clean_number_string_basic(quantity_str)
+            if is_potential_item_name and price_match:
+                # Found the sequence: Item Name (line i), Price (line i+1)
+                item_name = potential_item_name_line
+                price_str = price_match.group(1)
+                quantity_str = "1.0" # Assume quantity 1 if not specified on item line
 
-                          # Check if item name is a non-item keyword
-                          if item_name.upper() not in _non_item_keywords:
-                               items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
-                               i += 3 # Consume these three lines
-                               continue # Move to the next iteration
+                cleaned_price_str = clean_number_string_basic(price_str)
+                cleaned_quantity_str = clean_number_string_basic(quantity_str)
 
-        # --- Attempt to detect Tax/Tip amounts ---
-        # Check if the current line contains a tax or tip keyword
-        is_tax_keyword_line = any(keyword in line.upper() for keyword in _tax_keywords) # Use pre-compiled keywords
-        is_tip_keyword_line = any(keyword in line.upper() for keyword in _tip_keywords) # Use pre-compiled keywords
-
-        if (is_tax_keyword_line or is_tip_keyword_line):
-             if i + 1 < len(lines):
-                next_line = lines[i+1].strip()
-                cleaned_amount_str = clean_number_string_basic(next_line)
-
-                # Check if the next line actually contains a number using the quantity pattern
-                amount_match = _quantity_pattern.match(next_line) # Use pre-compiled quantity pattern
-                if amount_match:
-                    if is_tax_keyword_line:
-                        total_tax_str = cleaned_amount_str
-                        i += 2 # Consume keyword line and amount line
-                        continue # Move to the next iteration
-                    elif is_tip_keyword_line:
-                        total_tip_str = cleaned_amount_str
-                        i += 2 # Consume keyword line and amount line
-                        continue # Move to the next iteration
-                # If keyword found but next line doesn't look like an amount, fall through
+                items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+                print(f"Matched Item -> Price pattern: Item='{item_name}', Qty='{cleaned_quantity_str}', Price='{cleaned_price_str}'")
+                i += 2 # Consume these two lines
+                continue # Move to the next iteration
 
         # --- If none of the specific patterns matched, move to the next line ---
-        # This ensures the loop always progresses if no pattern consumes multiple lines
+        print(f"No pattern matched for line {i+1}. Skipping.")
         i += 1
 
         # Debug output every 10 lines (using i)
@@ -239,61 +257,40 @@ def parse_receipt_text(text):
     parse_time = time.time() - start_time
     parse_rate = len(lines)/parse_time if parse_time > 0 else 0
     print(f"Receipt parsing completed in {parse_time:.2f} seconds ({parse_rate:.1f} lines/sec)")
-    print(f"Found {len(items)} items, tax: {total_tax_str}, tip: {total_tip_str}")
-    return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
+    # Convert final sums back to strings for the return dict
+    final_tax_str = str(round(total_tax_amount, 2)) # Round to 2 decimal places
+    final_tip_str = str(round(total_tip_amount, 2)) # Round to 2 decimal places
+    print(f"Found {len(items)} items, total tax: {final_tax_str}, total tip: {final_tip_str}")
+    return {"items": items, "total_tax": final_tax_str, "total_tip": final_tip_str}
 
 # Keep example usage section for debugging but commented out
 if __name__ == '__main__':
+    # Updated sample text to match the structure seen in the image and user's OCR output
     sample_text = """
-STUBE
-SpUKT
-poncuk   INAH GOLEGALERY
-MEtRO PONDOk  INDAH
-JL
+SPORT STUBE
+PONDOk INDAH GOLF GALERY
+JL. METRO PONDOk INDAH
 JAKARTA
-Pax
-Table 404
-A178622
-BILL
-edi
-Server
+Table 404 Pax
+BILL : A178622
+Server: edi
 Cashier: melia
-Customer
+Customer:
 DINEIN
-202505241
-SDC |
-24/05/2025 21;08
-165,000
-PORK  BELLY SAMBAL MATA
-1.0
-210,000
-promo guiness stout
-1.0
-140,000
-pink Iove sour
-1,0
-90 ,000
-SCRAMBLED PANCAKE LARG
-1.0
-120,000
-PIZZAS SPORT  STUBE
-1.0
-30 ,000
-1.0
-ice tea
-70,000
-caramel
-latte
-1,0
-SUBTTL
-825 , Q0Q
-SVC CHG 97
-74,250
-PBI107
-89,925
-989
-TOTAL
-175
+24/05/2025 21:08 SDC1 202505241
+===========
+1.0 PORK BELLY SAMBAL MATA 165,000
+1.0 promo guiness stout 210,000
+1.0 pink love sour 140,000
+1.0 SCRAMBLED PANCAKE LARG 90,000
+1.0 PIZZAS SPORT STUBE 120,000
+1.0 ice tea 30,000
+1.0 caramel latte 70,000
+SUBTTL 825,000
+SVC CHG 9% 74,250
+PBI 10% 89,925
+---------
+TOTAL 989,175
 """
     parsed_data = parse_receipt_text(sample_text)
     import json
