@@ -2,11 +2,14 @@ import streamlit as st
 import ocr_utils
 from PIL import Image
 import split_logic # Import the new split logic file
+# Removed: import easyocr # Moved inside the cached function
 
 # Cache the EasyOCR reader to avoid re-initializing it every time
 @st.cache_resource
 def get_easyocr_reader():
     """Caches the EasyOCR reader initialization."""
+    # Import easyocr here so it's available within the cached function's scope
+    import easyocr
     # This will download models the first time it's run
     return easyocr.Reader(['en'])
 
@@ -27,12 +30,12 @@ def main():
         # Add a spinner while processing
         with st.spinner('Extracting text from receipt...'):
             # Get the cached reader
-            reader = get_easyocr_reader()
-            # Pass the reader and the file object to the extraction function
-            # Note: extract_text_from_image needs to be updated to accept the reader
-            # For now, we'll keep the reader initialization inside the function
-            # but the @st.cache_resource approach is better for performance.
-            # Let's stick to the current function signature for now and just add the spinner.
+            # Note: The extract_text_from_image function currently initializes its own reader.
+            # For performance, it should ideally accept the cached reader from here.
+            # However, to fix the linter error and add the spinner as requested previously,
+            # we'll keep the reader initialization inside extract_text_from_image for now,
+            # but acknowledge this is a potential optimization.
+            # The get_easyocr_reader function is still useful if we refactor ocr_utils later.
             text = ocr_utils.extract_text_from_image(uploaded_file)
 
         st.subheader("Extracted Text:")
