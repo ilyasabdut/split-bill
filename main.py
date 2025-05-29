@@ -33,10 +33,8 @@ def main():
         if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
             st.session_state.last_uploaded_file_info = current_file_info # Store current file info
 
-            # Display the image immediately when a new file is uploaded
-            image = Image.open(uploaded_file)
-            # Changed image display to a fixed smaller width
-            st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
+            # Removed the first st.image call here to prevent duplicate display
+            # The image will be displayed below this block on every rerun
 
             with st.spinner('Extracting text from receipt...'):
                 text = ocr_utils.extract_text_from_image(uploaded_file)
@@ -54,7 +52,7 @@ def main():
         detected_tax_str = parsed_data_from_state.get("total_tax", "0.0") # Get as string
         detected_tip_str = parsed_data_from_state.get("total_tip", "0.0") # Get as string
 
-        # Display the image again if data is loaded from state (needed on reruns)
+        # Display the image (this runs on every rerun after a file is uploaded)
         # This ensures the image stays visible after interactions
         image = Image.open(uploaded_file) # Re-open the file object (Streamlit handles this efficiently)
         # Changed image display to a fixed smaller width
@@ -107,13 +105,17 @@ def main():
                 with col2:
                      # Convert qty and price strings to numbers for display formatting
                      try:
-                         qty_display = int(float(item.get('qty', '0'))) # Handle potential float quantities like "1.0"
-                     except ValueError:
+                         # Use split_logic's cleaner for consistency
+                         qty_float = split_logic.clean_and_convert_number(item.get('qty', '0')) or 0.0
+                         qty_display = int(qty_float) if qty_float.is_integer() else qty_float # Display as int if whole number
+                     except Exception: # Catch any conversion error
                          qty_display = item.get('qty', '0') # Display as string if conversion fails
                      try:
-                         price_display = float(item.get('price', '0.0'))
-                     except ValueError:
+                         # Use split_logic's cleaner for consistency
+                         price_display = split_logic.clean_and_convert_number(item.get('price', '0.0')) or 0.0
+                     except Exception: # Catch any conversion error
                          price_display = 0.0 # Use 0.0 if conversion fails
+
 
                      # Changed currency formatting to IDR with thousands separator
                      st.write(f"{qty_display} x IDR {price_display:,.2f}")
