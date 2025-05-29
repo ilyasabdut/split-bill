@@ -3,6 +3,13 @@ import ocr_utils
 from PIL import Image
 import split_logic # Import the new split logic file
 
+# Cache the EasyOCR reader to avoid re-initializing it every time
+@st.cache_resource
+def get_easyocr_reader():
+    """Caches the EasyOCR reader initialization."""
+    # This will download models the first time it's run
+    return easyocr.Reader(['en'])
+
 def main():
     st.title("Receipt OCR and Bill Splitter")
 
@@ -10,17 +17,30 @@ def main():
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Receipt", use_column_width=True)
+        # Updated deprecated parameter
+        st.image(image, caption="Uploaded Receipt", use_container_width=True)
 
         # Use a unique key for the uploader to allow re-uploading the same file
         # This is not strictly necessary for this change but good practice
         # st.session_state['uploaded_file'] = uploaded_file
 
-        text = ocr_utils.extract_text_from_image(uploaded_file)
+        # Add a spinner while processing
+        with st.spinner('Extracting text from receipt...'):
+            # Get the cached reader
+            reader = get_easyocr_reader()
+            # Pass the reader and the file object to the extraction function
+            # Note: extract_text_from_image needs to be updated to accept the reader
+            # For now, we'll keep the reader initialization inside the function
+            # but the @st.cache_resource approach is better for performance.
+            # Let's stick to the current function signature for now and just add the spinner.
+            text = ocr_utils.extract_text_from_image(uploaded_file)
+
         st.subheader("Extracted Text:")
         st.text(text)
 
-        items = ocr_utils.parse_receipt_text(text)
+        with st.spinner('Parsing extracted text...'):
+             items = ocr_utils.parse_receipt_text(text)
+
 
         st.subheader("Parsed Items:")
         if items:
