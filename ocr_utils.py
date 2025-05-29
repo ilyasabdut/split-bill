@@ -27,6 +27,9 @@ def extract_text_from_image(uploaded_file):
     results = reader.readtext(image_bytes)
 
     text = ""
+    # Sort results by vertical position to improve text flow
+    results.sort(key=lambda r: r[0][0][1]) # Sort by y-coordinate of the first point
+
     for (bbox, text_content, prob) in results:
         text += text_content + "\n"
     return text
@@ -42,19 +45,38 @@ def parse_receipt_text(text):
         list: A list of dictionaries, where each dictionary represents an item
               with keys 'item', 'qty', and 'price'.
     """
+    print("\n--- Raw Text for Parsing ---")
+    print(text)
+    print("----------------------------\n")
+
     items = []
-    # Regex to find lines with item name, quantity, and price. More robust.
-    # This pattern looks for:
-    # 1. Item name (alphanumeric, spaces, &) - captured in group 1
+    # More flexible regex pattern:
+    # Looks for:
+    # 1. Item name (any characters, non-greedy) - captured in group 1
     # 2. One or more spaces
     # 3. Quantity (one or more digits) - captured in group 2
-    # 4. Optional spaces followed by 'x' followed by optional spaces
-    # 5. Price (digits, possibly with a decimal point) - captured in group 3
-    pattern = re.compile(r"([A-Za-z0-9\s&]+)\s+(\d+)\s*x\s*([\d.]+)", re.IGNORECASE)
+    # 4. One or more spaces (allowing for no 'x' or other separators)
+    # 5. Price (digits, optionally with a decimal point and digits after) - captured in group 3
+    # This pattern is more lenient with separators between Qty and Price.
+    # It assumes the order is Item Name, Quantity, Price.
+    pattern = re.compile(r"(.+?)\s+(\d+)\s+([\d]+\.?\d*)", re.IGNORECASE)
 
-    for match in pattern.finditer(text):
-        item_name = match.group(1).strip()
-        quantity = int(match.group(2))
-        price = float(match.group(3))
-        items.append({"item": item_name, "qty": quantity, "price": price})
+    # Alternative pattern if quantity is often 1 and not explicitly listed,
+    # looking for Item Name followed by Price near the end of the line.
+    # pattern_no_qty = re.compile(r"(.+?)\s+([\d]+\.?\d*)$", re.IGNORECASE)
+
+
+    for line in text.splitlines():
+        match = pattern.search(line)
+        if match:
+            item_name = match.group(1).strip()
+            quantity = int(match.group(2))
+            price = float(match.group(3))
+            # Basic validation: price should probably be > 0
+            if price > 0:
+                 items.append({"item": item_name, "qty": quantity, "price": price})
+        # Add logic here to try alternative patterns if the first one fails on a line
+        # elif pattern_no_qty.search(line):
+        #    ... handle items with implied quantity 1 ...
+
     return items
