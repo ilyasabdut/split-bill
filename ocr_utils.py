@@ -125,12 +125,12 @@ def parse_receipt_text(text):
         try:
             line_upper = line.upper()
 
-        # --- Attempt to extract store name, date, and time ---
-        if store_name is None:
-            # Look for store name in the first few lines
-            if i < 5 and _item_name_pattern.search(line):
-                store_name = line
-                print(f"Detected store name: {store_name}")
+            # --- Attempt to extract store name, date, and time ---
+            if store_name is None:
+                # Look for store name in the first few lines
+                if i < 5 and _item_name_pattern.search(line):
+                    store_name = line
+                    print(f"Detected store name: {store_name}")
 
         if date is None:
             # Look for date patterns
