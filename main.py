@@ -34,10 +34,10 @@ def main():
             st.session_state.last_uploaded_file_info = current_file_info # Store current file info
 
             # The image was previously displayed here and also below.
-            # We are now restoring the display below this block.
+            # We are now removing the display after parsing.
             # If you wanted to display it *only* during processing,
             # you would put st.image here and remove the one below.
-            # But the standard pattern is to display it after upload.
+            # But the request is to remove the image *after* extract text.
 
             with st.spinner('Extracting text from receipt...'):
                 text = ocr_utils.extract_text_from_image(uploaded_file)
@@ -55,10 +55,10 @@ def main():
         detected_tax_str = parsed_data_from_state.get("total_tax", "0.0") # Get as string
         detected_tip_str = parsed_data_from_state.get("total_tip", "0.0") # Get as string
 
-        # Restore the st.image call here. This displays the image once after upload
-        # and keeps it visible during subsequent interactions.
-        image = Image.open(uploaded_file) # Re-open the file object (Streamlit handles this efficiently)
-        st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
+        # Removed the st.image call here. The image will no longer be displayed
+        # after the initial upload and parsing is complete.
+        # image = Image.open(uploaded_file) # Re-open the file object (Streamlit handles this efficiently)
+        # st.image(image, caption="Uploaded Receipt", width=300) # Set a fixed width
 
 
         # --- Start of Bill Splitting UI (always shown if file is uploaded and parsed_data exists) ---
