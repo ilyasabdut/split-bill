@@ -1,5 +1,6 @@
 streamlit
 easyocr
 pillow
-numpy
+numpy<2.0,>=1.26.0
 pandas
+opencv-python
