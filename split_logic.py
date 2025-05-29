@@ -5,7 +5,8 @@ from typing import Optional, Union
 def clean_number_string(num_str: str) -> str:
     """Clean number string by removing non-numeric characters (except .)"""
     num_str = num_str.replace(" ", "")  # Remove spaces first
-    return re.sub(r'[^\d.]', '', num_str.replace(',', ''))
+    num_str = num_str.replace(",", "") # Remove comma
+    return re.sub(r'[^\d.]', '', num_str)
 
 def parse_quantity(num_str: str) -> Optional[float]:
     """Parse quantity string to float, handling common formats."""

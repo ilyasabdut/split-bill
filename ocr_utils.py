@@ -149,7 +149,7 @@ def parse_receipt_text(text):
             continue
 
         # Skip non-item lines based on keywords
-        if any(keyword in line_upper for keyword in ["BILL", "DINEIN", "SDC1", "TABLE", "SERVER", "CASHIER", "CUSTOMER"]):
+        if any(keyword in line_upper for keyword in ["BILL", "DINEIN", "SDC1", "TABLE", "SERVER", "CASHIER", "CUSTOMER", "PAX"]):
             print(f"Skipping non-item keyword line: '{line}'")
             i += 1
             continue
@@ -255,7 +255,7 @@ def parse_receipt_text(text):
 
             if is_potential_item_name and price_match:
                 # Found the sequence: Item Name (line i), Price (line i+1)
-                item_name = potential_item_name_line
+                item_name = potential_item_name_line.replace("Iove", "love").replace("carame]", "caramel")
                 price_str = price_match.group(1)
 
                 # Try to extract quantity from the item name line
