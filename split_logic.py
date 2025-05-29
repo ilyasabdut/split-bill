@@ -1,15 +1,53 @@
 # split_logic.py
+import re
 
-def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
+def clean_and_convert_number(num_str):
+    """Removes spaces and thousands commas, handles decimal comma, converts string to float."""
+    if not isinstance(num_str, str):
+        # print(f"Debug: clean_and_convert_number received non-string: {num_str}") # Avoid excessive prints
+        return None # Ensure input is a string
+
+    num_str = num_str.strip() # Strip leading/trailing spaces
+
+    # Remove any characters that are not digits, commas, or dots
+    cleaned_str = re.sub(r'[^\d,.]', '', num_str)
+
+    # Handle comma/dot ambiguity
+    if '.' in cleaned_str and ',' in cleaned_str:
+         # Assume comma is thousands separator, remove it
+         cleaned_str = cleaned_str.replace(',', '')
+    elif ',' in cleaned_str and '.' not in cleaned_str:
+         # Assume comma is decimal separator if it's the only separator
+         if cleaned_str.count(',') == 1:
+              cleaned_str = cleaned_str.replace(',', '.')
+         else: # Multiple commas, assume thousands
+              cleaned_str = cleaned_str.replace(',', '')
+    # else: # Only dots, or no commas/dots - no change needed
+
+    # Ensure it's not an empty string after cleaning
+    if not cleaned_str:
+         return None # Return None for empty string
+
+    try:
+        float_val = float(cleaned_str)
+        return float_val
+    except ValueError:
+        # print(f"Debug: clean_and_convert_number failed to convert '{num_str}' (cleaned to '{cleaned_str}') to float.") # Avoid excessive prints
+        return None
+
+
+def calculate_split(item_assignments, tax_amount_str, tip_amount_str, person_names):
     """
     Calculates the bill split based on item assignments, tax, tip, and people.
+    Expects tax_amount_str and tip_amount_str as strings.
 
     Args:
         item_assignments (list): List of dictionaries like
-                                 [{"item_details": {"item": "Burger", "qty": 2, "price": 7.99},
+                                 [{"item_details": {"item": "Burger", "qty": "2", "price": "7.99"},
                                    "assigned_to": ["Person 1", "Person 2"]}]
-        tax_amount (float): Total tax amount.
-        tip_amount (float): Total tip amount.
+                                 'qty' and 'price' are expected as strings.
+        tax_amount_str (str): Total tax amount as a string.
+        tip_amount_str (str): Total tip amount as a string.
         person_names (list): List of names of people splitting the bill.
 
     Returns:
@@ -24,6 +62,10 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
     if not person_names:
         return {"Error": "Please enter names for the people splitting the bill."}
 
+    # Convert tax and tip strings to floats
+    tax_amount = clean_and_convert_number(tax_amount_str) or 0.0
+    tip_amount = clean_and_convert_number(tip_amount_str) or 0.0
+
     # Initialize results structure for each person
     split_results = {name: {"items": [], "subtotal": 0.0, "tax": 0.0, "tip": 0.0, "total": 0.0} for name in person_names}
     total_bill_subtotal = 0.0 # Sum of costs of all assigned items
@@ -34,8 +76,17 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
         assigned_to = assignment["assigned_to"]
 
         item_name = item.get("item", "Unknown Item")
-        quantity = item.get("qty", 0)
-        price = item.get("price", 0.0)
+        quantity_str = item.get("qty", "0") # Expect string
+        price_str = item.get("price", "0.0") # Expect string
+
+        # Convert quantity and price strings to numbers
+        quantity = clean_and_convert_number(quantity_str) or 0.0
+        price = clean_and_convert_number(price_str) or 0.0
+
+        # Basic validation: price and quantity should be > 0 for calculation
+        if price <= 0 or quantity <= 0:
+             print(f"Warning: Item '{item_name}' has non-positive price ({price}) or quantity ({quantity}). Skipping calculation for this item.")
+             continue # Skip this item if price or quantity is invalid/zero
 
         item_total_cost = quantity * price
 
@@ -56,7 +107,7 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
         # Add the cost share to the subtotal of each assigned person
         for person in assigned_to:
             if person in split_results:
-                # Store original price and quantity for breakdown display
+                # Store original price and quantity (as numbers now) for breakdown display
                 split_results[person]["items"].append({"item": item_name, "qty": quantity, "price": price, "share_cost": cost_per_share}) # Don't round yet
                 split_results[person]["subtotal"] += cost_per_share
             else:
@@ -131,32 +182,35 @@ def calculate_split(item_assignments, tax_amount, tip_amount, person_names):
 
 # Example usage (for testing the function independently if needed)
 if __name__ == '__main__':
-    sample_item_assignments = [
-        {"item_details": {"item": "Burger", "qty": 2, "price": 7.99}, "assigned_to": ["Alice", "Bob"]}, # Burger cost: 15.98
-        {"item_details": {"item": "Coke", "qty": 1, "price": 2.50}, "assigned_to": ["Alice"]}, # Coke cost: 2.50
-        {"item_details": {"item": "Fries", "qty": 3, "price": 3.00}, "assigned_to": ["Alice", "Bob", "Charlie"]}, # Fries cost: 9.00
-        {"item_details": {"item": "Salad", "qty": 1, "price": 10.00}, "assigned_to": []}, # Unassigned item
+    # Example with strings as returned by ocr_utils
+    sample_item_assignments_str = [
+        {"item_details": {"item": "Burger", "qty": "2", "price": "7.99"}, "assigned_to": ["Alice", "Bob"]},
+        {"item_details": {"item": "Coke", "qty": "1", "price": "2.50"}, "assigned_to": ["Alice"]},
+        {"item_details": {"item": "Fries", "qty": "3", "price": "3.00"}, "assigned_to": ["Alice", "Bob", "Charlie"]},
+        {"item_details": {"item": "Salad", "qty": "1", "price": "10.00"}, "assigned_to": []},
+        {"item_details": {"item": "Item with comma price", "qty": "1", "price": "1,234.56"}, "assigned_to": ["Alice"]},
+        {"item_details": {"item": "Item with comma qty", "qty": "1,0", "price": "5.00"}, "assigned_to": ["Bob"]},
     ]
-    sample_tax = 5.00
-    sample_tip = 3.00
+    sample_tax_str = "5.00"
+    sample_tip_str = "3.00"
     sample_person_names = ["Alice", "Bob", "Charlie"]
 
-    split = calculate_split(sample_item_assignments, sample_tax, sample_tip, sample_person_names)
+    split = calculate_split(sample_item_assignments_str, sample_tax_str, sample_tip_str, sample_person_names)
     import json
     print(json.dumps(split, indent=2))
 
     print("\n--- Test Case: No Items Assigned ---")
-    sample_item_assignments_empty = [
-         {"item_details": {"item": "Burger", "qty": 2, "price": 7.99}, "assigned_to": []},
-         {"item_details": {"item": "Coke", "qty": 1, "price": 2.50}, "assigned_to": []},
+    sample_item_assignments_empty_str = [
+         {"item_details": {"item": "Burger", "qty": "2", "price": "7.99"}, "assigned_to": []},
+         {"item_details": {"item": "Coke", "qty": "1", "price": "2.50"}, "assigned_to": []},
     ]
-    split_empty_items = calculate_split(sample_item_assignments_empty, sample_tax, sample_tip, sample_person_names)
+    split_empty_items = calculate_split(sample_item_assignments_empty_str, sample_tax_str, sample_tip_str, sample_person_names)
     print(json.dumps(split_empty_items, indent=2))
 
     print("\n--- Test Case: No Items, Only Tax/Tip ---")
-    split_only_tax_tip = calculate_split([], sample_tax, sample_tip, sample_person_names)
+    split_only_tax_tip = calculate_split([], sample_tax_str, sample_tip_str, sample_person_names)
     print(json.dumps(split_only_tax_tip, indent=2))
 
     print("\n--- Test Case: No People ---")
-    split_no_people = calculate_split(sample_item_assignments, sample_tax, sample_tip, [])
+    split_no_people = calculate_split(sample_item_assignments_str, sample_tax_str, sample_tip_str, [])
     print(json.dumps(split_no_people, indent=2))

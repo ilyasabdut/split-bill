@@ -41,16 +41,16 @@ def parse_receipt_text(text):
     and automatically detect tax based on keywords.
     This version attempts to handle price-item-quantity across multiple lines
     based on the provided example text structure, with more flexible number parsing
-    and added debugging prints.
+    and added debugging prints. Returns numbers as cleaned strings.
 
     Args:
         text (str): The raw text extracted from the receipt.
 
     Returns:
         dict: A dictionary containing:
-              - 'items' (list): List of dictionaries for each item.
-              - 'total_tax' (float): The sum of detected tax amounts.
-              - 'total_tip' (float): Placeholder for detected tip amount (not implemented yet).
+              - 'items' (list): List of dictionaries for each item, with 'qty' and 'price' as strings.
+              - 'total_tax' (str): The detected total tax amount as a string.
+              - 'total_tip' (str): Placeholder for detected tip amount as a string (not implemented yet).
     """
     print("\n--- Raw Text for Parsing ---")
     print(text)
@@ -58,8 +58,8 @@ def parse_receipt_text(text):
 
     lines = text.strip().splitlines()
     items = []
-    total_tax = 0.0
-    total_tip = 0.0 # Placeholder for tip detection
+    total_tax_str = "0.0" # Store as string
+    total_tip_str = "0.0" # Store as string (Placeholder for tip detection)
 
     i = 0
 
@@ -84,12 +84,13 @@ def parse_receipt_text(text):
     non_item_keywords = ["SUBTTL", "SVC CHG", "PBI", "PPN", "TOTAL"]
 
 
-    # Helper function to clean and convert number strings (price/quantity/tax/tip)
-    def clean_and_convert_number(num_str):
-        """Removes spaces and thousands commas, handles decimal comma, converts string to float."""
+    # Helper function to clean number strings (price/quantity/tax/tip)
+    # Returns cleaned string, does NOT convert to float here
+    def clean_number_string(num_str):
+        """Removes spaces and thousands commas, handles decimal comma, returns cleaned string."""
         if not isinstance(num_str, str):
-            print(f"Debug: clean_and_convert_number received non-string: {num_str}")
-            return None # Ensure input is a string
+            print(f"Debug: clean_number_string received non-string: {num_str}")
+            return "0.0" # Return default string for non-strings
 
         num_str = num_str.strip() # Strip leading/trailing spaces
 
@@ -108,12 +109,11 @@ def parse_receipt_text(text):
                   cleaned_str = cleaned_str.replace(',', '')
         # else: # Only dots, or no commas/dots - no change needed
 
-        try:
-            float_val = float(cleaned_str)
-            return float_val
-        except ValueError:
-            print(f"Debug: clean_and_convert_number failed to convert '{num_str}' (cleaned to '{cleaned_str}') to float.")
-            return None
+        # Ensure it's not an empty string after cleaning
+        if not cleaned_str:
+             return "0.0"
+
+        return cleaned_str
 
     while i < len(lines):
         line = lines[i].strip()
@@ -138,37 +138,19 @@ def parse_receipt_text(text):
                         item_name = potential_item_name_line
                         quantity_str = quantity_match.group(1)
 
-                        # Clean and convert price
-                        price = clean_and_convert_number(price_str)
-                        if price is None:
-                            print(f"Warning: Could not convert price '{price_str}' to number. Skipping P->I->Q sequence starting at line {i+1}.")
-                            i += 1 # Move to the next line
-                            continue # Continue loop
+                        # Clean price and quantity strings
+                        cleaned_price_str = clean_number_string(price_str)
+                        cleaned_quantity_str = clean_number_string(quantity_str)
 
-                        # Clean and convert quantity
-                        quantity = clean_and_convert_number(quantity_str)
-                        if quantity is None:
-                             print(f"Warning: Could not convert quantity '{quantity_str}' to number. Skipping P->I->Q sequence starting at line {i+1}.")
-                             i += 1 # Move to the next line
-                             continue # Continue loop
-
-                        # Convert quantity to int if it's a whole number like 1.0 -> 1
-                        if quantity is not None and quantity.is_integer():
-                            quantity = int(quantity)
-
-
-                        # Basic validation: price and quantity should be > 0
-                        if price > 0 and quantity > 0:
-                             # Check if item name is a non-item keyword
-                             if item_name.upper() not in non_item_keywords:
-                                items.append({"item": item_name, "qty": quantity, "price": price})
-                                print(f"Debug: Parsed P->I->Q item: '{item_name}', Qty: {quantity}, Price: {price} (from lines {i+1}-{i+3})")
-                                i += 3 # Consume these three lines and move to the next potential item start
-                                continue # Successfully parsed a multi-line item, continue loop from new position
-                             else:
-                                print(f"Debug: P->I->Q pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
+                        # Check if item name is a non-item keyword
+                        if item_name.upper() not in non_item_keywords:
+                            # Store cleaned strings
+                            items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+                            print(f"Debug: Parsed P->I->Q item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})")
+                            i += 3 # Consume these three lines and move to the next potential item start
+                            continue # Successfully parsed a multi-line item, continue loop from new position
                         else:
-                             print(f"Debug: P->I->Q pattern matched lines {i+1}-{i+3}, but price ({price}) or quantity ({quantity}) was not positive. Skipping.")
+                           print(f"Debug: P->I->Q pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
 
 
         # --- Attempt to match the multi-line item pattern 2: Price -> Quantity -> Item Name ---
@@ -189,36 +171,19 @@ def parse_receipt_text(text):
                           quantity_str = quantity_match.group(1)
                           item_name = potential_item_name_line
 
-                          # Clean and convert price
-                          price = clean_and_convert_number(price_str)
-                          if price is None:
-                               print(f"Warning: Could not convert price '{price_str}' to number. Skipping P->Q->I sequence starting at line {i+1}.")
-                               i += 1 # Move to the next line
-                               continue # Continue loop
+                          # Clean price and quantity strings
+                          cleaned_price_str = clean_number_string(price_str)
+                          cleaned_quantity_str = clean_number_string(quantity_str)
 
-                          # Clean and convert quantity
-                          quantity = clean_and_convert_number(quantity_str)
-                          if quantity is None:
-                                print(f"Warning: Could not convert quantity '{quantity_str}' to number. Skipping P->Q->I sequence starting at line {i+1}.")
-                                i += 1 # Move to the next line
-                                continue # Continue loop
-
-                          # Convert quantity to int if it's a whole number like 1.0 -> 1
-                          if quantity is not None and quantity.is_integer():
-                               quantity = int(quantity)
-
-                          # Basic validation: price and quantity should be > 0
-                          if price > 0 and quantity > 0:
-                               # Check if item name is a non-item keyword
-                               if item_name.upper() not in non_item_keywords:
-                                    items.append({"item": item_name, "qty": quantity, "price": price})
-                                    print(f"Debug: Parsed P->Q->I item: '{item_name}', Qty: {quantity}, Price: {price} (from lines {i+1}-{i+3})")
-                                    i += 3 # Consume these three lines and move to the next potential item start
-                                    continue # Successfully parsed, continue loop from new position
-                               else:
-                                    print(f"Debug: P->Q->I pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
+                          # Check if item name is a non-item keyword
+                          if item_name.upper() not in non_item_keywords:
+                               # Store cleaned strings
+                               items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+                               print(f"Debug: Parsed P->Q->I item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from lines {i+1}-{i+3})")
+                               i += 3 # Consume these three lines and move to the next potential item start
+                               continue # Successfully parsed, continue loop from new position
                           else:
-                               print(f"Debug: P->Q->I pattern matched lines {i+1}-{i+3}, but price ({price}) or quantity ({quantity}) was not positive. Skipping.")
+                               print(f"Debug: P->Q->I pattern matched lines {i+1}-{i+3}, but item name '{item_name}' is a non-item keyword. Skipping.")
 
 
         # --- Attempt to match single-line item pattern ---
@@ -231,32 +196,19 @@ def parse_receipt_text(text):
             quantity_str = single_match.group(2)
             price_str = single_match.group(3)
 
-            # Clean and convert price
-            price = clean_and_convert_number(price_str)
-            if price is None:
-                print(f"Warning: Could not convert price '{price_str}' to number. Skipping single-line match on line {i+1}.")
-                i += 1 # Move to the next line
-                continue # Continue loop
+            # Clean price and quantity strings
+            cleaned_price_str = clean_number_string(price_str)
+            cleaned_quantity_str = clean_number_string(quantity_str)
 
-            # Convert quantity (assuming integer for single line)
-            try:
-                quantity = int(quantity_str)
-            except ValueError:
-                 print(f"Warning: Could not convert quantity '{quantity_str}' to integer. Skipping single-line match on line {i+1}.")
-                 i += 1 # Move to the next line
-                 continue # Continue loop
-
-            if price > 0 and quantity > 0:
-                 # Check if item name is a non-item keyword
-                 if item_name.upper() not in non_item_keywords:
-                    items.append({"item": item_name, "qty": quantity, "price": price})
-                    print(f"Debug: Parsed single-line item: '{item_name}', Qty: {quantity}, Price: {price} (from line {i+1})")
-                    i += 1 # Consume this line
-                    continue # Successfully parsed a single-line item, continue loop from new position
-                 else:
-                    print(f"Debug: Single-line pattern matched line {i+1}, but item name '{item_name}' is a non-item keyword. Skipping.")
+            # Check if item name is a non-item keyword
+            if item_name.upper() not in non_item_keywords:
+               # Store cleaned strings
+               items.append({"item": item_name, "qty": cleaned_quantity_str, "price": cleaned_price_str})
+               print(f"Debug: Parsed single-line item: '{item_name}', Qty: '{cleaned_quantity_str}', Price: '{cleaned_price_str}' (from line {i+1})")
+               i += 1 # Consume this line
+               continue # Successfully parsed a single-line item, continue loop from new position
             else:
-                 print(f"Debug: Single-line pattern matched line {i+1}, but price ({price}) or quantity ({quantity}) was not positive. Skipping.")
+               print(f"Debug: Single-line pattern matched line {i+1}, but item name '{item_name}' is a non-item keyword. Skipping.")
 
 
         # --- Attempt to detect Tax/Tip amounts ---
@@ -269,19 +221,20 @@ def parse_receipt_text(text):
              if i + 1 < len(lines):
                 next_line = lines[i+1].strip()
                 print(f"Debug: Checking next line {i+2} for amount: '{next_line}'")
-                amount = clean_and_convert_number(next_line)
+                cleaned_amount_str = clean_number_string(next_line)
 
-                if amount is not None:
-                    if is_tax_keyword_line:
-                        total_tax += amount
-                        print(f"Detected Tax: {amount} (from line {i+2}). Total tax is now {total_tax}") # Print line number of the amount
-                        i += 2 # Consume keyword line and amount line
-                        continue # Continue loop
-                    elif is_tip_keyword_line:
-                        total_tip += amount
-                        print(f"Detected Tip: {amount} (from line {i+2}). Total tip is now {total_tip}") # Print line number of the amount
-                        i += 2 # Consume keyword line and amount line
-                        continue # Continue loop
+                # We don't sum here, just store the last detected amount for now
+                # More sophisticated logic might sum multiple tax lines
+                if is_tax_keyword_line:
+                    total_tax_str = cleaned_amount_str
+                    print(f"Detected Tax: '{total_tax_str}' (from line {i+2})")
+                    i += 2 # Consume keyword line and amount line
+                    continue # Continue loop
+                elif is_tip_keyword_line:
+                    total_tip_str = cleaned_amount_str
+                    print(f"Detected Tip: '{total_tip_str}' (from line {i+2})")
+                    i += 2 # Consume keyword line and amount line
+                    continue # Continue loop
                 else:
                      print(f"Warning: Found tax/tip keyword '{line}' on line {i+1}, but could not parse amount from next line '{next_line}'.")
                      # Fall through to general increment i += 1
@@ -293,9 +246,9 @@ def parse_receipt_text(text):
         # If none of the patterns matched starting at line i, just move to the next line
         i += 1
 
-    print(f"Debug: Finished parsing. Total detected tax: {total_tax}, Total detected tip: {total_tip}")
-    print(f"Debug: Parsed items: {items}") # Print the final list of parsed items
-    return {"items": items, "total_tax": total_tax, "total_tip": total_tip}
+    print(f"Debug: Finished parsing. Total detected tax (string): '{total_tax_str}', Total detected tip (string): '{total_tip_str}'")
+    print(f"Debug: Parsed items (strings): {items}") # Print the final list of parsed items
+    return {"items": items, "total_tax": total_tax_str, "total_tip": total_tip_str}
 
 
 # Example usage (for testing the function independently if needed)
