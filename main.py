@@ -63,10 +63,10 @@ def main():
                     start_time = time.time()
                     progress_bar = st.progress(0)
 
-                print("Starting OCR processing...")
-                # Pass the reader object to the OCR function
-                ocr_result = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
-                print(f"OCR completed in {time.time() - start_time:.2f} seconds")
+                    print("Starting OCR processing...")
+                    # Pass the reader object to the OCR function
+                    ocr_result = ocr_utils.extract_text_from_image(reader, uploaded_file, progress_callback=lambda p: progress_bar.progress(p))
+                    print(f"OCR completed in {time.time() - start_time:.2f} seconds")
 
                 progress_bar.progress(90, "Parsing text...")
                 parse_start = time.time()
@@ -81,7 +81,6 @@ def main():
                 st.session_state.parsed_data = parsed_data
                 if parsed_data.get('items'):
                     st.success(f"Successfully parsed {len(parsed_data['items'])} items from receipt!")
-                else:
                     st.warning("Parsing complete but no items found - please check receipt format")
 
         # Retrieve data from session state for display and interaction
