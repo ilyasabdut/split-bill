@@ -16,6 +16,13 @@ FASTAPI_API_URL = os.environ.get("FASTAPI_API_URL", "http://localhost:8000") # U
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8501") # For generating share links
 API_KEY = os.environ.get("API_KEY") # Get API key from environment variable
 
+st.set_page_config(
+    page_title="Split Bill",
+    page_icon="🧾",
+    layout="centered",
+    initial_sidebar_state="auto"
+)
+
 # --- SESSION STATE INITIALIZATION (MOVED TO TOP) ---
 if 'current_step' not in st.session_state: st.session_state.current_step = 0
 if 'view_split_id' not in st.session_state: st.session_state.view_split_id = None
@@ -93,7 +100,7 @@ def load_shared_split_data_from_api(split_id: str) -> dict[str, any] | None:
         return None
 
 def main_app_flow():
-    st.title("🧾 Bill Splitter")
+    st.title("🧾 Split Bill")
 
     if not API_KEY:
         st.error("API_KEY environment variable is not set. Please set it to connect to the backend API.")
