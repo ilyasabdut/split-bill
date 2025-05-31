@@ -48,7 +48,7 @@ def clean_and_convert_number(num_str: str | int | float, is_quantity: bool = Fal
 
 
 def calculate_split(
-    item_assignments: List[Dict[str, Any]],
+    assignments,
     tax_amount_str: str,
     tip_amount_str: str,
     person_names: List[str],
@@ -89,8 +89,9 @@ def calculate_split(
             })
     else: # Individual item assignment logic
         current_calculated_subtotal_from_items = 0.0
-        for assignment in item_assignments:
-            item_details = assignment["item_details"]; assigned_to_list = assignment.get("assigned_to", [])
+        for assignment in assignments:
+            item_details = assignment.item_details
+            assigned_to_list = assignment.assigned_to
             item_name = item_details.get("item", "Unknown")
             line_item_quantity = clean_and_convert_number(item_details.get("qty", "1"), is_quantity=True) or 1.0
             line_item_total_price = clean_and_convert_number(item_details.get("price", "0.0")) or 0.0
@@ -161,6 +162,32 @@ def calculate_split(
             item_share["share_cost"] = round(item_share.get("share_cost", 0), 2)
             
     return split_results
+
+def process_item_assignments(assignments):
+    """Helper function to process item assignments"""
+    assignments_dict = {}
+    for assignment in assignments:
+        # Access fields using dot notation instead of dictionary access
+        item_details = assignment.item_details
+        assigned_to = assignment.assigned_to
+        item_desc = item_details.get("item", "")
+        item_price = clean_and_convert_number(item_details.get("price", 0))
+        item_qty = clean_and_convert_number(item_details.get("qty", 1))
+        
+        if not item_price or not item_qty:
+            continue
+
+        for person in assigned_to:
+            if person not in assignments_dict:
+                assignments_dict[person] = []
+            assignments_dict[person].append({
+                "item": item_desc,
+                "price": item_price,
+                "qty": item_qty,
+                "share_count": len(assigned_to)
+            })
+    
+    return assignments_dict
 
 if __name__ == '__main__':
     # Test cases for calculate_split
