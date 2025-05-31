@@ -9,12 +9,10 @@ from PIL import Image as PILImage, UnidentifiedImageError
 import json
 import time # Still needed for creation_timestamp in metadata for share link
 
-# Add the parent directory of 'src' to the Python path
-# This line is not strictly needed for a pure frontend, but kept for broader compatibility
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Removed: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Configuration for FastAPI backend URL
-FASTAPI_API_URL = os.environ.get("FASTAPI_API_URL", "http://localhost:8000")
+FASTAPI_API_URL = os.environ.get("FASTAPI_API_URL", "http://localhost:8000") # Updated for Docker Compose internal network
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8501") # For generating share links
 API_KEY = os.environ.get("API_KEY") # Get API key from environment variable
 
@@ -56,7 +54,7 @@ MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
 def reset_app_state_full():
     st.session_state.current_step = 0; st.session_state.parsed_data = None
     st.session_state.last_uploaded_file_info = None; st.session_state.uploaded_image_bytes = None
-    st.session_state.processed_image_bytes_for_minio_base64 = None; st.session_state.minio_image_object_name = None
+    st.session_state.processed_image_bytes_for_minio_base66 = None; st.session_state.minio_image_object_name = None
     st.session_state.item_assignments = []; st.session_state.split_results = None
     st.session_state.share_link = None; st.session_state.view_split_id = None
     st.session_state.loaded_share_data = None; 
@@ -140,7 +138,11 @@ def main_app_flow():
                             st.error(f"Status Code: {response.status_code}")
                             try:
                                 error_detail = response.json().get("detail", "No additional detail.")
-                                st.error(f"Detail: {error_detail}")
+                                # Specific error handling for "NOT_A_RECEIPT"
+                                if response.status_code == 400 and "not appear to be a receipt" in error_detail:
+                                    st.warning("⚠️ The uploaded image does not appear to be a receipt. Please upload a valid receipt image.")
+                                else:
+                                    st.error(f"Detail: {error_detail}")
                             except json.JSONDecodeError:
                                 st.error(f"Response: {response.text}")
                         st.stop()

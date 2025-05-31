@@ -25,14 +25,13 @@ RUN mkdir src
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code into src
-COPY src/api.py src/
-COPY src/split_logic.py src/
-COPY src/gemini_ocr.py src/
-COPY src/minio_utils.py src/
-
+# Copy application code
+COPY ./api/src /app/src
 # Make port 8000 available to the world outside this container (FastAPI default)
 EXPOSE 8000
+
+# Add /app to Python path
+ENV PYTHONPATH=/app
 
 # Set the activate path for the venv
 ENV PATH="/opt/venv/bin:$PATH"

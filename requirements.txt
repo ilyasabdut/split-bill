@@ -1,6 +1,6 @@
 streamlit
 pandas
-google-generativeai
+google-generativeai>=0.3.0
 Pillow
 python-dotenv
 minio
@@ -10,5 +10,5 @@ requests
 python-multipart
 charset_normalizer
 chardet
-pycryptodomex # Changed from pycryptodome to pycryptodomex
-cryptography # Added for general crypto needs
+pycryptodomex
+cryptography

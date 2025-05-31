@@ -56,13 +56,13 @@ start: run-streamlit
 
 run-streamlit: install
 	@echo "Starting Streamlit app locally..."
-	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run app/main.py
+	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run app/src/main.py
 
 # Start the FastAPI application with Uvicorn locally
 run-api: install
 	@echo "Starting FastAPI app with Uvicorn locally..."
 	# Change directory to 'api/' before running uvicorn so it can find sibling modules
-	cd api && . ../.venv/bin/activate && . ../.venv/bin/python -m dotenv run -- uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+	cd api && . ../.venv/bin/activate && python -m dotenv -f ../.env run uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
 
 # New target to specifically check dotenv (kept from user's provided Makefile)
 check_dotenv: venv install

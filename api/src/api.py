@@ -5,6 +5,16 @@ import hashlib
 import base64
 import time
 from typing import Dict, Any, List
+from dotenv import load_dotenv
+
+# Load environment variables first
+dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
+print(f"Loading env from: {os.path.abspath(dotenv_path)}")  # debug
+
+load_dotenv(dotenv_path)
+
+# Verify an env var was loaded
+print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))  # or whatever variable you're expecting
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
@@ -13,16 +23,18 @@ from pydantic import BaseModel, Field
 
 from PIL import Image as PILImage, UnidentifiedImageError
 
-from src import gemini_ocr
-from src import minio_utils
-from src import split_logic
+from . import gemini_ocr
+from . import minio_utils 
+from . import split_logic
 
 # Constants
 MAX_IMAGE_SIZE_MB = 2
 MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
 
 # --- API Key Authentication Configuration ---
-API_KEY = os.environ.get("API_KEY") # Get API key from environment variable
+API_KEY = os.getenv("API_KEY") # Get API key from environment variable
+if not API_KEY:
+    raise ValueError("API_KEY environment variable is not set in .env file")
 
 # If API_KEY is not set, raise an error on startup
 if not API_KEY:
@@ -144,10 +156,13 @@ async def upload_receipt(file: UploadFile = File(...), api_key: str = Depends(ge
 
     parsed_data_dict = gemini_ocr.extract_receipt_data_with_gemini(processed_image_bytes)
 
-    if "Error" in parsed_data_dict:
+    # Check for the specific "NOT_A_RECEIPT" error
+    if parsed_data_dict.get("Error") == "NOT_A_RECEIPT":
+        raise HTTPException(status_code=400, detail=parsed_data_dict.get("message", "The uploaded image does not appear to be a receipt. Please upload a valid receipt image."))
+    elif "Error" in parsed_data_dict:
         raise HTTPException(status_code=500, detail=f"Processing error: {parsed_data_dict['Error']}")
     elif not parsed_data_dict.get('line_items') and not parsed_data_dict.get('total_amount'):
-        raise HTTPException(status_code=400, detail="Could not extract details from receipt.")
+        raise HTTPException(status_code=400, detail="Could not extract details from receipt. Please ensure it's a clear receipt image.")
     
     subtotal_from_gemini = parsed_data_dict.get("subtotal", 0.0)
     extracted_subtotal_from_gemini = split_logic.clean_and_convert_number(subtotal_from_gemini) or 0.0

@@ -13,6 +13,7 @@ services:
     restart: unless-stopped
     depends_on:
       - split-bill-api
+    command: streamlit run main.py # Updated command
 
   split-bill-api:
     image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
@@ -30,3 +31,4 @@ services:
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8000}
     restart: unless-stopped
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 # Updated command

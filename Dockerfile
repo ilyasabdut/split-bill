@@ -29,7 +29,7 @@ RUN mkdir src
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code into src
-COPY src/main.py src/
+COPY /app/src/main.py /app/src/
 COPY .streamlit/ .streamlit/
 
 # Make port 8501 available to the world outside this container (Streamlit default)
@@ -47,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8501/healthz || exit 1
 
 # Default command to run the app
-CMD ["streamlit", "run", "src/main.py"]
+CMD ["streamlit", "run", "/app/src/main.py"]

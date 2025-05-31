@@ -12,7 +12,7 @@ def parse_quantity(num_str: str) -> float | None: # Python 3.10+ type hint
     """Parse quantity string to float, handling common formats including decimals."""
     if not isinstance(num_str, str): return None
     num_str_cleaned = num_str.replace("x", "", 1).replace("X", "", 1).strip().lower() # Replace only first 'x'
-    match = re.match(r'^(\d+(?:[.,]\d*)?)$', num_str_cleaned) # Allows 1 or 1.0 or 1,0 or 1. or 1,
+    match = re.match(r'^(\d+(?:[.,]\d*)?)$', num_str_cleaned) # Allows 1 or 1.0 or 1,0 or 1.
     if match:
         quantity_str_standardized = match.group(1).replace(',', '.')
         try:

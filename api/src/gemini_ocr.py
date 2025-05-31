@@ -1,26 +1,27 @@
 # src/gemini_ocr.py
 import google.generativeai as genai
-import PIL.Image # For type hinting if needed, and opening image
+import PIL.Image
 import io
 import os
 import json
 import time
-from typing import Any # For dict type hint
+from typing import Any
 
-# --- Configure Gemini API ---
-try:
-    GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+# --- Configure Gemini API (consolidated and correct) ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    # It's crucial to raise an error here if the API key is mandatory for the app to function.
+    # The FastAPI app (api.py) will likely catch this during startup.
+    raise ValueError("GEMINI_API_KEY environment variable not set. Please ensure it's loaded from .env or system environment.")
+else:
+    # Configure the global genai module state once at import time.
+    # All subsequent GenerativeModel instances will use this configured key.
     genai.configure(api_key=GEMINI_API_KEY)
     print("Gemini API Key configured from environment variable.")
-except KeyError:
-    print("ERROR: GEMINI_API_KEY environment variable not set.")
-    GEMINI_API_KEY = None 
 
 # --- Model Configuration ---
-# Check Google AI Studio for the latest appropriate model names supporting vision.
-# "gemini-1.5-flash-latest" is good for speed/cost.
-# "gemini-1.5-pro-latest" is more powerful but slower/more expensive.
-MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemma-3-27b-it")
+MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-1.5-flash-latest")
 
 
 def generate_gemini_prompt_with_discounts():
@@ -71,22 +72,57 @@ Guidelines for extraction:
 """
     return prompt
 
-def extract_receipt_data_with_gemini(image_bytes: bytes, api_key: str | None = None) -> dict[str, Any]:
+def classify_image_as_receipt(image_bytes: bytes) -> bool: # Removed api_key parameter
+    """
+    Uses Gemini to classify if the given image is a retail receipt or bill.
+    Returns True if it's likely a receipt, False otherwise.
+    """
+    # The model will automatically use the globally configured key.
+    try:
+        model = genai.GenerativeModel(MODEL_NAME) # Removed api_key=api_key
+        img = PIL.Image.open(io.BytesIO(image_bytes))
+
+        # A very direct prompt for classification
+        classification_prompt = "Is this image a retail receipt or bill? Answer only 'YES' or 'NO'."
+        contents = [classification_prompt, img]
+
+        print("Sending classification request to Gemini API...")
+        generation_config = genai.types.GenerationConfig(
+            temperature=0.0, # Very low temperature for deterministic answer
+            max_output_tokens=10, # Expecting only 'YES' or 'NO'
+        )
+
+        response = model.generate_content(contents, generation_config=generation_config)
+        
+        if not response.candidates or not response.candidates[0].content.parts:
+            print("Error: Gemini classification response is empty or malformed.")
+            return False
+
+        classification_result = response.text.strip().upper()
+        print(f"Gemini classification result: {classification_result}")
+
+        return classification_result == "YES"
+
+    except Exception as e:
+        print(f"An error occurred during Gemini image classification: {e}")
+        return False
+
+
+def extract_receipt_data_with_gemini(image_bytes: bytes) -> dict[str, Any]: # Removed api_key parameter
     """Extracts receipt data from an image using the Gemini API."""
     start_time = time.time()
     
-    current_api_key = api_key or GEMINI_API_KEY
-    if not current_api_key:
-        return {"Error": "Gemini API Key not configured."}
-    
-    # Ensure genai is configured with the potentially overridden key for this call
-    # This is only necessary if you allow api_key to be passed per call and it differs from the global config
-    if api_key and api_key != genai.api_key: # Fictitious attribute, real check might be more complex or just reconfigure
-         genai.configure(api_key=api_key)
+    # No need to check for current_api_key or reconfigure here.
+    # The initial module-level check covers if GEMINI_API_KEY is set.
+    # If the script reaches here, genai is already configured.
 
+    # --- Step 1: Classify the image first ---
+    is_receipt = classify_image_as_receipt(image_bytes) # Call without api_key
+    if not is_receipt:
+        return {"Error": "NOT_A_RECEIPT", "message": "The uploaded image does not appear to be a receipt. Please upload a valid receipt image."}
 
     try:
-        print(f"Initializing Gemini model: {MODEL_NAME}")
+        print(f"Initializing Gemini model for OCR: {MODEL_NAME}")
         # Safety settings can be adjusted if content is being filtered unexpectedly
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -94,13 +130,13 @@ def extract_receipt_data_with_gemini(image_bytes: bytes, api_key: str | None = N
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
-        model = genai.GenerativeModel(MODEL_NAME, safety_settings=safety_settings)
+        model = genai.GenerativeModel(MODEL_NAME, safety_settings=safety_settings) # Removed api_key=api_key
 
         img = PIL.Image.open(io.BytesIO(image_bytes))
         prompt_text = generate_gemini_prompt_with_discounts()
         contents = [prompt_text, img]
 
-        print("Sending request to Gemini API...")
+        print("Sending OCR request to Gemini API...")
         generation_config = genai.types.GenerationConfig(
             temperature=0.1, # Low temperature for factual extraction
             max_output_tokens=4096,
@@ -118,6 +154,7 @@ def extract_receipt_data_with_gemini(image_bytes: bytes, api_key: str | None = N
         raw_json_text = response.text
         print("\n--- Raw Gemini Response Text (Discount Prompt) ---"); print(raw_json_text); print("--------------------------------\n")
 
+        # Clean up markdown code block if present
         if raw_json_text.startswith("```json"): raw_json_text = raw_json_text[7:]
         if raw_json_text.endswith("```"): raw_json_text = raw_json_text[:-3]
         raw_json_text = raw_json_text.strip()
@@ -159,15 +196,38 @@ def extract_receipt_data_with_gemini(image_bytes: bytes, api_key: str | None = N
         return {"Error": f"Gemini API call failed: {str(e)}"}
 
 if __name__ == '__main__':
-    # ... (your test block remains the same, ensure GEMINI_API_KEY is set for testing)
-    if not GEMINI_API_KEY: print("Skipping direct test: GEMINI_API_KEY not set.")
+    # No need to re-check GEMINI_API_KEY here as it's handled at the module import level.
+    
+    # --- Test with a known receipt image ---
+    # IMPORTANT: Replace with a real path to a sample receipt image you have
+    test_receipt_image_path = "path/to/your/sample_receipt_with_discount.png" 
+    if os.path.exists(test_receipt_image_path):
+        print(f"--- Testing with a receipt image: {test_receipt_image_path} ---")
+        with open(test_receipt_image_path, "rb") as f: 
+            img_bytes = f.read()
+        data = extract_receipt_data_with_gemini(img_bytes) # No api_key argument needed
+        print("\n--- Processed Data (Receipt) ---")
+        if "Error" in data: 
+            print(f"Error: {data['Error']}. Message: {data.get('message', 'No specific message.')}")
+        else: 
+            print(json.dumps(data, indent=2))
     else:
-        test_image_path = "path/to/your/sample_receipt_with_discount.png" # Use a relevant image
-        if not os.path.exists(test_image_path): print(f"Test image not found: {test_image_path}")
-        else:
-            print(f"Testing with image: {test_image_path}")
-            with open(test_image_path, "rb") as f: img_bytes = f.read()
-            data = extract_receipt_data_with_gemini(img_bytes)
-            print("\n--- Processed Data (with discount prompt) ---")
-            if "Error" in data: print(f"Error: {data['Error']}")
-            else: print(json.dumps(data, indent=2))
+        print(f"Test receipt image not found: {test_receipt_image_path}. Skipping receipt test.")
+
+    print("\n" + "="*50 + "\n")
+
+    # --- Test with a non-receipt image ---
+    # IMPORTANT: Replace with a real path to a sample non-receipt image (e.g., a landscape photo)
+    test_non_receipt_image_path = "path/to/your/sample_non_receipt.png" 
+    if os.path.exists(test_non_receipt_image_path):
+        print(f"--- Testing with a non-receipt image: {test_non_receipt_image_path} ---")
+        with open(test_non_receipt_image_path, "rb") as f: 
+            img_bytes = f.read()
+        data = extract_receipt_data_with_gemini(img_bytes) # No api_key argument needed
+        print("\n--- Processed Data (Non-Receipt) ---")
+        if "Error" in data: 
+            print(f"Error: {data['Error']}. Message: {data.get('message', 'No specific message.')}")
+        else: 
+            print(json.dumps(data, indent=2))
+    else:
+        print(f"Test non-receipt image not found: {test_non_receipt_image_path}. Skipping non-receipt test.")
