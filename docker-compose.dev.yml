@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  split-bill-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: registry.ilyasabdut.loseyourip.com/split-bill-app:latest
+    container_name: split-bill-app
+    ports:
+      - "8501:8501"
+    environment:
+      - FASTAPI_API_URL=http://split-bill-api:8000 # Internal Docker network name and port
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8501}
+      - API_KEY=${API_KEY}
+    restart: unless-stopped
+    depends_on:
+      - split-bill-api
+
+  split-bill-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
+    container_name: split-bill-api # Corrected container name
+    ports:
+      - "8000:8000"
+    environment:
+      - API_KEY=${API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemma-3-27b-it}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
