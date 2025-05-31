@@ -13,8 +13,9 @@ COPY requirements.txt .
 # Create a virtual environment and install dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade uv
+RUN uv pip install --no-cache-dir uvloop httptools
+RUN uv pip install --no-cache-dir -r requirements.txt
 
 
 # --- Final Stage ---

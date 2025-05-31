@@ -9,12 +9,7 @@ from dotenv import load_dotenv
 
 # Load environment variables first
 dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
-print(f"Loading env from: {os.path.abspath(dotenv_path)}")  # debug
-
 load_dotenv(dotenv_path)
-
-# Verify an env var was loaded
-print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))  # or whatever variable you're expecting
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.responses import JSONResponse

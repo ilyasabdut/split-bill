@@ -1,5 +1,20 @@
+# General server settings
 [server]
-# Disable the file watcher to avoid conflicts with libraries like torch
-# Use "none" to disable the watcher entirely
+headless = true             # Essential for Docker/headless environments: doesn't try to open a browser window
+port = 8501                 # Ensure it listens on the correct port (matching EXPOSE and docker-compose)
+address = "0.0.0.0"         # Listen on all available network interfaces inside the container
 fileWatcherType = "none"
 maxUploadSize = 2
+
+# Browser-related settings
+[browser]
+gatherUsageStats = false    # Opt-out of sending usage statistics to Streamlit (good for privacy/prod)
+
+# Global settings for app behavior
+[global]
+showWarningOnDirectExecution = false # <--- THIS IS THE KEY SETTING to remove the "re-run app" warning
+# disableWatchdogWarning = true      # Optional: Set to true if you experience "watchdog" warnings (e.g., if app files are on a network share)
+
+# Client-side UI settings (optional, but can make it cleaner)
+[client]
+# toolbarMode = "off"         # <--- REMOVE OR COMMENT OUT THIS LINE
