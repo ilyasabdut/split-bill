@@ -8,6 +8,7 @@ import io
 from PIL import Image as PILImage, UnidentifiedImageError
 import json
 import time # Still needed for creation_timestamp in metadata for share link
+import streamlit.components.v1 as components
 
 # Removed: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -24,10 +25,16 @@ st.set_page_config(
 )
 
 # --- Umami Analytics Script ---
-umami_script = """
-<script defer src="https://umami.ilyasabdut.loseyourip.com/script.js" data-website-id="0e96ff0f-f450-4e3b-8446-ad2a232b1268"></script>
-"""
-st.markdown(umami_script, unsafe_allow_html=True) # Inject the Umami script
+components.html(
+    f"""
+    <script async defer 
+        data-website-id="0e96ff0f-f450-4e3b-8446-ad2a232b1268" 
+        src="https://umami.ilyasabdut.loseyourip.com/script.js"> 
+    </script>
+    """,
+    height=0 # Set height to 0 as the script has no visible output
+)
+
 
 # --- SESSION STATE INITIALIZATION (MOVED TO TOP) ---
 if 'current_step' not in st.session_state: st.session_state.current_step = 0
