@@ -33,7 +33,7 @@ jobs:
           dockerfile: Dockerfile # Dockerfile for Streamlit
           platforms: linux/arm64 # As per your example, adjust if needed
           push: true
-          tags: registry.ilyasabdut.loseyourip.com/bill-splitter-app:latest # IMPORTANT: Use the correct image name for Streamlit
+          tags: registry.ilyasabdut.loseyourip.com/split-bill-app:latest # IMPORTANT: Use the correct image name for Streamlit
           # Optional: Build caching for self-hosted runners can be more complex.
           # Consider local Docker layer caching on the runner itself if buildx gha cache isn't suitable.
 
@@ -44,7 +44,7 @@ jobs:
           dockerfile: Dockerfile.api # Dockerfile for FastAPI
           platforms: linux/arm64 # As per your example, adjust if needed
           push: true
-          tags: registry.ilyasabdut.loseyourip.com/bill-splitter-api:latest # IMPORTANT: Use the correct image name for FastAPI
+          tags: registry.ilyasabdut.loseyourip.com/split-bill-api:latest # IMPORTANT: Use the correct image name for FastAPI
 
   deploy-on-vps: # Renamed job for clarity
     name: Deploy Bill Splitter to VPS
@@ -62,8 +62,8 @@ jobs:
           echo "Deploying Bill Splitter on $(hostname)"
           
           # IMPORTANT: Navigate to the directory on your VPS where 
-          # the docker-compose.yml and .env file for bill-splitter-app are located.
-          APP_COMPOSE_DIR="/home/ubuntu/composes/bill-splitter-app" # ADJUST THIS PATH
+          # the docker-compose.yml and .env file for split-bill-app are located.
+          APP_COMPOSE_DIR="/home/ubuntu/composes/split-bill-app" # ADJUST THIS PATH
           
           if [ ! -d "${APP_COMPOSE_DIR}" ]; then
             echo "ERROR: Deployment directory ${APP_COMPOSE_DIR} does not exist!"
