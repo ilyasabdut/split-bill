@@ -1,22 +1,22 @@
 import sys
 import os
-
-# Add the parent directory of 'src' to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# src/main.py
 import streamlit as st
-from src import split_logic
 import pandas as pd
-import time
-from src import gemini_ocr
+import requests
+import base64
 import io
 from PIL import Image as PILImage, UnidentifiedImageError
 import json
-import os
-from src import minio_utils
-from typing import Dict, Any 
-import hashlib # For idempotency key
+import time # Still needed for creation_timestamp in metadata for share link
+
+# Add the parent directory of 'src' to the Python path
+# This line is not strictly needed for a pure frontend, but kept for broader compatibility
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Configuration for FastAPI backend URL
+FASTAPI_API_URL = os.environ.get("FASTAPI_API_URL", "http://localhost:8000")
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8501") # For generating share links
+API_KEY = os.environ.get("API_KEY") # Get API key from environment variable
 
 # --- SESSION STATE INITIALIZATION (MOVED TO TOP) ---
 if 'current_step' not in st.session_state: st.session_state.current_step = 0
@@ -25,7 +25,7 @@ if 'loaded_share_data' not in st.session_state: st.session_state.loaded_share_da
 if 'parsed_data' not in st.session_state: st.session_state.parsed_data = None
 if 'last_uploaded_file_info' not in st.session_state: st.session_state.last_uploaded_file_info = None
 if 'uploaded_image_bytes' not in st.session_state: st.session_state.uploaded_image_bytes = None
-if 'processed_image_bytes_for_minio' not in st.session_state: st.session_state.processed_image_bytes_for_minio = None
+if 'processed_image_bytes_for_minio_base64' not in st.session_state: st.session_state.processed_image_bytes_for_minio_base64 = None # Now base64 string
 if 'minio_image_object_name' not in st.session_state: st.session_state.minio_image_object_name = None
 if 'person_names_list' not in st.session_state: st.session_state.person_names_list = ["Person 1", "Person 2"]
 if 'current_name_input' not in st.session_state: st.session_state.current_name_input = ""
@@ -37,6 +37,7 @@ if 'share_link' not in st.session_state: st.session_state.share_link = None
 if 'split_evenly' not in st.session_state: st.session_state.split_evenly = False
 if 'extracted_subtotal_from_gemini' not in st.session_state: st.session_state.extracted_subtotal_from_gemini = 0.0
 if 'extracted_total_discount' not in st.session_state: st.session_state.extracted_total_discount = 0.0
+# Removed access_token and logged_in_user from session state
 # --- END SESSION STATE INITIALIZATION ---
 
 # --- Helper functions for on_change callbacks ---
@@ -55,7 +56,7 @@ MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
 def reset_app_state_full():
     st.session_state.current_step = 0; st.session_state.parsed_data = None
     st.session_state.last_uploaded_file_info = None; st.session_state.uploaded_image_bytes = None
-    st.session_state.processed_image_bytes_for_minio = None; st.session_state.minio_image_object_name = None
+    st.session_state.processed_image_bytes_for_minio_base64 = None; st.session_state.minio_image_object_name = None
     st.session_state.item_assignments = []; st.session_state.split_results = None
     st.session_state.share_link = None; st.session_state.view_split_id = None
     st.session_state.loaded_share_data = None; 
@@ -77,45 +78,28 @@ def reset_to_step(step_number: int):
         if "split_id" in st.query_params:
             st.query_params.clear()
 
+def get_api_headers():
+    headers = {}
+    if API_KEY: # Use the global API_KEY
+        headers["Authorization"] = f"Bearer {API_KEY}"
+    return headers
 
-def compress_image(image_bytes: bytes, target_size_bytes: int = MAX_IMAGE_SIZE_BYTES, quality: int = 90, min_quality: int = 70) -> bytes | None:
+def load_shared_split_data_from_api(split_id: str) -> dict[str, any] | None:
     try:
-        img = PILImage.open(io.BytesIO(image_bytes))
-        if img.mode not in ('RGB', 'L'): img = img.convert('RGB')
-        compressed_bytes = None 
-        for q in range(quality, min_quality -1 , -5):
-            buffer = io.BytesIO(); img.save(buffer, format="JPEG", quality=q, optimize=True)
-            compressed_bytes = buffer.getvalue()
-            if len(compressed_bytes) <= target_size_bytes:
-                print(f"Image compressed to {len(compressed_bytes)/1024:.2f} KB with quality {q}.")
-                return compressed_bytes
-        if compressed_bytes and len(compressed_bytes) > target_size_bytes:
-            ratio = (target_size_bytes / len(compressed_bytes))**0.5 
-            new_width = int(img.width * ratio); new_height = int(img.height * ratio)
-            if new_width > 0 and new_height > 0:
-                img_resized = img.resize((new_width, new_height), PILImage.Resampling.LANCZOS)
-                buffer = io.BytesIO(); img_resized.save(buffer, format="JPEG", quality=min_quality, optimize=True)
-                compressed_bytes = buffer.getvalue()
-                print(f"Resized/compressed image size: {len(compressed_bytes)/1024:.2f} KB.")
-                return compressed_bytes
-        return compressed_bytes
-    except UnidentifiedImageError: st.error("Cannot identify image file."); return None
-    except Exception as e: st.error(f"Image compression error: {e}"); return image_bytes
-
-def load_shared_split_data(split_id: str) -> dict[str, Any] | None:
-    metadata = minio_utils.get_metadata_from_minio(split_id)
-    if metadata:
-        image_bytes_for_display = None
-        minio_img_obj_name = metadata.get("minio_image_object_name")
-        if minio_img_obj_name:
-            base_img_name = minio_img_obj_name.replace(minio_utils.IMAGE_PREFIX, "", 1)
-            image_bytes_for_display = minio_utils.get_image_from_minio(base_img_name)
-        metadata['image_bytes_for_display'] = image_bytes_for_display if image_bytes_for_display else None
-        return metadata
-    else: st.error(f"Split data for ID '{split_id}' not found."); return None
+        headers = get_api_headers()
+        response = requests.get(f"{FASTAPI_API_URL}/view-split/{split_id}", headers=headers)
+        response.raise_for_status() # Raise an exception for HTTP errors
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error loading shared split data: {e}")
+        return None
 
 def main_app_flow():
     st.title("🧾 Bill Splitter")
+
+    if not API_KEY:
+        st.error("API_KEY environment variable is not set. Please set it to connect to the backend API.")
+        st.stop() # Stop execution if API_KEY is missing
 
     # --- STEP 0: Upload Image ---
     if st.session_state.current_step == 0:
@@ -127,25 +111,42 @@ def main_app_flow():
             if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
                 st.session_state.last_uploaded_file_info = current_file_info; st.session_state.parsed_data = None
                 raw_image_bytes = uploaded_file.getvalue(); st.session_state.uploaded_image_bytes = raw_image_bytes
-                st.session_state.processed_image_bytes_for_minio = compress_image(raw_image_bytes)
-                if not st.session_state.processed_image_bytes_for_minio: st.error("Image processing failed."); st.stop()
-                try:
-                    pil_image_display = PILImage.open(io.BytesIO(st.session_state.processed_image_bytes_for_minio))
-                    st.image(pil_image_display, caption="Processing this image...", use_container_width=True)
-                except Exception as e: st.error(f"Could not display image: {e}")
+                
+                response = None # Initialize response to None
                 with st.spinner(f'⚙️ Processing receipt...'):
-                    parsed_data_dict = gemini_ocr.extract_receipt_data_with_gemini(st.session_state.processed_image_bytes_for_minio)
-                    st.session_state.parsed_data = parsed_data_dict
-                    if "Error" in parsed_data_dict: st.error(f"Processing error: {parsed_data_dict['Error']}")
-                    elif not parsed_data_dict.get('line_items') and not parsed_data_dict.get('total_amount'): st.warning("Could not extract details.")
-                    else: 
-                        subtotal_from_gemini = st.session_state.parsed_data.get("subtotal", 0.0)
-                        st.session_state.extracted_subtotal_from_gemini = split_logic.clean_and_convert_number(subtotal_from_gemini) or 0.0
-                        total_discount = 0.0
-                        if isinstance(st.session_state.parsed_data.get("discounts"), list):
-                            for disc in st.session_state.parsed_data.get("discounts", []): total_discount += (split_logic.clean_and_convert_number(disc.get("amount")) or 0.0)
-                        st.session_state.extracted_total_discount = total_discount
+                    try:
+                        files = {'file': (uploaded_file.name, raw_image_bytes, uploaded_file.type)}
+                        headers = get_api_headers()
+                        response = requests.post(f"{FASTAPI_API_URL}/upload-receipt", files=files, headers=headers)
+                        response.raise_for_status()
+                        api_response = response.json()
+
+                        st.session_state.parsed_data = api_response['parsed_data']
+                        st.session_state.processed_image_bytes_for_minio_base64 = api_response.get('processed_image_bytes_base64')
+                        st.session_state.extracted_subtotal_from_gemini = api_response['extracted_subtotal_from_gemini']
+                        st.session_state.extracted_total_discount = api_response['extracted_total_discount']
+
+                        if st.session_state.processed_image_bytes_for_minio_base64:
+                            try:
+                                pil_image_display = PILImage.open(io.BytesIO(base64.b64decode(st.session_state.processed_image_bytes_for_minio_base64)))
+                                st.image(pil_image_display, caption="Processing this image...", use_container_width=True)
+                            except Exception as e: st.error(f"Could not display image: {e}")
+                        
                         st.success(f"Receipt processed!"); st.session_state.current_step = 1; st.rerun()
+
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"API Error during receipt processing: {e}")
+                        if response is not None and response.status_code: # Check if response is not None
+                            st.error(f"Status Code: {response.status_code}")
+                            try:
+                                error_detail = response.json().get("detail", "No additional detail.")
+                                st.error(f"Detail: {error_detail}")
+                            except json.JSONDecodeError:
+                                st.error(f"Response: {response.text}")
+                        st.stop()
+                    except Exception as e:
+                        st.error(f"An unexpected error occurred: {e}")
+                        st.stop()
             elif st.session_state.parsed_data is not None and "Error" not in st.session_state.parsed_data:
                 if st.button("Proceed with current receipt", type="primary"): st.session_state.current_step = 1; st.rerun()
 
@@ -154,17 +155,25 @@ def main_app_flow():
     gemini_items_list = []
     store_name, receipt_date, receipt_time_val = None, None, None
     total_tax_from_processor_str, tip_from_processor_str = "0.0", "0.0"
-    display_image_bytes_source = None
+    display_image_bytes_source_base64 = None # Now base64 string
 
     if data_source and "Error" not in data_source:
         store_name = data_source.get("store_name"); receipt_date = data_source.get("transaction_date"); receipt_time_val = data_source.get("transaction_time")
-        if is_view_mode: display_image_bytes_source = data_source.get('image_bytes_for_display')
-        elif st.session_state.processed_image_bytes_for_minio: display_image_bytes_source = st.session_state.processed_image_bytes_for_minio
-        elif st.session_state.uploaded_image_bytes: display_image_bytes_source = st.session_state.uploaded_image_bytes
+        if is_view_mode: display_image_bytes_source_base64 = data_source.get('image_bytes_for_display_base64')
+        elif st.session_state.processed_image_bytes_for_minio_base64: display_image_bytes_source_base64 = st.session_state.processed_image_bytes_for_minio_base64
+        
         raw_items = data_source.get("line_items", [])
         if isinstance(raw_items, list):
             for item_struct in raw_items:
-                if isinstance(item_struct, dict): gemini_items_list.append({"item": item_struct.get("item_description", "Unknown"), "qty": str(item_struct.get("quantity", 1.0)), "price": str(item_struct.get("item_total_price", 0.0))})
+                if isinstance(item_struct, dict): 
+                    # Ensure 'qty' and 'price' are strings for consistency with original logic
+                    qty_val = item_struct.get("quantity", 1.0)
+                    price_val = item_struct.get("item_total_price", 0.0)
+                    gemini_items_list.append({
+                        "item": item_struct.get("item_description", "Unknown"), 
+                        "qty": str(qty_val), 
+                        "price": str(price_val)
+                    })
         tax_sum = 0.0
         if isinstance(data_source.get("tax_details"), list):
             for tax_item in data_source.get("tax_details", []):
@@ -178,8 +187,10 @@ def main_app_flow():
         with st.expander("Receipt Details", expanded=expanded_state):
             if store_name: st.write(f"🏪 **Store:** {store_name}")
             if receipt_date or receipt_time_val: st.write(f"🗓️ **Date:** {receipt_date or 'N/A'} | 🕒 **Time:** {receipt_time_val or 'N/A'}")
-            if display_image_bytes_source:
-                try: img_disp = PILImage.open(io.BytesIO(display_image_bytes_source)); st.image(img_disp, caption="Receipt Image", width=400)
+            if display_image_bytes_source_base64:
+                try: 
+                    img_disp = PILImage.open(io.BytesIO(base64.b64decode(display_image_bytes_source_base64)))
+                    st.image(img_disp, caption="Receipt Image", width=400)
                 except Exception as e: st.caption(f"Could not display image: {e}")
 
     if st.session_state.current_step == 1 and not is_view_mode:
@@ -222,10 +233,12 @@ def main_app_flow():
                 with col_item_detail:
                     st.markdown(f"**{item_data_ui.get('item', 'Unknown Item')}**")
                     try:
-                        qty_float = split_logic.clean_and_convert_number(item_data_ui.get('qty', '1'), is_quantity=True) or 1.0
+                        qty_float = float(item_data_ui.get('qty', '1'))
                         qty_display = int(qty_float) if qty_float == int(qty_float) else qty_float
-                        price_float = split_logic.clean_and_convert_number(item_data_ui.get('price', '0.0')) or 0.0
-                    except Exception: qty_display = item_data_ui.get('qty', '1'); price_float = 0.0
+                        price_float = float(item_data_ui.get('price', '0.0'))
+                    except ValueError: # Fallback if conversion fails
+                        qty_display = item_data_ui.get('qty', '1')
+                        price_float = 0.0
                     st.caption(f"{qty_display} x IDR {price_float:,.2f}")
                 with col_assign_person:
                     default_sel = []
@@ -249,8 +262,12 @@ def main_app_flow():
     if st.session_state.current_step == 3 and not is_view_mode:
         st.header("Step 4: Tax, Tip & Calculate")
         if st.session_state.extracted_total_discount > 0: st.info(f"An overall discount of IDR {st.session_state.extracted_total_discount:,.2f} will be applied.")
-        initial_tax = split_logic.clean_and_convert_number(total_tax_from_processor_str) or 0.0
-        initial_tip = split_logic.clean_and_convert_number(tip_from_processor_str) or 0.0
+        
+        # Use the extracted values from API response as initial values
+        # Ensure that parsed_data is not None before attempting to access its keys
+        initial_tax = float(st.session_state.parsed_data.get("tax_details", [{}])[0].get("tax_amount") or 0.0) if st.session_state.parsed_data and st.session_state.parsed_data.get("tax_details") else 0.0
+        initial_tip = float(st.session_state.parsed_data.get("tip_amount") or 0.0) if st.session_state.parsed_data else 0.0
+
         st.session_state.tax_amount_input = st.number_input("Tax (IDR)", min_value=0.0, value=initial_tax, step=100.0, key="tax_input_s3", format="%.2f", on_change=update_tax_amount)
         st.session_state.tip_amount_input = st.number_input("Tip (IDR)", min_value=0.0, value=initial_tip, step=100.0, key="tip_input_s3", format="%.2f", on_change=update_tip_amount)
         st.markdown("---"); col_back3, col_calc = st.columns(2)
@@ -262,54 +279,43 @@ def main_app_flow():
                 if not st.session_state.split_evenly and not final_assignments_for_calc and (st.session_state.tax_amount_input == 0 and st.session_state.tip_amount_input == 0):
                     st.warning("Please assign items or enter tax/tip.")
                 else:
-                    idempotency_key_material = {
-                        "image_bytes_hash": hashlib.sha256(st.session_state.processed_image_bytes_for_minio or b"").hexdigest(),
-                        "people": sorted(st.session_state.person_names_list),
-                        "assignments": sorted(
-                            [{"item_desc": a["item_details"].get("item", ""), "item_qty": a["item_details"].get("qty", ""), "item_price": a["item_details"].get("price", ""), "assigned_to": sorted(a.get("assigned_to", []))} for a in final_assignments_for_calc],
-                            key=lambda x: x["item_desc"]
-                        ) if not st.session_state.split_evenly else "SPLIT_EVENLY",
-                        "tax": f"{st.session_state.tax_amount_input:.2f}", "tip": f"{st.session_state.tip_amount_input:.2f}",
+                    # Prepare data for API request
+                    calculate_payload = {
+                        "person_names": st.session_state.person_names_list,
+                        "item_assignments": final_assignments_for_calc,
+                        "tax_amount_input": st.session_state.tax_amount_input,
+                        "tip_amount_input": st.session_state.tip_amount_input,
                         "split_evenly": st.session_state.split_evenly,
-                        "extracted_subtotal": f"{st.session_state.extracted_subtotal_from_gemini:.2f}" if st.session_state.split_evenly else None,
-                        "extracted_discount": f"{st.session_state.extracted_total_discount:.2f}"
+                        "extracted_subtotal_from_gemini": st.session_state.extracted_subtotal_from_gemini,
+                        "extracted_total_discount": st.session_state.extracted_total_discount,
+                        "processed_image_bytes_for_minio_base64": st.session_state.processed_image_bytes_for_minio_base64,
+                        "original_parsed_data": st.session_state.parsed_data
                     }
-                    id_hasher = hashlib.sha256(); id_hasher.update(json.dumps(idempotency_key_material, sort_keys=True).encode('utf-8'))
-                    split_id = id_hasher.hexdigest()[:12]
-                    print(f"Generated content-based split_id: {split_id}")
-                    existing_metadata = minio_utils.get_metadata_from_minio(split_id)
-                    if existing_metadata and existing_metadata.get("share_link"):
-                        st.success("This exact split has been calculated and saved before!")
-                        st.session_state.share_link = existing_metadata["share_link"]
-                        st.session_state.split_results = existing_metadata.get("calculated_split_results")
-                        st.session_state.minio_image_object_name = existing_metadata.get("minio_image_object_name")
-                        st.session_state.person_names_list = existing_metadata.get("person_names", st.session_state.person_names_list)
-                        st.session_state.item_assignments = existing_metadata.get("item_assignments", st.session_state.item_assignments)
-                        st.session_state.tax_amount_input = existing_metadata.get("user_adjusted_tax", st.session_state.tax_amount_input)
-                        st.session_state.tip_amount_input = existing_metadata.get("user_adjusted_tip", st.session_state.tip_amount_input)
-                        st.session_state.split_evenly = existing_metadata.get("split_evenly_choice", st.session_state.split_evenly)
-                        st.session_state.extracted_total_discount = existing_metadata.get("total_discount_applied", st.session_state.extracted_total_discount)
-                        st.session_state.parsed_data = existing_metadata.get("original_parsed_data", st.session_state.parsed_data)
-                        print(f"Using existing share link for split_id {split_id}: {st.session_state.share_link}")
-                    else:
-                        print(f"New split or metadata not found for {split_id}. Proceeding.")
-                        subtotal_for_even_split = st.session_state.extracted_subtotal_from_gemini if st.session_state.split_evenly else 0.0
-                        calculated_split = split_logic.calculate_split(final_assignments_for_calc, str(st.session_state.tax_amount_input), str(st.session_state.tip_amount_input), st.session_state.person_names_list, split_evenly_flag=st.session_state.split_evenly, overall_subtotal_for_even_split=subtotal_for_even_split, total_discount_amount=st.session_state.extracted_total_discount)
-                        st.session_state.split_results = calculated_split
-                        if "Error" not in calculated_split:
-                            st.session_state.minio_image_object_name = None
-                            if st.session_state.processed_image_bytes_for_minio:
-                                base_image_name = f"{split_id}.jpg"
-                                full_image_obj_name = minio_utils.upload_image_to_minio(st.session_state.processed_image_bytes_for_minio, base_image_name, "image/jpeg")
-                                if full_image_obj_name: st.session_state.minio_image_object_name = full_image_obj_name
-                                else: st.error("Failed to save receipt image to cloud.")
-                            app_base_url = os.environ.get("APP_BASE_URL", "http://localhost:8501")
-                            current_share_link = f"{app_base_url}?split_id={split_id}"
-                            metadata_to_save = {"split_id": split_id, "original_parsed_data": st.session_state.parsed_data, "person_names": st.session_state.person_names_list, "item_assignments": final_assignments_for_calc, "split_evenly_choice": st.session_state.split_evenly, "total_discount_applied": st.session_state.extracted_total_discount, "user_adjusted_tax": st.session_state.tax_amount_input, "user_adjusted_tip": st.session_state.tip_amount_input, "calculated_split_results": calculated_split, "minio_image_object_name": st.session_state.minio_image_object_name, "share_link": current_share_link, "creation_timestamp": time.time()}
-                            meta_upload_obj_name = minio_utils.upload_metadata_to_minio(metadata_to_save, split_id)
-                            if meta_upload_obj_name: st.session_state.share_link = current_share_link; st.success(f"Split saved! Share link: ID: {split_id}")
-                            else: st.error(f"Failed to save split metadata."); st.session_state.share_link = None
-                    st.session_state.current_step = 4; st.rerun()
+                    with st.spinner("Calculating split and generating link..."):
+                        try:
+                            headers = get_api_headers()
+                            response = requests.post(f"{FASTAPI_API_URL}/calculate-split", json=calculate_payload, headers=headers)
+                            response.raise_for_status()
+                            api_response = response.json()
+
+                            st.session_state.split_results = api_response['split_results']
+                            st.session_state.share_link = f"{APP_BASE_URL}?split_id={api_response['split_id']}" # Use Streamlit's base URL for sharing
+                            st.success(f"Split saved! Share link: ID: {api_response['split_id']}")
+                            st.session_state.current_step = 4; st.rerun()
+
+                        except requests.exceptions.RequestException as e:
+                            st.error(f"API Error during split calculation: {e}")
+                            if response is not None and response.status_code: # Check if response is not None
+                                st.error(f"Status Code: {response.status_code}")
+                                try:
+                                    error_detail = response.json().get("detail", "No additional detail.")
+                                    st.error(f"Detail: {error_detail}")
+                                except json.JSONDecodeError:
+                                    st.error(f"Response: {response.text}")
+                            st.stop()
+                        except Exception as e:
+                            st.error(f"An unexpected error occurred: {e}")
+                            st.stop()
 
     if st.session_state.current_step == 4:
         st.header("🎉 Split Results 🎉")
@@ -361,7 +367,12 @@ if __name__ == "__main__":
         reset_app_state_full() # Reset state before loading a potentially new shared link
         st.session_state.view_split_id = shared_split_id_from_url # Mark that we are attempting to view this
         
-        loaded_data_dict = load_shared_split_data(shared_split_id_from_url)
+        # Check for API_KEY before loading shared data if it's a view mode
+        if not API_KEY:
+            st.error("API_KEY environment variable is not set. Cannot load shared split data.")
+            st.stop()
+        
+        loaded_data_dict = load_shared_split_data_from_api(shared_split_id_from_url) # Use the new API function
         if loaded_data_dict:
             print(f"Successfully loaded data for shared split_id: {shared_split_id_from_url}")
             st.session_state.loaded_share_data = loaded_data_dict

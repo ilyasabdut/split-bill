@@ -4,3 +4,11 @@ google-generativeai
 Pillow
 python-dotenv
 minio
+fastapi
+uvicorn
+requests
+python-multipart
+charset_normalizer
+chardet
+pycryptodomex # Changed from pycryptodome to pycryptodomex
+cryptography # Added for general crypto needs

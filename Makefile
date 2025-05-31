@@ -1,6 +1,6 @@
-.PHONY: all venv install start clean
+.PHONY: all venv install start clean run-api run-streamlit
 
-# Default target: install dependencies and start the app
+# Default target: install dependencies and start the Streamlit app
 all: start
 
 # Create a virtual environment using uv
@@ -18,10 +18,16 @@ install: venv
 	. .venv/bin/activate && uv pip install -r requirements.txt && echo "Installation complete. Check for python-dotenv above."
 
 # Start the Streamlit application
-start: install
+start: run-streamlit
+
+run-streamlit: install
 	@echo "Starting Streamlit app..."
-	# Activate the venv and then explicitly use python from .venv
 	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run src/main.py
+
+# Start the FastAPI application with Uvicorn
+run-api: install
+	@echo "Starting FastAPI app with Uvicorn..."
+	. .venv/bin/activate && .venv/bin/python -m dotenv run -- uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
 
 # Clean up the virtual environment
 clean:
