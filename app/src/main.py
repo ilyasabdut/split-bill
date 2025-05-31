@@ -23,6 +23,12 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
+# --- Umami Analytics Script ---
+umami_script = """
+<script defer src="https://umami.ilyasabdut.loseyourip.com/script.js" data-website-id="0e96ff0f-f450-4e3b-8446-ad2a232b1268"></script>
+"""
+st.markdown(umami_script, unsafe_allow_html=True) # Inject the Umami script
+
 # --- SESSION STATE INITIALIZATION (MOVED TO TOP) ---
 if 'current_step' not in st.session_state: st.session_state.current_step = 0
 if 'view_split_id' not in st.session_state: st.session_state.view_split_id = None
