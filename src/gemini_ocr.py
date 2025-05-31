@@ -1,4 +1,4 @@
-# gemini_ocr.py
+# src/gemini_ocr.py
 import google.generativeai as genai
 import PIL.Image # For type hinting if needed, and opening image
 import io
@@ -20,7 +20,7 @@ except KeyError:
 # Check Google AI Studio for the latest appropriate model names supporting vision.
 # "gemini-1.5-flash-latest" is good for speed/cost.
 # "gemini-1.5-pro-latest" is more powerful but slower/more expensive.
-MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemma-3-27b-it")
 
 
 def generate_gemini_prompt_with_discounts():
@@ -49,7 +49,7 @@ The JSON object should have the following structure:
   ],
   "tax_details": [
     {
-      "tax_label": "string (e.g., 'VAT', 'SVC CHG', 'PBI 10%', 'PPN 11%')",
+      "tax_label": "string (e.g., 'VAT', 'SVC CHG', 'PBI 10%', 'PPN 11%', 'Biaya Pelayanan', 'Tax')",
       "tax_amount": "number"
     }
   ],
@@ -81,7 +81,7 @@ def extract_receipt_data_with_gemini(image_bytes: bytes, api_key: str | None = N
     
     # Ensure genai is configured with the potentially overridden key for this call
     # This is only necessary if you allow api_key to be passed per call and it differs from the global config
-    if api_key and api_key != genai. अभीकृत_api_key: # Fictitious attribute, real check might be more complex or just reconfigure
+    if api_key and api_key != genai.api_key: # Fictitious attribute, real check might be more complex or just reconfigure
          genai.configure(api_key=api_key)
 
 

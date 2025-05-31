@@ -21,7 +21,7 @@ install: venv
 start: install
 	@echo "Starting Streamlit app..."
 	# Activate the venv and then explicitly use python from .venv
-	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run main.py
+	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run src/main.py
 
 # Clean up the virtual environment
 clean:

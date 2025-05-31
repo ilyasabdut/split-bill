@@ -2,3 +2,4 @@
 # Disable the file watcher to avoid conflicts with libraries like torch
 # Use "none" to disable the watcher entirely
 fileWatcherType = "none"
+maxUploadSize = 2

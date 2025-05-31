@@ -1,4 +1,4 @@
-# split_logic.py
+# src/split_logic.py
 import re
 from typing import List, Dict, Any # Python 3.9+
 import json

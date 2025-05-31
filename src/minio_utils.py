@@ -1,4 +1,4 @@
-# minio_utils.py
+# src/minio_utils.py
 import os
 from minio import Minio
 from minio.error import S3Error

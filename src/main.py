@@ -1,14 +1,20 @@
-# main.py
+import sys
+import os
+
+# Add the parent directory of 'src' to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# src/main.py
 import streamlit as st
-import split_logic
+from src import split_logic
 import pandas as pd
 import time
-import gemini_ocr
+from src import gemini_ocr
 import io
 from PIL import Image as PILImage, UnidentifiedImageError
 import json
 import os
-import minio_utils
+from src import minio_utils
 from typing import Dict, Any 
 import hashlib # For idempotency key
 
@@ -32,6 +38,15 @@ if 'split_evenly' not in st.session_state: st.session_state.split_evenly = False
 if 'extracted_subtotal_from_gemini' not in st.session_state: st.session_state.extracted_subtotal_from_gemini = 0.0
 if 'extracted_total_discount' not in st.session_state: st.session_state.extracted_total_discount = 0.0
 # --- END SESSION STATE INITIALIZATION ---
+
+# --- Helper functions for on_change callbacks ---
+def update_tax_amount():
+    st.session_state.tax_amount_input = st.session_state.tax_input_s3
+    st.rerun()
+
+def update_tip_amount():
+    st.session_state.tip_amount_input = st.session_state.tip_input_s3
+    st.rerun()
 
 # --- Constants and Configuration ---
 MAX_IMAGE_SIZE_MB = 2
@@ -63,7 +78,7 @@ def reset_to_step(step_number: int):
             st.query_params.clear()
 
 
-def compress_image(image_bytes: bytes, target_size_bytes: int = MAX_IMAGE_SIZE_BYTES, quality: int = 85, min_quality: int = 30) -> bytes | None:
+def compress_image(image_bytes: bytes, target_size_bytes: int = MAX_IMAGE_SIZE_BYTES, quality: int = 90, min_quality: int = 70) -> bytes | None:
     try:
         img = PILImage.open(io.BytesIO(image_bytes))
         if img.mode not in ('RGB', 'L'): img = img.convert('RGB')
@@ -106,7 +121,6 @@ def main_app_flow():
     if st.session_state.current_step == 0:
         st.header("Step 1: Upload Receipt")
         uploaded_file = st.file_uploader("Select a receipt image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
-        st.caption(f"Max file size: {MAX_IMAGE_SIZE_MB}MB. JPG, JPEG, PNG.")
         if uploaded_file is not None:
             if uploaded_file.size > MAX_IMAGE_SIZE_BYTES: st.error(f"Image too large ({uploaded_file.size / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB."); st.stop()
             current_file_info = (uploaded_file.name, uploaded_file.size)
@@ -165,12 +179,12 @@ def main_app_flow():
             if store_name: st.write(f"🏪 **Store:** {store_name}")
             if receipt_date or receipt_time_val: st.write(f"🗓️ **Date:** {receipt_date or 'N/A'} | 🕒 **Time:** {receipt_time_val or 'N/A'}")
             if display_image_bytes_source:
-                try: img_disp = PILImage.open(io.BytesIO(display_image_bytes_source)); st.image(img_disp, caption="Receipt Image", width=200)
+                try: img_disp = PILImage.open(io.BytesIO(display_image_bytes_source)); st.image(img_disp, caption="Receipt Image", width=400)
                 except Exception as e: st.caption(f"Could not display image: {e}")
 
     if st.session_state.current_step == 1 and not is_view_mode:
         st.header("Step 2: Who's Splitting?")
-        name_to_add = st.text_input("Enter a person's name to add:", key="current_name_input_field", value=st.session_state.current_name_input, on_change=lambda: setattr(st.session_state, 'current_name_input', st.session_state.current_name_input_field))
+        name_to_add = st.text_input("Enter a person's name to add:", key="current_name_input_field", value=st.session_state.current_name_input, on_change=lambda: (setattr(st.session_state, 'current_name_input', st.session_state.current_name_input_field), st.rerun()))
         if st.button("➕ Add Person", use_container_width=True):
             typed_name = st.session_state.current_name_input.strip()
             if typed_name and typed_name not in st.session_state.person_names_list: st.session_state.person_names_list.append(typed_name); st.session_state.current_name_input = ""; st.rerun()
@@ -237,8 +251,8 @@ def main_app_flow():
         if st.session_state.extracted_total_discount > 0: st.info(f"An overall discount of IDR {st.session_state.extracted_total_discount:,.2f} will be applied.")
         initial_tax = split_logic.clean_and_convert_number(total_tax_from_processor_str) or 0.0
         initial_tip = split_logic.clean_and_convert_number(tip_from_processor_str) or 0.0
-        st.session_state.tax_amount_input = st.number_input("Tax (IDR)", min_value=0.0, value=initial_tax, step=100.0, key="tax_input_s3", format="%.2f")
-        st.session_state.tip_amount_input = st.number_input("Tip (IDR)", min_value=0.0, value=initial_tip, step=100.0, key="tip_input_s3", format="%.2f")
+        st.session_state.tax_amount_input = st.number_input("Tax (IDR)", min_value=0.0, value=initial_tax, step=100.0, key="tax_input_s3", format="%.2f", on_change=update_tax_amount)
+        st.session_state.tip_amount_input = st.number_input("Tip (IDR)", min_value=0.0, value=initial_tip, step=100.0, key="tip_input_s3", format="%.2f", on_change=update_tip_amount)
         st.markdown("---"); col_back3, col_calc = st.columns(2)
         with col_back3:
             if st.button("⬅️ Back to Assign Items", use_container_width=True): reset_to_step(2); st.rerun()

@@ -22,14 +22,17 @@ FROM python:3.12-slim as final
 
 WORKDIR /app
 
+# Create src directory
+RUN mkdir src
+
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code
-COPY main.py .
-COPY split_logic.py .
-COPY gemini_ocr.py .
-COPY minio_utils.py .
+# Copy application code into src
+COPY src/main.py src/
+COPY src/split_logic.py src/
+COPY src/gemini_ocr.py src/
+COPY src/minio_utils.py src/
 # If you have other assets like a static folder, copy them too
 # COPY static ./static
 
@@ -48,4 +51,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8501/healthz || exit 1
 
 # Default command to run the app
-CMD ["streamlit", "run", "main.py"]
+CMD ["streamlit", "run", "src/main.py"]

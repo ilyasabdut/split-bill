@@ -33,6 +33,7 @@ bill-splitter/
 │
 ├── .github/
 │   └── workflows/    # CI/CD configuration
+│       └── ci-master.yml
 │
 ├── src/
 │   ├── main.py      # Main Streamlit application
@@ -41,22 +42,13 @@ bill-splitter/
 │   └── split_logic.py# Bill splitting core logic
 │
 ├── .env.example     # Environment template
+├── .gitignore       # Git ignore rules
 ├── Dockerfile       # Container definition
 ├── docker-compose.yml# Service orchestration
 ├── requirements.txt # Python dependencies
-└── README.md       # Documentation
+└── README.md        # Documentation
 ```
 ## Setup and Installation
-
-### Prerequisites
-
-*   Python 3.10+ (Python 3.12 used in development)
-*   Docker & Docker Compose (for containerized deployment)
-*   Access to a Google Gemini API Key
-*   Access to a MinIO server (or other S3-compatible storage) and its credentials
-*   A registered domain or IP address for your VPS (for `APP_BASE_URL` in production)
-
-## 🚀 Setup and Installation
 
 ### Prerequisites
 
@@ -91,7 +83,7 @@ bill-splitter/
 
 3. **Run the App**
    ```bash
-   streamlit run main.py
+   streamlit run src/main.py
    ```
 
 ### Docker Deployment
