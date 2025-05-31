@@ -30,11 +30,7 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code into src
 COPY src/main.py src/
-COPY src/split_logic.py src/
-COPY src/gemini_ocr.py src/
-COPY src/minio_utils.py src/
-# If you have other assets like a static folder, copy them too
-# COPY static ./static
+COPY .streamlit/ .streamlit/
 
 # Make port 8501 available to the world outside this container (Streamlit default)
 EXPOSE 8501
