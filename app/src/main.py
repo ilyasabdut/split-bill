@@ -394,8 +394,8 @@ def main_app_flow():
         # --- CHANGE 1: Removed reset logic, now just reload page ---
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
             st.write("Reloading page for a new split...")
-            st.experimental_set_query_params()
-            st.experimental_rerun()
+            st.set_query_params()
+            st.rerun()
 
         if not is_view_mode:
             if st.button("⬅️ Adjust Split Details", use_container_width=True):
