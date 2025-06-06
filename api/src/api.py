@@ -14,6 +14,7 @@ load_dotenv(dotenv_path)
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # Import for Bearer token
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from PIL import Image as PILImage, UnidentifiedImageError
@@ -55,6 +56,16 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None,
     openapi_url=None
+)
+
+# --- CORS Configuration ---
+# Allow requests from any origin (React front-end, Streamlit, etc.)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],       # Accept requests from every domain
+    allow_credentials=True,
+    allow_methods=["*"],       # Accept all HTTP methods
+    allow_headers=["*"],       # Accept all request headers
 )
 
 # Helper functions (moved from main.py, adapted for API)
