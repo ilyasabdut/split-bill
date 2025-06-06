@@ -370,7 +370,11 @@ def main_app_flow():
                             st.dataframe(item_breakdown_df, use_container_width=True)
         else: st.warning("No results to display.")
         st.markdown("---")
-        if st.button("✨ Start New Split", type="primary", use_container_width=True): reset_to_step(0); st.rerun()
+        if st.button("✨ Start New Split", type="primary", use_container_width=True):
+            # Explicitly clear any query parameters (e.g., ?split_id=...) before resetting
+            st.query_params.clear()
+            reset_to_step(0)
+            st.rerun()
         if not is_view_mode:
             if st.button("⬅️ Adjust Split Details", use_container_width=True):
                 st.session_state.share_link = None 
