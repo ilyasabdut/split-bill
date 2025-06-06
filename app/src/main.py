@@ -391,13 +391,11 @@ def main_app_flow():
         else: st.warning("No results to display.")
         st.markdown("---")
         
-        # --- CHANGE 1: Corrected "Start New Split" button logic ---
-        # The original code for this button was flawed. This new logic correctly
-        # uses a flag to signal a full reset, which is then handled at the start
-        # of the script execution to prevent the shared link loader from interfering.
+        # --- CHANGE 1: Removed reset logic, now just reload page ---
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
-            reset_to_step(0, full_reset=True)  # Pass full_reset=True
-            st.rerun()
+            st.write("Reloading page for a new split...")
+            st.experimental_set_query_params()
+            st.experimental_rerun()
 
         if not is_view_mode:
             if st.button("⬅️ Adjust Split Details", use_container_width=True):
