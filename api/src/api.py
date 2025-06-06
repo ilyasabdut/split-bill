@@ -70,6 +70,16 @@ app.add_middleware(
 
 # Helper functions (moved from main.py, adapted for API)
 def compress_image(image_bytes: bytes, target_size_bytes: int = MAX_IMAGE_SIZE_BYTES, quality: int = 90, min_quality: int = 70) -> bytes | None:
+    # Ensure quality and min_quality are integers (handle unexpected list type)
+    if isinstance(quality, list):
+        quality = int(quality[0]) if quality else 90
+    else:
+        quality = int(quality)
+    if isinstance(min_quality, list):
+        min_quality = int(min_quality[0]) if min_quality else 70
+    else:
+        min_quality = int(min_quality)
+
     try:
         img = PILImage.open(io.BytesIO(image_bytes))
         if img.mode not in ('RGB', 'L'): img = img.convert('RGB')
