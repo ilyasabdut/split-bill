@@ -95,7 +95,7 @@ def reset_to_step(step_number: int):
         # so that if user was on a shared link, they truly start fresh.
         if "split_id" in st.query_params:
             # Remove all query params from the URL bar
-            st.experimental_set_query_params()
+            st.experimental_set_query_params()  # clears all query params
 
 def get_api_headers():
     headers = {}
@@ -382,7 +382,7 @@ def main_app_flow():
         st.markdown("---")
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
             # Remove query params from the browser URL, reset state, then rerun
-            st.experimental_set_query_params()  # clears ?split_id=...
+            st.experimental_set_query_params()  # clears all query params
             st.session_state.view_split_id = None
             st.session_state.current_step = 0
             reset_app_state_full()  # full state reset without re-adding query params
