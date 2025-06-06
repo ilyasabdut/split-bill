@@ -1,4 +1,4 @@
-streamlit==1.32.2
+streamlit==1.45.0
 uvloop==0.19.0
 httptools==0.6.1
 protobuf==4.25.3
