@@ -93,9 +93,7 @@ def reset_to_step(step_number: int):
         reset_app_state_full()
         # If resetting to step 0 (start new), explicitly clear query params
         # so that if user was on a shared link, they truly start fresh.
-        if "split_id" in st.query_params:
-            # Remove all query params from the URL bar
-            st.experimental_set_query_params()  # clears all query params
+        st.experimental_set_query_params()  # clears all query params
 
 def get_api_headers():
     headers = {}
