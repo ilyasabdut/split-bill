@@ -27,9 +27,9 @@ st.set_page_config(
 # --- Umami Analytics Script ---
 components.html(
     f"""
-    <script async defer 
-        data-website-id="0e96ff0f-f450-4e3b-8446-ad2a232b1268" 
-        src="https://umami.ilyasabdut.loseyourip.com/script.js"> 
+    <script async defer
+        data-website-id="0e96ff0f-f450-4e3b-8446-ad2a232b1268"
+        src="https://umami.ilyasabdut.loseyourip.com/script.js">
     </script>
     """,
     height=0 # Set height to 0 as the script has no visible output
@@ -55,7 +55,8 @@ if 'share_link' not in st.session_state: st.session_state.share_link = None
 if 'split_evenly' not in st.session_state: st.session_state.split_evenly = False
 if 'extracted_subtotal_from_gemini' not in st.session_state: st.session_state.extracted_subtotal_from_gemini = 0.0
 if 'extracted_total_discount' not in st.session_state: st.session_state.extracted_total_discount = 0.0
-# Removed access_token and logged_in_user from session state
+# --- NEW: Flag for handling the reset action ---
+if '_start_new_split_requested' not in st.session_state: st.session_state._start_new_split_requested = False
 # --- END SESSION STATE INITIALIZATION ---
 
 # --- Helper functions for on_change callbacks ---
@@ -72,28 +73,42 @@ MAX_IMAGE_SIZE_MB = 2
 MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
 
 def reset_app_state_full():
-    st.session_state.current_step = 0; st.session_state.parsed_data = None
-    st.session_state.last_uploaded_file_info = None; st.session_state.uploaded_image_bytes = None
-    st.session_state.processed_image_bytes_for_minio_base66 = None; st.session_state.minio_image_object_name = None
-    st.session_state.item_assignments = []; st.session_state.split_results = None
-    st.session_state.share_link = None; st.session_state.view_split_id = None
-    st.session_state.loaded_share_data = None; 
-    # Do not clear query_params here in reset_app_state_full directly, 
-    # as it might be called when loading a shared link before the main check.
-    # It's cleared in the main block after successful load.
-    st.session_state.split_evenly = False
-    st.session_state.extracted_subtotal_from_gemini = 0.0
-    st.session_state.extracted_total_discount = 0.0
+    # This function is now simplified, as query param clearing is handled separately.
+    keys_to_reset = [
+        'current_step', 'parsed_data', 'last_uploaded_file_info', 'uploaded_image_bytes',
+        'processed_image_bytes_for_minio_base64', 'minio_image_object_name', 'item_assignments',
+        'split_results', 'share_link', 'view_split_id', 'loaded_share_data',
+        'split_evenly', 'extracted_subtotal_from_gemini', 'extracted_total_discount'
+    ]
+    for key in keys_to_reset:
+        st.session_state.pop(key, None) # Use pop to safely remove keys
+    # Re-initialize necessary keys to default values
+    st.session_state.current_step = 0
+    st.session_state.person_names_list = ["Person 1", "Person 2"]
+    st.session_state.current_name_input = ""
+    st.session_state.tax_amount_input = 0.0
+    st.session_state.tip_amount_input = 0.0
 
-def reset_to_step(step_number: int):
+
+def reset_to_step(step_number: int, full_reset: bool = False):
     st.session_state.current_step = step_number
-    if step_number <= 2: st.session_state.split_results = None; st.session_state.share_link = None
-    if step_number <= 1: st.session_state.item_assignments = []; st.session_state.split_evenly = False
-    if step_number <= 0: 
-        reset_app_state_full()
-        # If resetting to step 0 (start new), explicitly clear query params
-        # so that if user was on a shared link, they truly start fresh.
-        st.experimental_set_query_params()  # clears all query params
+    if full_reset:
+        # Signal for full reset including query params
+        st.session_state._start_new_split_requested = True
+        st.session_state._force_query_params_clear = True  # New flag
+    else:
+        # Normal step reset logic
+        if step_number <= 2: 
+            st.session_state.split_results = None
+            st.session_state.share_link = None
+        if step_number <= 1: 
+            st.session_state.item_assignments = []
+            st.session_state.split_evenly = False
+        if step_number <= 0:
+            # Instead of resetting here, we set the flag to be handled by the main app loop
+            # This prevents control flow issues.
+            st.session_state._start_new_split_requested = True
+
 
 def get_api_headers():
     headers = {}
@@ -118,6 +133,8 @@ def main_app_flow():
         st.error("API_KEY environment variable is not set. Please set it to connect to the backend API.")
         st.stop() # Stop execution if API_KEY is missing
 
+    # This logic is now handled in the main execution block at the bottom
+    # to avoid interference with the reset flow.
 
     # --- STEP 0: Upload Image ---
     if st.session_state.current_step == 0:
@@ -129,7 +146,7 @@ def main_app_flow():
             if st.session_state.parsed_data is None or st.session_state.last_uploaded_file_info != current_file_info:
                 st.session_state.last_uploaded_file_info = current_file_info; st.session_state.parsed_data = None
                 raw_image_bytes = uploaded_file.getvalue(); st.session_state.uploaded_image_bytes = raw_image_bytes
-                
+
                 response = None # Initialize response to None
                 with st.spinner(f'⚙️ Processing receipt...'):
                     try:
@@ -149,7 +166,7 @@ def main_app_flow():
                                 pil_image_display = PILImage.open(io.BytesIO(base64.b64decode(st.session_state.processed_image_bytes_for_minio_base64)))
                                 st.image(pil_image_display, caption="Processing this image...", use_container_width=True)
                             except Exception as e: st.error(f"Could not display image: {e}")
-                        
+
                         st.success(f"Receipt processed!"); st.session_state.current_step = 1; st.rerun()
 
                     except requests.exceptions.RequestException as e:
@@ -183,17 +200,17 @@ def main_app_flow():
         store_name = data_source.get("store_name"); receipt_date = data_source.get("transaction_date"); receipt_time_val = data_source.get("transaction_time")
         if is_view_mode: display_image_bytes_source_base64 = data_source.get('image_bytes_for_display_base64')
         elif st.session_state.processed_image_bytes_for_minio_base64: display_image_bytes_source_base64 = st.session_state.processed_image_bytes_for_minio_base64
-        
+
         raw_items = data_source.get("line_items", [])
         if isinstance(raw_items, list):
             for item_struct in raw_items:
-                if isinstance(item_struct, dict): 
+                if isinstance(item_struct, dict):
                     # Ensure 'qty' and 'price' are strings for consistency with original logic
                     qty_val = item_struct.get("quantity", 1.0)
                     price_val = item_struct.get("item_total_price", 0.0)
                     gemini_items_list.append({
-                        "item": item_struct.get("item_description", "Unknown"), 
-                        "qty": str(qty_val), 
+                        "item": item_struct.get("item_description", "Unknown"),
+                        "qty": str(qty_val),
                         "price": str(price_val)
                     })
         tax_sum = 0.0
@@ -202,7 +219,7 @@ def main_app_flow():
                 if isinstance(tax_item, dict) and isinstance(tax_item.get("tax_amount"), (int, float)): tax_sum += tax_item.get("tax_amount", 0.0)
         total_tax_from_processor_str = str(tax_sum)
         tip_val = data_source.get("tip_amount", 0.0); tip_from_processor_str = str(tip_val if isinstance(tip_val, (int, float)) else 0.0)
-    
+
     should_show_receipt_expander = bool(data_source and "Error" not in data_source and (st.session_state.current_step > 0))
     if should_show_receipt_expander:
         expanded_state = (st.session_state.current_step > 0 and st.session_state.current_step < 4) or is_view_mode
@@ -210,7 +227,7 @@ def main_app_flow():
             if store_name: st.write(f"🏪 **Store:** {store_name}")
             if receipt_date or receipt_time_val: st.write(f"🗓️ **Date:** {receipt_date or 'N/A'} | 🕒 **Time:** {receipt_time_val or 'N/A'}")
             if display_image_bytes_source_base64:
-                try: 
+                try:
                     img_disp = PILImage.open(io.BytesIO(base64.b64decode(display_image_bytes_source_base64)))
                     st.image(img_disp, caption="Receipt Image", width=400)
                 except Exception as e: st.caption(f"Could not display image: {e}")
@@ -234,7 +251,10 @@ def main_app_flow():
             st.markdown(f"Total: **{len(st.session_state.person_names_list)}** people")
         st.markdown("---"); col_back1, col_next1 = st.columns(2)
         with col_back1:
-            if st.button("⬅️ Change Receipt", use_container_width=True): reset_to_step(0); st.rerun()
+            if st.button("⬅️ Change Receipt", use_container_width=True):
+                # Using the flag-based reset is safer
+                reset_to_step(0)
+                st.rerun()
         with col_next1:
             if st.button("Next: Assign Items ➡️", type="primary", use_container_width=True, disabled=(not st.session_state.person_names_list)): st.session_state.current_step = 2; st.rerun()
 
@@ -246,7 +266,7 @@ def main_app_flow():
         all_individual_items_assigned_flag = True if items_to_assign_ui else False
         if st.session_state.split_evenly:
             st.info("The bill subtotal will be split evenly. Individual item assignment below is disabled.")
-            all_individual_items_assigned_flag = True 
+            all_individual_items_assigned_flag = True
         elif not items_to_assign_ui: st.warning("No items extracted. If not splitting evenly, please go back."); all_individual_items_assigned_flag = False
         else:
             st.write("For each item, select who shared it:")
@@ -270,21 +290,21 @@ def main_app_flow():
                 if i < len(items_to_assign_ui) - 1: st.markdown("---")
         st.markdown("---"); col_back2, col_next2 = st.columns(2)
         with col_back2:
-            if st.button("⬅️ Back to People", use_container_width=True): 
+            if st.button("⬅️ Back to People", use_container_width=True):
                 if not st.session_state.split_evenly : st.session_state.item_assignments = current_ui_assignments
                 reset_to_step(1); st.rerun()
         with col_next2:
             next_button_disabled_step2 = (not st.session_state.split_evenly) and ((not items_to_assign_ui) or (not all_individual_items_assigned_flag))
             if st.button("Next: Tax & Tip ➡️", type="primary", use_container_width=True, disabled=next_button_disabled_step2):
                 if not st.session_state.split_evenly: st.session_state.item_assignments = current_ui_assignments
-                else: st.session_state.item_assignments = [] 
+                else: st.session_state.item_assignments = []
                 st.session_state.current_step = 3; st.rerun()
             if not st.session_state.split_evenly and not all_individual_items_assigned_flag and items_to_assign_ui: st.caption("⚠️ Please assign all items if not splitting evenly.")
 
     if st.session_state.current_step == 3 and not is_view_mode:
         st.header("Step 4: Tax, Tip & Calculate")
         if st.session_state.extracted_total_discount > 0: st.info(f"An overall discount of IDR {st.session_state.extracted_total_discount:,.2f} will be applied.")
-        
+
         # Use the extracted values from API response as initial values
         # Ensure that parsed_data is not None before attempting to access its keys
         initial_tax = float(st.session_state.parsed_data.get("tax_details", [{}])[0].get("tax_amount") or 0.0) if st.session_state.parsed_data and st.session_state.parsed_data.get("tax_details") else 0.0
@@ -370,46 +390,45 @@ def main_app_flow():
                             st.dataframe(item_breakdown_df, use_container_width=True)
         else: st.warning("No results to display.")
         st.markdown("---")
+        
+        # --- CHANGE 1: Corrected "Start New Split" button logic ---
+        # The original code for this button was flawed. This new logic correctly
+        # uses a flag to signal a full reset, which is then handled at the start
+        # of the script execution to prevent the shared link loader from interfering.
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
-            # Clear query params FIRST
-            st.experimental_set_query_params()  # this schedules the change
-
-            # Then store a flag to trigger reset on next rerun
-            st.session_state._should_reset = True
-            st.rerun()
-            
-        # Outside the button (after rerun happens)
-        if st.session_state.get("_should_reset"):
-            # Only run once after clearing query params
-            st.session_state.pop("_should_reset")
-            st.session_state.view_split_id = None
-            st.session_state.current_step = 0
-            reset_app_state_full()
+            reset_to_step(0, full_reset=True)  # Pass full_reset=True
             st.rerun()
 
         if not is_view_mode:
             if st.button("⬅️ Adjust Split Details", use_container_width=True):
-                st.session_state.share_link = None 
+                st.session_state.share_link = None
                 if st.session_state.item_assignments or not st.session_state.split_evenly : reset_to_step(2)
                 else: reset_to_step(3)
                 st.rerun()
 
 if __name__ == "__main__":
+    # Handle full reset request first
+    if st.session_state.pop('_start_new_split_requested', False):
+        if st.session_state.pop('_force_query_params_clear', False):
+            st.query_params.clear()  # Clear query parameters
+        reset_app_state_full()
+        st.rerun()
+
     query_params = st.query_params
     shared_split_id_from_url = query_params.get("split_id")
     if isinstance(shared_split_id_from_url, list): shared_split_id_from_url = shared_split_id_from_url[0] if shared_split_id_from_url else None
-    
+
     # Only load if view_split_id is not already this ID, or if it's None (first load of a shared link)
     if shared_split_id_from_url and (st.session_state.view_split_id != shared_split_id_from_url or st.session_state.view_split_id is None) :
         print(f"URL has split_id: {shared_split_id_from_url}. Current view_split_id: {st.session_state.view_split_id}")
         reset_app_state_full() # Reset state before loading a potentially new shared link
         st.session_state.view_split_id = shared_split_id_from_url # Mark that we are attempting to view this
-        
+
         # Check for API_KEY before loading shared data if it's a view mode
         if not API_KEY:
             st.error("API_KEY environment variable is not set. Cannot load shared split data.")
             st.stop()
-        
+
         loaded_data_dict = load_shared_split_data_from_api(shared_split_id_from_url) # Use the new API function
         if loaded_data_dict:
             print(f"Successfully loaded data for shared split_id: {shared_split_id_from_url}")
@@ -424,15 +443,13 @@ if __name__ == "__main__":
             st.session_state.split_evenly = loaded_data_dict.get("split_evenly_choice", False)
             st.session_state.extracted_total_discount = loaded_data_dict.get("total_discount_applied", 0.0)
             st.session_state.share_link = loaded_data_dict.get("share_link") # Also load the share link itself
-            
+
             st.session_state.current_step = 4 # Go directly to results view
-            # DO NOT clear query_params here, let them persist in the URL for bookmarking/sharing
             st.rerun()
         else:
             print(f"Failed to load data for shared split_id: {shared_split_id_from_url}. Resetting.")
             st.session_state.view_split_id = None # Reset if loading failed
-            st.session_state.current_step = 0 
-            # No need to clear query_params here, if user refreshes, it will try again. If they navigate away, it's fine.
+            st.session_state.current_step = 0
             st.rerun()
-            
+
     main_app_flow()
