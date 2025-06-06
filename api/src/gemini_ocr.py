@@ -79,6 +79,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool: # Removed api_key par
     """
     # The model will automatically use the globally configured key.
     try:
+        start_time = time.time()
         model = genai.GenerativeModel(MODEL_NAME) # Removed api_key=api_key
         img = PIL.Image.open(io.BytesIO(image_bytes))
 
@@ -99,7 +100,8 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool: # Removed api_key par
             return False
 
         classification_result = response.text.strip().upper()
-        print(f"Gemini classification result: {classification_result}")
+        elapsed = time.time() - start_time
+        print(f"Gemini classification result: {classification_result} (took {elapsed:.2f} seconds)")
 
         return classification_result == "YES"
 
