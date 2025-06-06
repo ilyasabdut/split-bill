@@ -120,6 +120,15 @@ def main_app_flow():
         st.error("API_KEY environment variable is not set. Please set it to connect to the backend API.")
         st.stop() # Stop execution if API_KEY is missing
 
+    # Check for split_id in query params and reset state if present
+    query_params = st.query_params
+    shared_split_id_from_url = query_params.get("split_id")
+    if shared_split_id_from_url:
+        reset_app_state_full()  # Reset state for a new split
+        st.session_state.view_split_id = None  # Clear view_split_id to start fresh
+        st.session_state.current_step = 0  # Start at the first step
+        st.experimental_set_query_params()  # Clear query params from the URL
+
     # --- STEP 0: Upload Image ---
     if st.session_state.current_step == 0:
         st.header("Step 1: Upload Receipt")
