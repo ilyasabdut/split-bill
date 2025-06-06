@@ -372,9 +372,11 @@ def main_app_flow():
         else: st.warning("No results to display.")
         st.markdown("---")
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
-            # Clear any query parameters from the URL and reset the app
-            st.experimental_set_query_params()  # removes ?split_id=... from the address bar
-            reset_to_step(0)
+            # Remove query params from the browser URL, reset state, then rerun
+            st.experimental_set_query_params()  # clears ?split_id=...
+            st.session_state.view_split_id = None
+            st.session_state.current_step = 0
+            reset_app_state_full()  # full state reset without re-adding query params
             st.rerun()
         if not is_view_mode:
             if st.button("⬅️ Adjust Split Details", use_container_width=True):
