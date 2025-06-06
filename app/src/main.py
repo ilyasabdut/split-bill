@@ -391,9 +391,10 @@ def main_app_flow():
         else: st.warning("No results to display.")
         st.markdown("---")
         
-        # --- CHANGE 1: Removed reset logic, now just reload page ---
+        # --- CHANGE 1: Fully reset and reload page ---
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
-            st.write("Reloading page for a new split...")
+            st.write("Starting a new split from step 0...")
+            reset_app_state_full()
             st.query_params.clear()
             st.rerun()
 
