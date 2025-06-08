@@ -138,11 +138,7 @@ class CalculateSplitRequest(BaseModel):
     processed_image_bytes_for_minio_base64: str | None = None # Base64 encoded image for MinIO upload
     original_parsed_data: Dict[str, Any]
     notes_text: str | None = None
-    payment_option: str | None = None
-    payment_bank_account_id: str | None = None
-    payment_bank_account_holder: str | None = None
-    payment_ewallet_account_id: str | None = None
-    payment_ewallet_account_holder: str | None = None
+    payment_details: Dict[str, Any] | None = None
 
 class CalculateSplitResponse(BaseModel):
     split_results: Dict[str, Any]
@@ -164,11 +160,7 @@ class SharedSplitDataResponse(BaseModel):
     creation_timestamp: float
     image_bytes_for_display_base64: str | None = None # Base64 encoded image for display
     notes_text: str
-    payment_option: str
-    payment_bank_account_id: str | None = None
-    payment_bank_account_holder: str | None = None
-    payment_ewallet_account_id: str | None = None
-    payment_ewallet_account_holder: str | None = None
+    payment_details: Dict[str, Any] = Field(default_factory=dict)
 
 # --- API Endpoints ---
 
