@@ -9,6 +9,7 @@ from PIL import Image as PILImage, UnidentifiedImageError
 import json
 import time # Still needed for creation_timestamp in metadata for share link
 import streamlit.components.v1 as components
+from constants import BANK_NAMES, E_WALLET_PROVIDERS
 
 # Removed: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -38,7 +39,6 @@ components.html(
 
 # --- SESSION STATE INITIALIZATION (MOVED TO TOP) ---
 if 'current_step' not in st.session_state: st.session_state.current_step = 0
-if 'view_split_id' not in st.session_state: st.session_state.view_split_id = None
 if 'loaded_share_data' not in st.session_state: st.session_state.loaded_share_data = None
 if 'parsed_data' not in st.session_state: st.session_state.parsed_data = None
 if 'last_uploaded_file_info' not in st.session_state: st.session_state.last_uploaded_file_info = None
@@ -55,6 +55,17 @@ if 'share_link' not in st.session_state: st.session_state.share_link = None
 if 'split_evenly' not in st.session_state: st.session_state.split_evenly = False
 if 'extracted_subtotal_from_gemini' not in st.session_state: st.session_state.extracted_subtotal_from_gemini = 0.0
 if 'extracted_total_discount' not in st.session_state: st.session_state.extracted_total_discount = 0.0
+# New fields for notes and payment options
+if 'notes_input' not in st.session_state: st.session_state.notes_input = ""
+if 'payment_option' not in st.session_state: st.session_state.payment_option = "Cash"
+if 'payment_method' not in st.session_state: st.session_state.payment_method = "Cash"
+if 'bank_name' not in st.session_state: st.session_state.bank_name = BANK_NAMES[0]
+if 'bank_account_id' not in st.session_state: st.session_state.bank_account_id = ""
+if 'bank_account_holder' not in st.session_state: st.session_state.bank_account_holder = ""
+if 'e_wallet_provider' not in st.session_state: st.session_state.e_wallet_provider = E_WALLET_PROVIDERS[0]
+if 'e_wallet_account_id' not in st.session_state: st.session_state.e_wallet_account_id = ""
+if 'e_wallet_account_holder' not in st.session_state: st.session_state.e_wallet_account_holder = ""
+if 'notes_text' not in st.session_state: st.session_state.notes_text = ""
 # --- NEW: Flag for handling the reset action ---
 if '_start_new_split_requested' not in st.session_state: st.session_state._start_new_split_requested = False
 # --- END SESSION STATE INITIALIZATION ---
@@ -189,7 +200,7 @@ def main_app_flow():
             elif st.session_state.parsed_data is not None and "Error" not in st.session_state.parsed_data:
                 if st.button("Proceed with current receipt", type="primary"): st.session_state.current_step = 1; st.rerun()
 
-    is_view_mode = st.session_state.view_split_id is not None and st.session_state.loaded_share_data is not None
+    is_view_mode = st.session_state.loaded_share_data is not None
     data_source = st.session_state.loaded_share_data if is_view_mode else st.session_state.parsed_data
     gemini_items_list = []
     store_name, receipt_date, receipt_time_val = None, None, None
@@ -312,6 +323,61 @@ def main_app_flow():
 
         st.session_state.tax_amount_input = st.number_input("Tax (IDR)", min_value=0.0, value=initial_tax, step=100.0, key="tax_input_s3", format="%.2f", on_change=update_tax_amount)
         st.session_state.tip_amount_input = st.number_input("Tip (IDR)", min_value=0.0, value=initial_tip, step=100.0, key="tip_input_s3", format="%.2f", on_change=update_tip_amount)
+    
+        # New fields for notes and payment options
+        st.session_state.notes_input = st.text_area("Notes", value=st.session_state.notes_input, key="notes_input_s3")
+        
+        # Payment method selection
+        st.session_state.payment_method = st.selectbox(
+            "Payment Method",
+            options=["Cash", "Bank", "E-Wallet", "Other"],
+            index=["Cash", "Bank", "E-Wallet", "Other"].index(st.session_state.payment_method) if st.session_state.payment_method in ["Cash", "Bank", "E-Wallet", "Other"] else 0,
+            key="payment_method_s3"
+        )
+        
+        # Bank dropdown if Bank selected
+        if st.session_state.payment_method == "Bank":
+            st.session_state.bank_name = st.selectbox(
+                "Bank Name",
+                options=BANK_NAMES,
+                index=BANK_NAMES.index(st.session_state.bank_name) if st.session_state.bank_name in BANK_NAMES else 0,
+                key="bank_name_s3"
+            )
+            st.session_state.bank_account_id = st.text_input(
+                "Account Number", 
+                value=st.session_state.bank_account_id or "",
+                key="bank_account_id_s3"
+            )
+            st.session_state.bank_account_holder = st.text_input(
+                "Account Holder Name", 
+                value=st.session_state.bank_account_holder or "",
+                key="bank_account_holder_s3"
+            )
+            st.session_state.payment_option = st.session_state.bank_name
+            
+        # E-Wallet dropdown if E-Wallet selected
+        elif st.session_state.payment_method == "E-Wallet":
+            st.session_state.e_wallet_provider = st.selectbox(
+                "E-Wallet Provider", 
+                options=E_WALLET_PROVIDERS,
+                index=E_WALLET_PROVIDERS.index(st.session_state.e_wallet_provider) if st.session_state.e_wallet_provider in E_WALLET_PROVIDERS else 0,
+                key="e_wallet_provider_s3"
+            )
+            st.session_state.e_wallet_account_id = st.text_input(
+                "Account ID", 
+                value=st.session_state.e_wallet_account_id or "",
+                key="e_wallet_account_id_s3"
+            )
+            st.session_state.e_wallet_account_holder = st.text_input(
+                "Account Holder", 
+                value=st.session_state.e_wallet_account_holder or "",
+                key="e_wallet_account_holder_s3"
+            )
+            st.session_state.payment_option = st.session_state.e_wallet_provider
+            
+        # For other methods, use method name directly
+        else:
+            st.session_state.payment_option = st.session_state.payment_method
         st.markdown("---"); col_back3, col_calc = st.columns(2)
         with col_back3:
             if st.button("⬅️ Back to Assign Items", use_container_width=True): reset_to_step(2); st.rerun()
@@ -331,7 +397,9 @@ def main_app_flow():
                         "extracted_subtotal_from_gemini": st.session_state.extracted_subtotal_from_gemini,
                         "extracted_total_discount": st.session_state.extracted_total_discount,
                         "processed_image_bytes_for_minio_base64": st.session_state.processed_image_bytes_for_minio_base64,
-                        "original_parsed_data": st.session_state.parsed_data
+                        "original_parsed_data": st.session_state.parsed_data,
+                        "notes_text": st.session_state.notes_input,
+                        "payment_option": st.session_state.payment_option
                     }
                     with st.spinner("Calculating split and generating link..."):
                         try:
@@ -391,6 +459,14 @@ def main_app_flow():
         else: st.warning("No results to display.")
         st.markdown("---")
         
+        # Add section for notes and payment options in results view
+        if st.session_state.notes_input or st.session_state.payment_option:
+            with st.expander("Payment Details & Notes", expanded=True):
+                if st.session_state.payment_option:
+                    st.write(f"**Payment Method:** {st.session_state.payment_option}")
+                if st.session_state.notes_input:
+                    st.write(f"**Notes:** {st.session_state.notes_input}")
+        
         # --- CHANGE 1: Fully reset and reload page ---
         if st.button("✨ Start New Split", type="primary", use_container_width=True):
             st.write("Starting a new split from step 0...")
@@ -398,12 +474,7 @@ def main_app_flow():
             st.query_params.clear()
             st.rerun()
 
-        if not is_view_mode:
-            if st.button("⬅️ Adjust Split Details", use_container_width=True):
-                st.session_state.share_link = None
-                if st.session_state.item_assignments or not st.session_state.split_evenly : reset_to_step(2)
-                else: reset_to_step(3)
-                st.rerun()
+        # Removed Adjust Split Details button as requested
 
 if __name__ == "__main__":
     # Handle full reset request first
@@ -415,13 +486,14 @@ if __name__ == "__main__":
 
     query_params = st.query_params
     shared_split_id_from_url = query_params.get("split_id")
-    if isinstance(shared_split_id_from_url, list): shared_split_id_from_url = shared_split_id_from_url[0] if shared_split_id_from_url else None
+    if isinstance(shared_split_id_from_url, list): 
+        shared_split_id_from_url = shared_split_id_from_url[0] if shared_split_id_from_url else None
 
-    # Only load if view_split_id is not already this ID, or if it's None (first load of a shared link)
-    if shared_split_id_from_url and (st.session_state.view_split_id != shared_split_id_from_url or st.session_state.view_split_id is None) :
-        print(f"URL has split_id: {shared_split_id_from_url}. Current view_split_id: {st.session_state.view_split_id}")
-        reset_app_state_full() # Reset state before loading a potentially new shared link
-        st.session_state.view_split_id = shared_split_id_from_url # Mark that we are attempting to view this
+    # Only load if there's a share ID in URL and either no loaded share data or loaded data doesn't match URL
+    if shared_split_id_from_url and (st.session_state.loaded_share_data is None or 
+                                     st.session_state.loaded_share_data.get("split_id") != shared_split_id_from_url):
+        print(f"Loading shared split data for ID: {shared_split_id_from_url}")
+        reset_app_state_full() # Reset state before loading shared data
 
         # Check for API_KEY before loading shared data if it's a view mode
         if not API_KEY:
@@ -443,11 +515,23 @@ if __name__ == "__main__":
             st.session_state.extracted_total_discount = loaded_data_dict.get("total_discount_applied", 0.0)
             st.session_state.share_link = loaded_data_dict.get("share_link") # Also load the share link itself
 
+            # Load notes and payment option from shared metadata
+            st.session_state.notes_input = loaded_data_dict.get("notes_text", "")
+            st.session_state.payment_option = loaded_data_dict.get("payment_option", "Cash")
+            # Initialize payment method based on loaded payment option
+            if st.session_state.payment_option in BANK_NAMES:
+                st.session_state.payment_method = "Bank"
+                st.session_state.bank_name = st.session_state.payment_option
+            elif st.session_state.payment_option in E_WALLET_PROVIDERS:
+                st.session_state.payment_method = "E-Wallet"
+                st.session_state.e_wallet_provider = st.session_state.payment_option
+            else:
+                st.session_state.payment_method = st.session_state.payment_option
+
             st.session_state.current_step = 4 # Go directly to results view
             st.rerun()
         else:
-            print(f"Failed to load data for shared split_id: {shared_split_id_from_url}. Resetting.")
-            st.session_state.view_split_id = None # Reset if loading failed
+            print(f"Failed to load data for shared split ID: {shared_split_id_from_url}")
             st.session_state.current_step = 0
             st.rerun()
 

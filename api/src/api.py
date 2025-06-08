@@ -137,6 +137,12 @@ class CalculateSplitRequest(BaseModel):
     extracted_total_discount: float
     processed_image_bytes_for_minio_base64: str | None = None # Base64 encoded image for MinIO upload
     original_parsed_data: Dict[str, Any]
+    notes_text: str | None = None
+    payment_option: str | None = None
+    payment_bank_account_id: str | None = None
+    payment_bank_account_holder: str | None = None
+    payment_ewallet_account_id: str | None = None
+    payment_ewallet_account_holder: str | None = None
 
 class CalculateSplitResponse(BaseModel):
     split_results: Dict[str, Any]
@@ -157,6 +163,12 @@ class SharedSplitDataResponse(BaseModel):
     share_link: str
     creation_timestamp: float
     image_bytes_for_display_base64: str | None = None # Base64 encoded image for display
+    notes_text: str
+    payment_option: str
+    payment_bank_account_id: str | None = None
+    payment_bank_account_holder: str | None = None
+    payment_ewallet_account_id: str | None = None
+    payment_ewallet_account_holder: str | None = None
 
 # --- API Endpoints ---
 
@@ -166,16 +178,19 @@ async def upload_receipt(file: UploadFile = File(...), api_key: str = Depends(ge
         raise HTTPException(status_code=400, detail=f"Image too large ({file.size / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB.")
     
     raw_image_bytes = await file.read()
+    
+    # Added: Check if image is a valid receipt using classifier
+    if not gemini_ocr.classify_image_as_receipt(raw_image_bytes):
+        raise HTTPException(status_code=400, detail="The uploaded image does not appear to be a receipt. Please upload a valid receipt image.")
+
     processed_image_bytes = compress_image(raw_image_bytes)
     if not processed_image_bytes:
         raise HTTPException(status_code=500, detail="Image processing failed.")
 
     parsed_data_dict = gemini_ocr.extract_receipt_data_with_gemini(processed_image_bytes)
 
-    # Check for the specific "NOT_A_RECEIPT" error
-    if parsed_data_dict.get("Error") == "NOT_A_RECEIPT":
-        raise HTTPException(status_code=400, detail=parsed_data_dict.get("message", "The uploaded image does not appear to be a receipt. Please upload a valid receipt image."))
-    elif "Error" in parsed_data_dict:
+    # Updated: Removed "NOT_A_RECEIPT" check since we classify upfront
+    if "Error" in parsed_data_dict:
         raise HTTPException(status_code=500, detail=f"Processing error: {parsed_data_dict['Error']}")
     elif not parsed_data_dict.get('line_items') and not parsed_data_dict.get('total_amount'):
         raise HTTPException(status_code=400, detail="Could not extract details from receipt. Please ensure it's a clear receipt image.")
@@ -212,10 +227,13 @@ async def calculate_split_endpoint(request: CalculateSplitRequest, api_key: str 
             [{"item_desc": a.item_details.get("item", ""), "item_qty": a.item_details.get("qty", ""), "item_price": a.item_details.get("price", ""), "assigned_to": sorted(a.assigned_to)} for a in final_assignments_for_calc],
             key=lambda x: x["item_desc"]
         ) if not request.split_evenly else "SPLIT_EVENLY",
-        "tax": f"{request.tax_amount_input:.2f}", "tip": f"{request.tip_amount_input:.2f}",
+        "tax": request.tax_amount_input,
+        "tip": request.tip_amount_input,
         "split_evenly": request.split_evenly,
-        "extracted_subtotal": f"{request.extracted_subtotal_from_gemini:.2f}" if request.split_evenly else None,
-        "extracted_discount": f"{request.extracted_total_discount:.2f}"
+        "extracted_subtotal": request.extracted_subtotal_from_gemini,
+        "extracted_discount": request.extracted_total_discount,
+        "notes_text": request.notes_text,
+        "payment_details": request.payment_details
     }
     id_hasher = hashlib.sha256(); id_hasher.update(json.dumps(idempotency_key_material, sort_keys=True).encode('utf-8'))
     split_id = id_hasher.hexdigest()[:12]
@@ -268,7 +286,9 @@ async def calculate_split_endpoint(request: CalculateSplitRequest, api_key: str 
             "calculated_split_results": calculated_split, 
             "minio_image_object_name": minio_image_object_name, 
             "share_link": current_share_link, 
-            "creation_timestamp": time.time()
+            "creation_timestamp": time.time(),
+            "notes_text": request.notes_text,
+            "payment_details": request.payment_details
         }
         meta_upload_obj_name = minio_utils.upload_metadata_to_minio(metadata_to_save, split_id)
         if not meta_upload_obj_name:
@@ -295,6 +315,13 @@ async def view_split(split_id: str, api_key: str = Depends(get_api_key)): # Secu
     # They might be dicts from MinIO, need to convert to ItemAssignment models
     item_assignments_converted = [ItemAssignment(**item) for item in loaded_data_dict.get("item_assignments", [])]
  
+    # Handle backward compatibility for payment_details vs payment_option
+    payment_details = loaded_data_dict.get("payment_details")
+    if payment_details is None:
+        # Fall back to payment_option for old metadata
+        payment_option_value = loaded_data_dict.get("payment_option", "Cash")
+        payment_details = {"method": payment_option_value}
+ 
     return SharedSplitDataResponse(
         split_id=loaded_data_dict["split_id"],
         original_parsed_data=loaded_data_dict.get("original_parsed_data", {}),
@@ -308,7 +335,9 @@ async def view_split(split_id: str, api_key: str = Depends(get_api_key)): # Secu
         minio_image_object_name=loaded_data_dict.get("minio_image_object_name"),
         share_link=loaded_data_dict.get("share_link"),
         creation_timestamp=loaded_data_dict.get("creation_timestamp", 0.0),
-        image_bytes_for_display_base64=image_bytes_for_display_base64
+        image_bytes_for_display_base64=image_bytes_for_display_base64,
+        notes_text=loaded_data_dict.get("notes_text", ""),
+        payment_details=payment_details
     )
  
 # Add a root endpoint for health check or basic info
