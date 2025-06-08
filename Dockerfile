@@ -22,8 +22,6 @@ RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-
     # Copy dependency files
 COPY pyproject.toml .
 
-RUN uv pip compile
-
 # Sync dependencies using uv
 RUN uv sync
 
