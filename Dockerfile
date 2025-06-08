@@ -5,17 +5,22 @@ FROM python:3.12-slim as builder
 
 WORKDIR /opt/app
 
-# Install build dependencies (if any, though for these packages usually not much beyond pip)
-# RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+# Install curl for uv
+RUN apt-get update && apt-get install -y --no-install-recommends curl
 
-COPY requirements.txt .
-
-# Create a virtual environment and install dependencies
+# Create a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade uv
-RUN uv pip install --no-cache-dir uvloop httptools
-RUN uv pip install --no-cache-dir -r requirements.txt
+
+# Install uv using official installer
+RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.1.2/uv-installer.py | python
+
+# Copy dependency files
+COPY pyproject.toml .
+COPY uv.lock .
+
+# Sync dependencies using uv
+RUN uv sync
 
 
 # --- Final Stage ---

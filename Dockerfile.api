@@ -5,14 +5,22 @@ FROM python:3.12-slim as builder
 
 WORKDIR /opt/app
 
-# Install uv (ultra fast pip alternative)
-RUN pip install --no-cache-dir uv
-COPY requirements.txt .
+# Install curl
+RUN apt-get update && apt-get install -y --no-install-recommends curl
 
-# Create a virtual environment and install dependencies using uv
+# Create a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN uv pip install --no-cache-dir -r requirements.txt
+
+# Install uv using official installer
+RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.1.2/uv-installer.py | python
+
+# Copy dependency files
+COPY pyproject.toml .
+COPY uv.lock .
+
+# Sync dependencies using uv
+RUN uv sync
 
 
 # --- Final Stage ---
