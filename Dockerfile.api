@@ -1,47 +1,54 @@
 # syntax=docker/dockerfile:1.4
 
-# --- Builder Stage ---
 FROM python:3.12-slim as builder
 
 WORKDIR /opt/app
 
-# Install curl and unzip
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install uv from prebuilt binary
-RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz \
-    | tar -xz && mv uv-aarch64-unknown-linux-gnu/uv /opt/venv/bin/uv && \
-    chmod +x /opt/venv/bin/uv
+ARG TARGETARCH
+RUN case ${TARGETARCH} in \
+        amd64) UV_ARCH="x86_64-unknown-linux-gnu";; \
+        arm64) UV_ARCH="aarch64-unknown-linux-gnu";; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-${UV_ARCH}.tar.gz \
+    | tar -xz -C /opt/app && mv /opt/app/uv-${UV_ARCH}/uv /opt/venv/bin/uv && \
+    chmod +x /opt/venv/bin/uv && \
+    rm -rf /opt/app/uv-${UV_ARCH}
 
-# Copy dependency files
-COPY pyproject.toml .
-COPY uv.lock .
+RUN uv --version
 
-# Sync dependencies using uv
-RUN uv sync
+COPY pyproject.toml ./
 
-# Install uvicorn using pip as fallback (more reliable)
-RUN /opt/venv/bin/pip install uvicorn[standard]
+RUN uv pip compile \
+    pyproject.toml \
+    -o requirements.txt
 
-# Verify uvicorn installation
-RUN /opt/venv/bin/uvicorn --version
+RUN uv pip install -r requirements.txt
 
-# --- Final Stage ---
+RUN uvicorn --version
+RUN python -c "import fastapi; print(f'FastAPI version: {fastapi.__version__}')"
+
 FROM python:3.12-slim as final
 
 WORKDIR /app
 
-RUN mkdir src
+RUN groupadd --gid 1001 appuser && \
+    useradd --uid 1001 --gid 1001 --shell /bin/bash --create-home appuser
 
-# Copy virtual environment from builder stage
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
+COPY --chown=appuser:appuser ./api/src /app/src
+RUN chown -R appuser:appuser /app
 
-# Copy application code
-COPY ./api/src /app/src
+USER appuser
 
 EXPOSE 8000
 
@@ -51,4 +58,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-CMD ["/opt/venv/bin/uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]

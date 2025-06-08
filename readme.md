@@ -101,7 +101,7 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
     FASTAPI_API_URL=http://localhost:8000
     API_KEY=your_secure_random_api_key_here  # IMPORTANT: Change this!
     GEMINI_API_KEY=your_gemini_api_key
-    GEMINI_MODEL_NAME=gemma-3-27b-it
+    GEMINI_MODEL_NAME=gemini-1.5-flash
     MINIO_ENDPOINT=your_minio_ip:9000
     MINIO_ACCESS_KEY=your_minio_access_key
     MINIO_SECRET_KEY=your_minio_secret_key

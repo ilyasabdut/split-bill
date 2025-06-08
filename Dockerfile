@@ -49,7 +49,7 @@ RUN mkdir -p /app/src
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code and Streamlit config
-COPY /app/src/main.py /app/src/
+COPY /app/src/ /app/src/
 COPY .streamlit/ .streamlit/
 
 # Make port 8501 available to the world outside this container
