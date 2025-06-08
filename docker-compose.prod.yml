@@ -1,21 +1,20 @@
 version: "3.8"
 
 services:
-  split-bill-app:
+  app:
     image: registry.ilyasabdut.loseyourip.com/split-bill-app:latest
     container_name: split-bill-app
     ports:
       - "8501:8501"
     environment:
-      - FASTAPI_API_URL=http://split-bill-api:8000 # Internal Docker network name and port
+      - FASTAPI_API_URL=http://api:8000
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8501}
       - API_KEY=${API_KEY}
     restart: unless-stopped
     depends_on:
-      - split-bill-api
-    command: streamlit run main.py # Updated command
+      - api
 
-  split-bill-api:
+  api:
     image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
     container_name: split-bill-api
     ports:
@@ -31,4 +30,3 @@ services:
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8000}
     restart: unless-stopped
-    command: uvicorn api:app --host 0.0.0.0 --port 8000 # Updated command

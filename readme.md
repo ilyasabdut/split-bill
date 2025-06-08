@@ -28,6 +28,7 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 *   **Programming Language:** Python
 *   **Containerization:** Docker, Docker Compose
 *   **CI/CD:** GitHub Actions (example provided)
+*   **Build/Automation:** Makefile
 
 ## 📁 Project Structure
 
@@ -35,23 +36,31 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 bill-splitter/
 │
 ├── .github/
-│   └── workflows/    # CI/CD configuration
+│   └── workflows/          # CI/CD configuration
 │       └── ci-master.yml
 │
-├── src/
-│   ├── main.py      # Streamlit frontend application
-│   ├── api.py       # FastAPI backend API
-│   ├── gemini_ocr.py# AI integration logic
-│   ├── minio_utils.py# Storage utilities
-│   └── split_logic.py# Bill splitting core logic
+├── app/
+│   └── src/                # Frontend (Streamlit) source code
+│       └── main.py
 │
-├── .env.example     # Environment template
-├── .gitignore       # Git ignore rules
-├── Dockerfile       # Container definition for Streamlit app
-├── Dockerfile.api   # Container definition for FastAPI API
-├── docker-compose.yml# Service orchestration for both apps
-├── requirements.txt # Python dependencies
-└── README.md        # Documentation
+├── api/
+│   └── src/                # Backend (FastAPI) source code
+│       ├── __init__.py
+│       ├── api.py
+│       ├── gemini_ocr.py
+│       ├── minio_utils.py
+│       └── split_logic.py
+│
+├── .env.example            # Environment variables template
+├── .gitignore              # Git ignore rules
+├── .streamlit/             # Streamlit configuration
+│   └── config.toml
+├── Dockerfile              # Frontend Dockerfile (Streamlit app)
+├── Dockerfile.api          # Backend Dockerfile (FastAPI API)
+├── Makefile                # Build automation commands
+├── docker-compose.yml      # Development docker-compose
+├── docker-compose.prod.yml # Production docker-compose
+└── README.md               # Documentation
 ```
 ## Setup and Installation
 
@@ -65,51 +74,66 @@ bill-splitter/
 
 ### Quick Start (Local Development)
 
+For convenience, this project utilizes `Makefile` commands to streamline common development tasks.
+
 1.  **Clone & Setup**
     ```bash
     git clone <repository-url>
     cd <repository-name>
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
+    make install
+    make check_dotenv
     ```
 
 2.  **Configure Environment**
-    -   Copy `.env.example` to `.env`
-    -   Fill in your API keys and MinIO credentials. **Ensure you set `API_KEY` to a strong, random string.**
-    -   Example `.env` content:
-        ```env
-        APP_BASE_URL=http://localhost:8501
-        FASTAPI_API_URL=http://localhost:8000
-        API_KEY=your_secure_random_api_key_here # IMPORTANT: Change this!
-        GEMINI_API_KEY=your_gemini_api_key
-        GEMINI_MODEL_NAME=gemma-3-27b-it
-        MINIO_ENDPOINT=your_minio_ip:9000
-        MINIO_ACCESS_KEY=your_minio_access_key
-        MINIO_SECRET_KEY=your_minio_secret_key
-        MINIO_BUCKET_NAME=split-bill
-        MINIO_USE_SSL=False
-        ```
+    - Copy `.env.example` to `.env` and edit with your credentials:
+      ```bash
+      cp .env.example .env
+      nano .env  # or use your favorite editor
+      ```
+    - Update these values in `.env`:
+        - `API_KEY`: Strong random string for API authentication
+        - `GEMINI_API_KEY`: Your Google Gemini API key
+        - MinIO credentialsn
+
+    Example `.env` content:
+    ```env
+    APP_BASE_URL=http://localhost:8501
+    FASTAPI_API_URL=http://localhost:8000
+    API_KEY=your_secure_random_api_key_here  # IMPORTANT: Change this!
+    GEMINI_API_KEY=your_gemini_api_key
+    GEMINI_MODEL_NAME=gemma-3-27b-it
+    MINIO_ENDPOINT=your_minio_ip:9000
+    MINIO_ACCESS_KEY=your_minio_access_key
+    MINIO_SECRET_KEY=your_minio_secret_key
+    MINIO_BUCKET_NAME=split-bill
+    MINIO_USE_SSL=False
+    ```
 
 3.  **Run the Applications**
-    Open two separate terminal windows:
+    From the project root directory, open two separate terminal windows:
 
-    *   **Terminal 1 (for FastAPI Backend):**
+    *   **Terminal 1 (Backend API):**
         ```bash
         make run-api
         ```
-        The FastAPI API will start on `http://localhost:8000`. You can access its interactive documentation at `http://localhost:8000/docs`.
+        Starts FastAPI on `http://localhost:8000` (docs at `http://localhost:8000/docs`)
 
-    *   **Terminal 2 (for Streamlit Frontend):**
+    *   **Terminal 2 (Frontend App):**
         ```bash
         make run-streamlit
         ```
-        The Streamlit app will start on `http://localhost:8501`.
+        Starts Streamlit on `http://localhost:8501`
 
 ### Docker Deployment
 
+#### Development
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml up --build
+```
+
+#### Production
+```bash
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 Access the Streamlit app at `http://localhost:8501` and the FastAPI API docs at `http://localhost:8000/docs` (if exposed).
@@ -195,7 +219,6 @@ Ensure your MinIO bucket (`split-bill`) has these permissions:
 -   [ ] User accounts
 -   [ ] Payment integration
 -   [ ] Multi-currency support
--   [ ] Dark mode theme
 
 ## 🤝 Contributing
 

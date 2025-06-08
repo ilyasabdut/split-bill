@@ -1,4 +1,4 @@
-.PHONY: all build up down logs clean rebuild-api rebuild-app venv install start run-api run-streamlit check_dotenv
+.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit check_dotenv
 
 # Default target: install dependencies and start the Streamlit app
 all: start
@@ -40,33 +40,32 @@ rebuild-app:
 	@echo "Rebuilding and restarting App service..."
 	docker-compose up --build -d app
 
-# --- Local Development Commands (using uv) ---
-# Create a virtual environment using uv
-venv:
-	@echo "Creating virtual environment with uv..."
-	uv venv -p python3.12
-
-# Install dependencies from requirements.txt using uv
-install: venv
-	@echo "Installing dependencies with uv into .venv..."
-	. .venv/bin/activate && uv pip install -r requirements.txt && echo "Installation complete."
+# Install dependencies using uv
+install:
+	@echo "Installing dependencies with uv..."
+	uv pip show uv || uv pip install uv
+	uv sync
 
 # Start the Streamlit application locally
 start: run-streamlit
 
-run-streamlit: install
+run-streamlit:
 	@echo "Starting Streamlit app locally..."
-	. .venv/bin/activate && .venv/bin/python -m dotenv run -- streamlit run app/src/main.py
+	uv pip show python-dotenv && \
+	uv run python -m dotenv run -- streamlit run app/src/main.py || \
+	echo "python-dotenv not found; run 'make install'"
 
 # Start the FastAPI application with Uvicorn locally
-run-api: install
+run-api:
 	@echo "Starting FastAPI app with Uvicorn locally..."
-	# Change directory to 'api/' before running uvicorn so it can find sibling modules
-	cd api && . ../.venv/bin/activate && python -m dotenv -f ../.env run uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
+	cd api && { \
+		uv pip show python-dotenv && \
+		uv run python -m dotenv -f ../.env run uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload; \
+	} || echo "python-dotenv not found; run 'make install'"
 
-# New target to specifically check dotenv (kept from user's provided Makefile)
-check_dotenv: venv install
-	@echo "Checking for python-dotenv in .venv..."
-	. .venv/bin/activate && .venv/bin/python -m pip show python-dotenv && echo "python-dotenv found if listed above."
+# Check for python-dotenv in the environment
+check_dotenv: install
+	@echo "Checking for python-dotenv..."
+	uv pip show python-dotenv
 	@echo "Attempting to run dotenv module directly..."
-	. .venv/bin/activate && .venv/bin/python -m dotenv --version && echo "dotenv module ran successfully if version shown."
+	uv run python -m dotenv --version
