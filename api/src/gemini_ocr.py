@@ -13,12 +13,6 @@ from pydantic import BaseModel, Field
 from loguru import logger
 
 # --- API Key Environment Variable ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set. This key is required for genai.Client().")
-
-# --- Model Configuration ---
-MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-1.5-flash")
 
 # --- Pydantic Models ---
 class LineItem(BaseModel):
@@ -154,9 +148,17 @@ Follow these guidelines for extraction accuracy:
 - If a value is not clearly present, use null or an empty list.
 """
 
+def get_gemini_config():
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY environment variable not set. This key is required for genai.Client().")
+    MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+    return GEMINI_API_KEY, MODEL_NAME
+
 def classify_image_as_receipt(image_bytes: bytes) -> bool:
     try:
         start_time = time.time()
+        GEMINI_API_KEY, MODEL_NAME = get_gemini_config()
         client = genai.Client(api_key=GEMINI_API_KEY)
 
         img = PIL.Image.open(io.BytesIO(image_bytes))
@@ -186,6 +188,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
 def extract_receipt_data_with_gemini(image_bytes: bytes) -> dict[str, Any]:
     start_time = time.time()
     logger.info(f"Starting receipt data extraction at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    GEMINI_API_KEY, MODEL_NAME = get_gemini_config()
 
     if not classify_image_as_receipt(image_bytes):
         return {"Error": "NOT_A_RECEIPT", "message": "The uploaded image does not appear to be a receipt."}

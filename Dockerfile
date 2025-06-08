@@ -1,72 +1,46 @@
 # syntax=docker/dockerfile:1.4
 
-# --- Builder Stage ---
 FROM python:3.12-slim as builder
 
 WORKDIR /opt/app
 
-# Install curl, ca-certificates, and tar for downloading and extracting uv
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates tar && \
+    curl ca-certificates tar gcc libjpeg-dev libpng-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create a virtual environment
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install uv (replace with appropriate arch if needed)
+# Install uv binary globally (optional, won't be used for Streamlit)
 RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz \
-    | tar -xz && mv uv-aarch64-unknown-linux-gnu/uv /opt/venv/bin/uv && \
-    chmod +x /opt/venv/bin/uv
+    | tar -xz && mv uv-aarch64-unknown-linux-gnu/uv /usr/local/bin/uv && chmod +x /usr/local/bin/uv
 
-# Copy dependency files
-COPY pyproject.toml .
-COPY uv.lock .
+# Upgrade pip and install dependencies globally
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir streamlit pandas requests Pillow
 
-# Sync dependencies using uv
-RUN uv sync
+# Cleanup
+RUN rm -rf /root/.cache/pip && \
+    apt-get purge -y --auto-remove gcc && \
+    find /usr/local/lib/python3.12/site-packages -name '*.pyc' -delete && \
+    find /usr/local/lib/python3.12/site-packages -name '__pycache__' -delete && \
+    rm -rf /usr/local/lib/python3.12/site-packages/*/tests
 
-# Ensure streamlit is installed (add as fallback if not in pyproject.toml)
-RUN /opt/venv/bin/pip install streamlit
-
-# Verify streamlit installation
-RUN /opt/venv/bin/streamlit --version || echo "streamlit command failed"
-RUN /opt/venv/bin/python -c "import streamlit; print('streamlit imported successfully')" || echo "streamlit import failed"
-
-# --- Final Stage ---
+# --- Final image ---
 FROM python:3.12-slim as final
 
 WORKDIR /app
 
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
-# Create src directory
-RUN mkdir -p /app/src
-
-# Copy virtual environment from builder stage
-COPY --from=builder /opt/venv /opt/venv
-
-# Copy application code and Streamlit config
 COPY /app/src/ /app/src/
 COPY .streamlit/ .streamlit/
 
-# Make port 8501 available to the world outside this container
-EXPOSE 8501
-
-# Set up environment
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/usr/local/bin:$PATH"
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-# Debug streamlit installation
-RUN ls -l /opt/venv/bin/ | grep streamlit || echo "streamlit binary not found"
-RUN /opt/venv/bin/python -c "import streamlit; print('streamlit available')" || echo "streamlit not available"
+EXPOSE 8501
 
-# Healthcheck for Streamlit
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8501/healthz || exit 1
 
-# Use python -m streamlit instead of direct streamlit binary for better reliability
-CMD ["/opt/venv/bin/python", "-m", "streamlit", "run", "/app/src/main.py"]
+CMD ["python", "-m", "streamlit", "run", "/app/src/main.py"]

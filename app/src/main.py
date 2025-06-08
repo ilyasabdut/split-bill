@@ -1,4 +1,3 @@
-import sys
 import os
 import streamlit as st
 import pandas as pd
@@ -9,9 +8,7 @@ from PIL import Image as PILImage, UnidentifiedImageError
 import json
 import time # Still needed for creation_timestamp in metadata for share link
 import streamlit.components.v1 as components
-from constants import BANK_NAMES, E_WALLET_PROVIDERS
-
-# Removed: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from constants import MAX_IMAGE_SIZE_BYTES ,BANK_NAMES, E_WALLET_PROVIDERS
 
 # Configuration for FastAPI backend URL
 FASTAPI_API_URL = os.environ.get("FASTAPI_API_URL", "http://localhost:8000") # Updated for Docker Compose internal network

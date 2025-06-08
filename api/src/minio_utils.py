@@ -8,22 +8,28 @@ from typing import Union, Dict, Any, Optional # For type hints
 
 # --- MinIO Configuration ---
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "158.179.26.94:9000") # Ensure API PORT
-MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY")
-MINIO_SECRET_KEY = os.environ.get("MINIO_SECRET_KEY")
-MINIO_BUCKET_NAME = os.environ.get("MINIO_BUCKET_NAME", "split-bill")
-MINIO_USE_SSL_STR = os.environ.get("MINIO_USE_SSL", "False").lower()
-MINIO_USE_SSL = MINIO_USE_SSL_STR == 'true'
-
 # Define prefixes (folders) within the bucket
 IMAGE_PREFIX = "receipts/"
 METADATA_PREFIX = "metadata/"
-
+MINIO_BUCKET_NAME = None
+MINIO_USE_SSL = None
+MINIO_ACCESS_KEY = None
+MINIO_SECRET_KEY = None
 
 minio_client_instance = None # Renamed to avoid conflict if minio_client is used elsewhere
+
+def initialize_minio_globals():
+    global MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET_NAME, MINIO_USE_SSL
+    MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY")
+    MINIO_SECRET_KEY = os.environ.get("MINIO_SECRET_KEY")
+    MINIO_BUCKET_NAME = os.environ.get("MINIO_BUCKET_NAME", "split-bill")
+    MINIO_USE_SSL_STR = os.environ.get("MINIO_USE_SSL", "False").lower()
+    MINIO_USE_SSL = MINIO_USE_SSL_STR == 'true'
 
 def get_minio_client() -> Optional[Minio]:
     global minio_client_instance
     if minio_client_instance is None:
+        initialize_minio_globals()
         if not all([MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET_NAME]):
             print("CRITICAL: MinIO environment variables not fully set. Cannot initialize client.")
             return None

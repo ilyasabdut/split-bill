@@ -7,9 +7,8 @@ import time
 from typing import Dict, Any, List
 from dotenv import load_dotenv
 
-# Load environment variables first
+# Will load .env later when needed
 dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
-load_dotenv(dotenv_path)
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
@@ -28,18 +27,25 @@ MAX_IMAGE_SIZE_MB = 2
 MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
 
 # --- API Key Authentication Configuration ---
-API_KEY = os.getenv("API_KEY") # Get API key from environment variable
-if not API_KEY:
-    raise ValueError("API_KEY environment variable is not set in .env file")
-
-# If API_KEY is not set, raise an error on startup
-if not API_KEY:
-    raise ValueError("API_KEY environment variable is not set. Please set it to secure your API.")
+API_KEY = None
+# We will set this later
 
 security_scheme = HTTPBearer()
 
 async def get_api_key(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
-    # Expecting a Bearer token that matches the API_KEY
+    global API_KEY
+    if API_KEY is None:
+        # Load environment variables on first request
+        load_dotenv(dotenv_path)
+        API_KEY = os.getenv("API_KEY")
+        if not API_KEY:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="API_KEY environment variable is not set. Please set it in .env.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    # Now verify the token
     if credentials.scheme != "Bearer" or credentials.credentials != API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -170,6 +176,9 @@ async def upload_receipt(file: UploadFile = File(...), api_key: str = Depends(ge
         raise HTTPException(status_code=400, detail=f"Image too large ({file.size / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB.")
     
     raw_image_bytes = await file.read()
+    
+    if len(raw_image_bytes) > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail=f"Image too large ({len(raw_image_bytes) / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB.")
     
     # Added: Check if image is a valid receipt using classifier
     if not gemini_ocr.classify_image_as_receipt(raw_image_bytes):
