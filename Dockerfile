@@ -16,7 +16,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install uv (replace with appropriate arch if needed)
 RUN curl -L https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz \
-    | tar -xz && mv uv /opt/venv/bin/uv
+    | tar -xz && mv uv-aarch64-unknown-linux-gnu/uv /opt/venv/bin/uv && \
+    chmod +x /opt/venv/bin/uv
 
     # Copy dependency files
 COPY pyproject.toml .
