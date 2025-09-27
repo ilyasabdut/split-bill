@@ -179,18 +179,32 @@ def main_app_flow():
                         st.success(f"Receipt processed!"); st.session_state.current_step = 1; st.rerun()
 
                     except requests.exceptions.RequestException as e:
-                        st.error(f"API Error during receipt processing: {e}")
-                        if response is not None and response.status_code: # Check if response is not None
-                            st.error(f"Status Code: {response.status_code}")
+                        status_code = response.status_code if response is not None else None
+                        error_detail = None
+
+                        if response is not None:
                             try:
-                                error_detail = response.json().get("detail", "No additional detail.")
-                                # Specific error handling for "NOT_A_RECEIPT"
-                                if response.status_code == 400 and "not appear to be a receipt" in error_detail:
-                                    st.warning("⚠️ The uploaded image does not appear to be a receipt. Please upload a valid receipt image.")
-                                else:
-                                    st.error(f"Detail: {error_detail}")
+                                error_detail = response.json().get("detail")
                             except json.JSONDecodeError:
-                                st.error(f"Response: {response.text}")
+                                error_detail = response.text or None
+
+                        base_message = "API error during receipt processing."
+                        if status_code is not None:
+                            base_message = f"{base_message} (HTTP {status_code})"
+                        st.error(base_message)
+
+                        if error_detail:
+                            normalized_detail = error_detail.lower()
+                            if status_code == 400 and "receipt" in normalized_detail:
+                                st.warning(f"⚠️ {error_detail}")
+                            elif status_code == 502:
+                                st.warning("The AI service had trouble classifying the receipt. Please try again with a clearer photo or retry later.")
+                                st.info(error_detail)
+                            else:
+                                st.error(error_detail)
+                        else:
+                            st.error(str(e))
+
                         st.stop()
                     except Exception as e:
                         st.error(f"An unexpected error occurred: {e}")

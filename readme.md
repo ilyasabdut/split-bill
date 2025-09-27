@@ -1,10 +1,10 @@
 # 🧾 Bill Splitter with OCR & Shareable Links
 
-This application is now split into a Streamlit frontend and a FastAPI backend, allowing users to upload a receipt image, automatically extracts items and amounts using AI (Google Gemini), and then facilitates splitting the bill among multiple people. Calculated splits can be saved and shared via a unique link.
+This application is now split into a Streamlit frontend and a FastAPI backend, allowing users to upload a receipt image, automatically extracts items and amounts using an OpenRouter-hosted model, and then facilitates splitting the bill among multiple people. Calculated splits can be saved and shared via a unique link.
 
 ## Features
 
-*   **AI-Powered OCR:** Uses Google Gemini to extract details from receipt images.
+*   **AI-Powered OCR:** Uses OpenRouter (Grok 4 Fast) to extract details from receipt images.
 *   **Decoupled Architecture:** Separate Streamlit frontend for UI and FastAPI backend for API logic.
 *   **API Key Authentication:** Secure API endpoints with a simple bearer token API key.
 *   **Step-by-Step UX:** Guides users through uploading, defining people, assigning items, and calculating the split.
@@ -22,7 +22,7 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 
 *   **Frontend:** Streamlit
 *   **Backend API:** FastAPI, Uvicorn
-*   **Backend AI:** Google Gemini API (for OCR and data extraction)
+*   **Backend AI:** OpenRouter API (for OCR and data extraction)
 *   **Image Storage:** MinIO (or any S3-compatible object storage)
 *   **Metadata Storage:** JSON files stored in MinIO
 *   **Programming Language:** Python
@@ -47,7 +47,7 @@ bill-splitter/
 │   └── src/                # Backend (FastAPI) source code
 │       ├── __init__.py
 │       ├── api.py
-│       ├── gemini_ocr.py
+│       ├── openrouter_ocr.py
 │       ├── minio_utils.py
 │       └── split_logic.py
 │
@@ -68,7 +68,7 @@ bill-splitter/
 
 - Python 3.12+
 - Docker & Docker Compose (optional, but recommended for full setup)
-- Google Gemini API key
+- OpenRouter API key
 - MinIO server access
 - An API Key (a simple string secret for authenticating API requests)
 
@@ -92,22 +92,27 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
       ```
     - Update these values in `.env`:
         - `API_KEY`: Strong random string for API authentication
-        - `GEMINI_API_KEY`: Your Google Gemini API key
-        - MinIO credentialsn
+        - `OPENROUTER_API_KEY`: Your OpenRouter API key ([get started](https://openrouter.ai/docs/quickstart))
+        - `OPENROUTER_MODEL_NAME`: Optional override for the deployed model
+        - MinIO credentials
 
     Example `.env` content:
     ```env
     APP_BASE_URL=http://localhost:8501
     FASTAPI_API_URL=http://localhost:8000
     API_KEY=your_secure_random_api_key_here  # IMPORTANT: Change this!
-    GEMINI_API_KEY=your_gemini_api_key
-    GEMINI_MODEL_NAME=gemini-1.5-flash
+    OPENROUTER_API_KEY=your_openrouter_api_key
+    OPENROUTER_MODEL_NAME=x-ai/grok-4-fast:free
     MINIO_ENDPOINT=your_minio_ip:9000
     MINIO_ACCESS_KEY=your_minio_access_key
     MINIO_SECRET_KEY=your_minio_secret_key
     MINIO_BUCKET_NAME=split-bill
     MINIO_USE_SSL=False
     ```
+
+    Optional OpenRouter headers (recommended by the [OpenRouter docs](https://openrouter.ai/docs/quickstart)):
+    - `OPENROUTER_HTTP_REFERER`
+    - `OPENROUTER_X_TITLE`
 
 3.  **Run the Applications**
     From the project root directory, open two separate terminal windows:
@@ -203,9 +208,9 @@ Ensure your MinIO bucket (`split-bill`) has these permissions:
 -   Check server accessibility
 
 ### API Problems
--   Validate `GEMINI_API_KEY`
--   Check API quotas in Google AI Studio
--   Verify model name if customized
+-   Validate `OPENROUTER_API_KEY`
+-   Ensure the API key has access to the selected model in OpenRouter
+-   Verify `OPENROUTER_MODEL_NAME` if you override the default
 
 ### Share Links
 -   Confirm correct `APP_BASE_URL`

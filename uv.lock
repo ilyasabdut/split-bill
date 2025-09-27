@@ -294,25 +294,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/9e/9b/e92ef23b84fa10a64
 wheels = [
     { url = "https://files.pythonhosted.org/packages/17/63/b19553b658a1692443c62bd07e5868adaa0ad746a0751ba62c59568cd45b/google_auth-2.40.3-py2.py3-none-any.whl", hash = "sha256:1370d4593e86213563547f97a92752fc658456fe4514c809544f330fed45a7ca", size = 216137, upload-time = "2025-06-04T18:04:55.573Z" },
 ]
-
-[[package]]
-name = "google-genai"
-version = "1.19.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "google-auth" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "requests" },
-    { name = "typing-extensions" },
-    { name = "websockets" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/14/17/8f717f43732ae2b7775f816f0d8f0b39e2a020bbe7ba202f2ddb2f948c3b/google_genai-1.19.0.tar.gz", hash = "sha256:66f5de78075781bfd9e423f1e3592e4240759dfe0ac42ac74a9dcb2c4f662e9d", size = 198000, upload-time = "2025-06-04T23:10:04.69Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/ae/64fccdebf5811453ce53b0d5ee23d4f27ef173ef36d3b67dad791a0007aa/google_genai-1.19.0-py3-none-any.whl", hash = "sha256:a2955612e4af8c84f83eb43c1ce4e74e1b714732926d0705e639761938192466", size = 200043, upload-time = "2025-06-04T23:10:02.692Z" },
-]
-
 [[package]]
 name = "h11"
 version = "0.16.0"
@@ -988,7 +969,6 @@ dependencies = [
     { name = "charset-normalizer" },
     { name = "cryptography" },
     { name = "fastapi" },
-    { name = "google-genai" },
     { name = "httptools" },
     { name = "loguru" },
     { name = "minio" },
@@ -1010,7 +990,6 @@ requires-dist = [
     { name = "charset-normalizer", specifier = ">=3.4.2" },
     { name = "cryptography", specifier = ">=45.0.3" },
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "google-genai", specifier = ">=1.19.0" },
     { name = "httptools", specifier = "==0.6.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "minio", specifier = ">=7.2.15" },

@@ -9,7 +9,6 @@ dependencies = [
     "charset-normalizer>=3.4.2",
     "cryptography>=45.0.3",
     "fastapi>=0.115.12",
-    "google-genai>=1.19.0",
     "httptools==0.6.1",
     "loguru>=0.7.3",
     "minio>=7.2.15",

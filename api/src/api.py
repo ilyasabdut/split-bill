@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from PIL import Image as PILImage, UnidentifiedImageError
 
-from . import gemini_ocr
+from . import openrouter_ocr
 from . import minio_utils 
 from . import split_logic
 
@@ -180,19 +180,21 @@ async def upload_receipt(file: UploadFile = File(...), api_key: str = Depends(ge
     if len(raw_image_bytes) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(status_code=400, detail=f"Image too large ({len(raw_image_bytes) / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB.")
     
-    # Added: Check if image is a valid receipt using classifier
-    if not gemini_ocr.classify_image_as_receipt(raw_image_bytes):
-        raise HTTPException(status_code=400, detail="The uploaded image does not appear to be a receipt. Please upload a valid receipt image.")
-
     processed_image_bytes = compress_image(raw_image_bytes)
     if not processed_image_bytes:
         raise HTTPException(status_code=500, detail="Image processing failed.")
 
-    parsed_data_dict = gemini_ocr.extract_receipt_data_with_gemini(processed_image_bytes)
+    parsed_data_dict = openrouter_ocr.extract_receipt_data(processed_image_bytes)
 
     # Updated: Removed "NOT_A_RECEIPT" check since we classify upfront
     if "Error" in parsed_data_dict:
-        raise HTTPException(status_code=500, detail=f"Processing error: {parsed_data_dict['Error']}")
+        error_code = parsed_data_dict.get("Error")
+        message = parsed_data_dict.get("message", "Unknown error from OpenRouter.")
+        if error_code == "NOT_A_RECEIPT":
+            raise HTTPException(status_code=400, detail=message)
+        if error_code == "CLASSIFICATION_FAILED":
+            raise HTTPException(status_code=502, detail=message)
+        raise HTTPException(status_code=500, detail=f"Processing error: {message}")
     elif not parsed_data_dict.get('line_items') and not parsed_data_dict.get('total_amount'):
         raise HTTPException(status_code=400, detail="Could not extract details from receipt. Please ensure it's a clear receipt image.")
     
