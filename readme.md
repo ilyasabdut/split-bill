@@ -102,7 +102,7 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
     FASTAPI_API_URL=http://localhost:8000
     API_KEY=your_secure_random_api_key_here  # IMPORTANT: Change this!
     OPENROUTER_API_KEY=your_openrouter_api_key
-    OPENROUTER_MODEL_NAME=x-ai/grok-4-fast:free
+    OPENROUTER_MODEL_NAME=mistralai/mistral-small-3.2-24b-instruct:free
     MINIO_ENDPOINT=your_minio_ip:9000
     MINIO_ACCESS_KEY=your_minio_access_key
     MINIO_SECRET_KEY=your_minio_secret_key
