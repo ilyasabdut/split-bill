@@ -6,21 +6,85 @@ import os
 # Import local modules first
 import sys
 import time
+from collections import defaultdict
+from functools import wraps
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import (  # Import for Bearer token
     HTTPAuthorizationCredentials,
     HTTPBearer,
 )
 from pydantic import BaseModel, Field
+from starlette.responses import JSONResponse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "services"))
 import minio_utils
 import openrouter_ocr
 import split_logic
+
+
+# Simple rate limiting implementation
+class SimpleRateLimiter:
+    def __init__(self):
+        self.requests = defaultdict(list)
+
+    def is_rate_limited(self, client_ip: str, limit: int, window: int) -> bool:
+        """Check if client is rate limited."""
+        now = time.time()
+        client_requests = self.requests[client_ip]
+
+        # Remove old requests outside the window
+        self.requests[client_ip] = [
+            req_time for req_time in client_requests if now - req_time < window
+        ]
+
+        # Check if over limit
+        if len(self.requests[client_ip]) >= limit:
+            return True
+
+        # Add current request
+        self.requests[client_ip].append(now)
+        return False
+
+
+# Global rate limiter instance
+rate_limiter = SimpleRateLimiter()
+
+
+def rate_limit(requests_per_minute: int):
+    """Rate limiting decorator."""
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Extract request from kwargs or args
+            request = None
+            for arg in args:
+                if isinstance(arg, Request):
+                    request = arg
+                    break
+
+            if not request:
+                # If no request object, allow the request
+                return await func(*args, **kwargs)
+
+            client_ip = request.client.host if request.client else "unknown"
+
+            if rate_limiter.is_rate_limited(client_ip, requests_per_minute, 60):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Rate limit exceeded. Maximum {requests_per_minute} requests per minute.",
+                )
+
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
 
 # Constants
 MAX_IMAGE_SIZE_MB = 2
@@ -92,6 +156,38 @@ app.add_middleware(
     allow_methods=["*"],  # Accept all HTTP methods
     allow_headers=["*"],  # Accept all request headers
 )
+
+
+# --- Security Headers Middleware ---
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+
+    # Add security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    )
+
+    return response
+
+
+# --- Input Validation Middleware ---
+@app.middleware("http")
+async def validate_input_size(request: Request, call_next):
+    """Validate request size to prevent DoS attacks."""
+    # Check Content-Length header
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 10 * 1024 * 1024:  # 10MB limit
+        return JSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={"detail": "Request too large. Maximum size is 10MB."},
+        )
+
+    return await call_next(request)
 
 
 def load_shared_split_data(split_id: str) -> dict[str, Any] | None:
@@ -170,8 +266,11 @@ class SharedSplitDataResponse(BaseModel):
 
 
 @app.post("/upload-receipt", response_model=ReceiptUploadResponse)
+@rate_limit(10)  # 10 uploads per minute
 async def upload_receipt(
-    file: UploadFile = File(...), api_key: str = Depends(get_api_key)
+    http_request: Request,  # Add request for rate limiting
+    file: UploadFile = File(...),
+    api_key: str = Depends(get_api_key),
 ):  # Secured with API Key
     if file.size > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(
@@ -238,8 +337,11 @@ async def upload_receipt(
 
 
 @app.post("/calculate-split", response_model=CalculateSplitResponse)
+@rate_limit(30)  # 30 calculations per minute
 async def calculate_split_endpoint(
-    request: CalculateSplitRequest, api_key: str = Depends(get_api_key)
+    http_request: Request,  # Add request for rate limiting
+    request: CalculateSplitRequest,
+    api_key: str = Depends(get_api_key),
 ):  # Secured with API Key
     final_assignments_for_calc = request.item_assignments
 
@@ -378,8 +480,11 @@ async def calculate_split_endpoint(
 
 
 @app.get("/view-split/{split_id}", response_model=SharedSplitDataResponse)
+@rate_limit(100)  # 100 views per minute
 async def view_split(
-    split_id: str, api_key: str = Depends(get_api_key)
+    http_request: Request,  # Add request for rate limiting
+    split_id: str,
+    api_key: str = Depends(get_api_key),
 ):  # Secured with API Key
     loaded_data_dict = load_shared_split_data(split_id)
     if not loaded_data_dict:
