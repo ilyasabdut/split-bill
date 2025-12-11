@@ -69,7 +69,7 @@ def clean_and_convert_number(
 
 
 def calculate_split(
-    assignments: List[Any],
+    assignments,
     tax_amount_str: str,
     tip_amount_str: str,
     person_names: List[str],
@@ -86,8 +86,7 @@ def calculate_split(
     # Ensure total_discount_amount is positive, as it represents a reduction
     actual_total_discount = abs(clean_and_convert_number(total_discount_amount) or 0.0)
 
-    # Initialize split results with explicit typing to help MyPy
-    split_results: Dict[str, Dict[str, Any]] = {
+    split_results = {
         name: {"items": [], "subtotal": 0.0, "tax": 0.0, "tip": 0.0, "total": 0.0}
         for name in person_names
     }
@@ -125,8 +124,8 @@ def calculate_split(
     else:  # Individual item assignment logic
         current_calculated_subtotal_from_items = 0.0
         for assignment in assignments:
-            item_details = assignment.item_details
-            assigned_to_list = assignment.assigned_to
+            item_details: Dict[str, Any] = assignment.item_details
+            assigned_to_list: List[str] = assignment.assigned_to
             item_name = item_details.get("item", "Unknown")
             line_item_quantity = (
                 clean_and_convert_number(item_details.get("qty", "1"), is_quantity=True)
@@ -228,7 +227,7 @@ def calculate_split(
 
     # --- Calculate Total per person and Round ---
     for person_name in person_names:
-        data = split_results[person_name]
+        data: Dict[str, Any] = split_results[person_name]
         data["subtotal"] = round(data["subtotal"], 2)
         data["tax"] = round(data["tax"], 2)
         data["tip"] = round(data["tip"], 2)

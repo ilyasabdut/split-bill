@@ -336,7 +336,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
     try:
         start_time = time.time()
         encoded_image = _encode_image_for_payload(image_bytes)
-        messages = [
+        messages: List[Dict[str, Any]] = [
             {
                 "role": "system",
                 "content": [
@@ -399,7 +399,7 @@ def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
         encoded_image = _encode_image_for_payload(image_bytes)
 
         prompt_text = generate_extraction_prompt(schema_json)
-        messages = [
+        messages: List[Dict[str, Any]] = [
             {
                 "role": "system",
                 "content": [

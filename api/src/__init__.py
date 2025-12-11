@@ -1,1 +1,1 @@
-# Initialize the src package
+# FastAPI Bill Splitter API

@@ -1,0 +1,142 @@
+"""
+Receipt processing router for handling receipt uploads and OCR processing.
+"""
+
+import base64
+import os
+
+# Import services (simplified for this demo)
+import sys
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from services.image_service import compress_image
+from services.openrouter_ocr import extract_receipt_data
+
+# Import core modules (simplified)
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from core.config import settings
+from core.security import get_api_key
+from models.schemas import ReceiptUploadResponse
+
+router = APIRouter(prefix="/receipts", tags=["receipts"])
+
+
+def get_logger(name):
+    """Simple logger replacement"""
+    return type("Logger", (), {"info": print, "error": print, "warning": print})()
+
+
+logger = get_logger(__name__)
+
+
+@router.post("/upload", response_model=ReceiptUploadResponse)
+async def upload_receipt(
+    file: UploadFile = File(...), api_key: str = Depends(get_api_key)
+):
+    """
+    Upload and process a receipt image using OCR.
+
+    Args:
+        file: Uploaded image file
+
+    Returns:
+        Processed receipt data with extracted information
+
+    Raises:
+        HTTPException: For various error conditions (file too large, invalid image, etc.)
+    """
+    logger.info(f"Processing receipt upload: {file.filename}")
+
+    # Validate file size - handle None case
+    file_size = file.size or 0
+    if file_size > settings.MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Image too large ({file_size / (1024*1024):.2f} MB). Max {settings.MAX_IMAGE_SIZE_MB} MB.",
+        )
+
+    # Read file content
+    raw_image_bytes = await file.read()
+
+    # Double-check size after reading
+    if len(raw_image_bytes) > settings.MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Image too large ({len(raw_image_bytes) / (1024*1024):.2f} MB). Max {settings.MAX_IMAGE_SIZE_MB} MB.",
+        )
+
+    # Compress image
+    processed_image_bytes = compress_image(raw_image_bytes)
+    if not processed_image_bytes:
+        raise HTTPException(status_code=500, detail="Image processing failed.")
+
+    logger.info("Starting OCR processing...")
+
+    # Process with OCR
+    try:
+        parsed_data_dict = extract_receipt_data(processed_image_bytes)
+    except Exception as e:
+        logger.error(f"OCR processing failed: {e}")
+        raise HTTPException(status_code=502, detail=f"OCR processing failed: {e}")
+
+    # Check for errors in OCR response
+    if "Error" in parsed_data_dict:
+        error_code = parsed_data_dict.get("Error")
+        message = parsed_data_dict.get("message", "Unknown error from OCR service.")
+
+        if error_code == "NOT_A_RECEIPT":
+            raise HTTPException(status_code=400, detail=message)
+        elif error_code == "CLASSIFICATION_FAILED":
+            raise HTTPException(status_code=502, detail=message)
+        else:
+            raise HTTPException(status_code=500, detail=f"Processing error: {message}")
+
+    # Validate that we got some useful data
+    if not parsed_data_dict.get("line_items") and not parsed_data_dict.get(
+        "total_amount"
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract details from receipt. Please ensure it's a clear receipt image.",
+        )
+
+    # Extract additional data
+    subtotal_from_gemini = parsed_data_dict.get("subtotal", 0.0)
+    try:
+        extracted_subtotal_from_gemini = (
+            float(subtotal_from_gemini) if subtotal_from_gemini else 0.0
+        )
+    except (ValueError, TypeError):
+        extracted_subtotal_from_gemini = 0.0
+
+    # Calculate total discount
+    total_discount = 0.0
+    if isinstance(parsed_data_dict.get("discounts"), list):
+        for disc in parsed_data_dict.get("discounts", []):
+            try:
+                discount_amount = float(disc.get("amount", 0))
+                total_discount += discount_amount
+            except (ValueError, TypeError):
+                continue
+
+    extracted_total_discount = total_discount
+
+    # Encode processed image for response
+    processed_image_bytes_base64 = (
+        base64.b64encode(processed_image_bytes).decode("utf-8")
+        if processed_image_bytes
+        else None
+    )
+
+    logger.info(
+        f"Receipt processing completed successfully. Items found: {len(parsed_data_dict.get('line_items', []))}"
+    )
+
+    return ReceiptUploadResponse(
+        parsed_data=parsed_data_dict,
+        processed_image_bytes_base64=processed_image_bytes_base64,
+        extracted_subtotal_from_gemini=extracted_subtotal_from_gemini,
+        extracted_total_discount=extracted_total_discount,
+    )

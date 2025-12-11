@@ -1,4 +1,4 @@
-.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit check_dotenv
+.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit check_dotenv lint lint-fix test format type-check pre-commit check-quality demo-phase1
 
 # Default target: install dependencies and start the Streamlit app
 all: start
@@ -69,3 +69,53 @@ check_dotenv: install
 	uv pip show python-dotenv
 	@echo "Attempting to run dotenv module directly..."
 	uv run python -m dotenv --version
+
+# Code Quality and Development Tools
+# ==================================
+
+# Check code quality with Ruff
+lint:
+	@echo "🔍 Running code quality checks with Ruff..."
+	uv run ruff check .
+
+# Auto-fix code quality issues
+lint-fix:
+	@echo "🔧 Auto-fixing code quality issues with Ruff..."
+	uv run ruff check --fix .
+
+# Run pre-commit hooks on all files
+pre-commit:
+	@echo "🚀 Running pre-commit hooks on all files..."
+	uv run pre-commit run --all-files
+
+# Format code with Black
+format:
+	@echo "✨ Formatting code with Black..."
+	uv run black .
+
+# Sort imports with isort
+sort-imports:
+	@echo "📋 Sorting imports with isort..."
+	uv run isort .
+
+# Run tests
+test:
+	@echo "🧪 Running tests..."
+	uv run pytest api/tests/ -v
+
+# Type checking with MyPy
+type-check:
+	@echo "🔍 Running type checks with MyPy..."
+	uv run mypy api/src/ --ignore-missing-imports
+
+# Comprehensive quality check (lint + pre-commit)
+check-quality: lint
+	@echo "✅ Running comprehensive quality checks..."
+	@echo "Running pre-commit hooks..."
+	uv run pre-commit run --all-files
+	@echo "All quality checks passed!"
+
+# Phase 1 Demo and Status
+demo-phase1:
+	@echo "🎯 Running Phase 1 Architecture Demo..."
+	python scripts/demos/phase1_demo.py

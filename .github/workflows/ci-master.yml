@@ -57,9 +57,9 @@ jobs:
       - name: Deploy Bill Splitter Apps
         run: |
           echo "Deploying Bill Splitter on $(hostname)"
-          
+
           APP_COMPOSE_DIR="/home/ubuntu/composes/split-bill" # ADJUST THIS PATH
-          
+
           if [ ! -d "${APP_COMPOSE_DIR}" ]; then
             echo "ERROR: Deployment directory ${APP_COMPOSE_DIR} does not exist!"
             exit 1
@@ -75,7 +75,7 @@ jobs:
 
           echo "Pulling latest images for both services using docker-compose.prod.yml..."
           docker compose pull split-bill-app split-bill-api
-          
+
           echo "Restarting containers using docker-compose.prod.yml..."
           docker compose up -d --force-recreate --remove-orphans
 
