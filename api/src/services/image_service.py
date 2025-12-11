@@ -3,10 +3,14 @@ Image processing utilities for the application.
 """
 
 import io
+import logging
 from typing import Optional
 
 from PIL import Image as PILImage
 from PIL import UnidentifiedImageError
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 # Simple configuration without imports to avoid circular dependencies
 MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024  # 2MB default
@@ -42,7 +46,7 @@ def compress_image(
             compressed_bytes = buffer.getvalue()
 
             if len(compressed_bytes) <= target_size_bytes:
-                print(
+                logger.info(
                     f"Image compressed to {len(compressed_bytes) / 1024:.2f} KB with quality {q}"
                 )
                 return compressed_bytes
@@ -61,7 +65,7 @@ def compress_image(
                     buffer, format="JPEG", quality=min_quality, optimize=True
                 )
                 compressed_bytes = buffer.getvalue()
-                print(
+                logger.info(
                     f"Resized/compressed image size: {len(compressed_bytes) / 1024:.2f} KB"
                 )
                 return compressed_bytes
@@ -71,7 +75,7 @@ def compress_image(
     except UnidentifiedImageError:
         raise ValueError("Cannot identify image file.")
     except Exception as e:
-        print(f"Image compression error: {e}")
+        logger.error(f"Image compression error: {e}")
         raise ValueError(f"Image compression error: {e}")
 
 
@@ -120,5 +124,5 @@ def get_image_info(image_bytes: bytes) -> dict:
                 "size_mb": round(len(image_bytes) / (1024 * 1024), 2),
             }
     except Exception as e:
-        print(f"Error getting image info: {e}")
+        logger.error(f"Error getting image info: {e}")
         return {"error": str(e)}

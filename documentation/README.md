@@ -49,8 +49,7 @@ bill-splitter/
 ├── api/
 │   └── src/                # Backend (FastAPI) source code
 │       ├── __init__.py
-│       ├── api.py          # Original API (preserved for compatibility)
-│       ├── api_main.py     # New modular FastAPI application
+│       ├── api_main.py     # Modern modular FastAPI application
 │       ├── core/           # Core utilities and configuration
 │       │   ├── __init__.py
 │       │   ├── config.py   # Centralized configuration management

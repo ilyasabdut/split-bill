@@ -5,6 +5,9 @@ Split calculation router for handling bill splitting and sharing.
 import base64
 import hashlib
 import json
+
+# Import logger after other imports
+import logging
 import time
 from typing import Any, Dict, Optional
 
@@ -28,6 +31,9 @@ from ..services.minio_utils import (
 
 # Import services using relative imports
 from ..services.split_logic import calculate_split
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/splits", tags=["splits"])
 
@@ -158,7 +164,7 @@ async def calculate_split_endpoint(
             if full_image_obj_name:
                 minio_image_object_name = full_image_obj_name
         except Exception as e:
-            print(f"Failed to save receipt image to cloud: {e}")
+            logger.error(f"Failed to save receipt image to cloud: {e}")
 
     # Generate share link
     app_base_url = settings.APP_BASE_URL
@@ -186,7 +192,7 @@ async def calculate_split_endpoint(
 
     meta_upload_obj_name = upload_metadata_to_minio(metadata_to_save, split_id)
     if not meta_upload_obj_name:
-        print(f"Failed to save split metadata for {split_id}.")
+        logger.error(f"Failed to save split metadata for {split_id}.")
 
     return CalculateSplitResponse(
         split_results=calculated_split, share_link=current_share_link, split_id=split_id

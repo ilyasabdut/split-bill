@@ -60,7 +60,7 @@ run-api:
 	@echo "Starting FastAPI app with Uvicorn locally..."
 	cd api && { \
 		uv pip show python-dotenv && \
-		uv run python -m dotenv -f ../.env run uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload; \
+		uv run python -m dotenv -f ../.env run uvicorn src.api_main:app --host 0.0.0.0 --port 8000 --reload; \
 	} || echo "python-dotenv not found; run 'make install'"
 
 # Check for python-dotenv in the environment

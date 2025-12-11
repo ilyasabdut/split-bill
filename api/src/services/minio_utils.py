@@ -1,11 +1,15 @@
 # src/minio_utils.py
 import io
 import json  # For JSON operations
+import logging
 import os
 from typing import Any, Dict, Optional  # For type hints
 
 from minio import Minio
 from minio.error import S3Error
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 # --- MinIO Configuration ---
 MINIO_ENDPOINT = os.environ.get(
@@ -40,12 +44,12 @@ def get_minio_client() -> Optional[Minio]:
         if not all(
             [MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET_NAME]
         ):
-            print(
-                "CRITICAL: MinIO environment variables not fully set. Cannot initialize client."
+            logger.critical(
+                "MinIO environment variables not fully set. Cannot initialize client."
             )
             return None
         try:
-            print(
+            logger.info(
                 f"Initializing MinIO client for endpoint: {MINIO_ENDPOINT}, SSL: {MINIO_USE_SSL}"
             )
             minio_client_instance = Minio(
@@ -56,27 +60,29 @@ def get_minio_client() -> Optional[Minio]:
             )
             found = minio_client_instance.bucket_exists(MINIO_BUCKET_NAME)
             if not found:
-                print(
-                    f"Warning: MinIO bucket '{MINIO_BUCKET_NAME}' does not exist. Attempting to create it."
+                logger.warning(
+                    f"MinIO bucket '{MINIO_BUCKET_NAME}' does not exist. Attempting to create it."
                 )
                 try:
                     minio_client_instance.make_bucket(MINIO_BUCKET_NAME)
-                    print(f"Bucket '{MINIO_BUCKET_NAME}' created successfully.")
+                    logger.info(f"Bucket '{MINIO_BUCKET_NAME}' created successfully.")
                 except S3Error as mb_exc:
-                    print(
+                    logger.error(
                         f"Error creating MinIO bucket '{MINIO_BUCKET_NAME}': {mb_exc}"
                     )
                     minio_client_instance = None  # Cannot proceed without bucket
                     return None
             else:
-                print(
+                logger.info(
                     f"Successfully connected to MinIO and bucket '{MINIO_BUCKET_NAME}' found."
                 )
         except S3Error as exc:
-            print(f"S3Error initializing MinIO client: {exc}")
+            logger.error(f"S3Error initializing MinIO client: {exc}")
             minio_client_instance = None
         except Exception as e:
-            print(f"A non-S3 error occurred during MinIO client initialization: {e}")
+            logger.error(
+                f"A non-S3 error occurred during MinIO client initialization: {e}"
+            )
             minio_client_instance = None
     return minio_client_instance
 
@@ -99,17 +105,17 @@ def upload_to_minio(
             length=data_length,
             content_type=content_type,
         )
-        print(
+        logger.info(
             f"Successfully uploaded {object_name_with_prefix} to MinIO bucket {MINIO_BUCKET_NAME}."
         )
         # It's generally better to return the object_name and construct URLs in the app
         # or use presigned URLs, rather than assuming public accessibility here.
         return object_name_with_prefix  # Indicate success by returning the object name
     except S3Error as exc:
-        print(f"Error uploading '{object_name_with_prefix}' to MinIO: {exc}")
+        logger.error(f"Error uploading '{object_name_with_prefix}' to MinIO: {exc}")
         return None
     except Exception as e:
-        print(
+        logger.error(
             f"An unexpected error occurred during MinIO upload of '{object_name_with_prefix}': {e}"
         )
         return None
@@ -128,16 +134,16 @@ def get_from_minio(object_name_with_prefix: str) -> Optional[bytes]:
         return data_bytes
     except S3Error as exc:
         if exc.code == "NoSuchKey":
-            print(
+            logger.warning(
                 f"Object '{object_name_with_prefix}' not found in MinIO bucket '{MINIO_BUCKET_NAME}'."
             )
         else:
-            print(
+            logger.error(
                 f"S3Error getting object '{object_name_with_prefix}' from MinIO: {exc}"
             )
         return None
     except Exception as e:
-        print(
+        logger.error(
             f"An unexpected error occurred during MinIO get of '{object_name_with_prefix}': {e}"
         )
         return None
@@ -170,10 +176,10 @@ def upload_metadata_to_minio(
         )  # Add .json extension
         return upload_to_minio(json_bytes, object_name_with_prefix, "application/json")
     except TypeError as e:
-        print(f"Error serializing metadata to JSON: {e}")
+        logger.error(f"Error serializing metadata to JSON: {e}")
         return None
     except Exception as e:
-        print(f"Unexpected error preparing metadata for upload: {e}")
+        logger.error(f"Unexpected error preparing metadata for upload: {e}")
         return None
 
 
@@ -186,7 +192,7 @@ def get_metadata_from_minio(base_object_name: str) -> Optional[Dict[str, Any]]:
             metadata_dict = json.loads(json_bytes.decode("utf-8"))
             return metadata_dict
         except json.JSONDecodeError as e:
-            print(
+            logger.error(
                 f"Error decoding JSON from MinIO object '{object_name_with_prefix}': {e}"
             )
             return None
@@ -212,26 +218,26 @@ if __name__ == "__main__":
             "total": 15.50,
         }
 
-        print(f"\nAttempting to upload metadata for {test_metadata_id}...")
+        logger.info(f"Attempting to upload metadata for {test_metadata_id}...")
         meta_obj_name = upload_metadata_to_minio(sample_metadata, test_metadata_id)
         if meta_obj_name:
-            print(
+            logger.info(
                 f"Metadata uploaded, object name should be: {METADATA_PREFIX}{test_metadata_id}.json (Actual MinIO name: {meta_obj_name})"
             )
 
-            print(f"\nAttempting to retrieve metadata for {test_metadata_id}...")
+            logger.info(f"Attempting to retrieve metadata for {test_metadata_id}...")
             retrieved_meta = get_metadata_from_minio(test_metadata_id)
             if retrieved_meta:
-                print("Retrieved metadata:")
-                print(json.dumps(retrieved_meta, indent=2))
+                logger.info("Retrieved metadata:")
+                logger.info(json.dumps(retrieved_meta, indent=2))
                 if retrieved_meta == sample_metadata:
-                    print("Metadata matches: SUCCESS!")
+                    logger.info("Metadata matches: SUCCESS!")
                 else:
-                    print("Metadata MISMATCH: FAILED!")
+                    logger.error("Metadata MISMATCH: FAILED!")
             else:
-                print(f"Failed to retrieve metadata for {test_metadata_id}.")
+                logger.error(f"Failed to retrieve metadata for {test_metadata_id}.")
         else:
-            print(f"Failed to upload metadata for {test_metadata_id}.")
+            logger.error(f"Failed to upload metadata for {test_metadata_id}.")
 
     else:
-        print("MinIO client not configured. Set environment variables.")
+        logger.warning("MinIO client not configured. Set environment variables.")

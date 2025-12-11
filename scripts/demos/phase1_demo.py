@@ -24,7 +24,7 @@ def demo_modular_structure():
         "models/": ["schemas.py"],
         "routers/": ["health.py", "receipts.py", "splits.py"],
         "services/": ["split_logic.py", "openrouter_ocr.py", "minio_utils.py"],
-        "": ["api_main.py", "api.py"],
+        "": ["api_main.py"],
     }
 
     print("📋 NEW MODULAR STRUCTURE:")
