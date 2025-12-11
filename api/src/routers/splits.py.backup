@@ -5,9 +5,9 @@ Split calculation router for handling bill splitting and sharing.
 import base64
 import hashlib
 import json
-
-# Import logger after other imports
 import logging
+import os
+import sys
 import time
 from typing import Any, Dict, Optional
 
@@ -15,25 +15,30 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 # Import core modules
-from ..core.config import settings
-from ..core.security import get_api_key
-from ..models.schemas import (
+from core.config import settings
+from core.security import get_api_key
+from models.schemas import (
     CalculateSplitRequest,
     CalculateSplitResponse,
     ItemAssignment,
     SharedSplitDataResponse,
 )
-from ..services.minio_utils import (
+from services.minio_utils import (
     get_metadata_from_minio,
     upload_image_to_minio,
     upload_metadata_to_minio,
 )
 
-# Import services using relative imports
-from ..services.split_logic import calculate_split
+# Import services
+from services.split_logic import calculate_split
+
+# Import cache integration
+try:
+    from cache_integration import cache_integration
+except ImportError:
+    cache_integration = None
 
 logger = logging.getLogger(__name__)
-
 
 router = APIRouter(prefix="/splits", tags=["splits"])
 
@@ -67,17 +72,7 @@ async def calculate_split_endpoint(
     Returns:
         Split calculation results with share link and split ID
     """
-    final_assignments_for_calc = request.item_assignments
-
-    # Validate request
-    if (
-        not request.split_evenly
-        and not final_assignments_for_calc
-        and (request.tax_amount_input == 0 and request.tip_amount_input == 0)
-    ):
-        raise HTTPException(
-            status_code=400, detail="Please assign items or enter tax/tip."
-        )
+    logger.info("Starting split calculation")
 
     # Generate idempotency key for content-based split ID
     idempotency_key_material = {
@@ -98,7 +93,7 @@ async def calculate_split_endpoint(
                         "item_price": a.item_details.get("price", ""),
                         "assigned_to": sorted(a.assigned_to),
                     }
-                    for a in final_assignments_for_calc
+                    for a in request.item_assignments
                 ],
                 key=lambda x: x["item_desc"],
             )
@@ -122,9 +117,23 @@ async def calculate_split_endpoint(
     )
     split_id = id_hasher.hexdigest()[:12]
 
-    # Check for existing split
+    logger.info(f"Generated split ID: {split_id}")
+
+    # Try to get from cache first
+    if cache_integration and cache_integration.cache_enabled:
+        cached_result = await cache_integration.get_cached_split_result(split_id)
+        if cached_result:
+            logger.info(f"Using cached split result for ID: {split_id}")
+            return CalculateSplitResponse(
+                split_results=cached_result,
+                share_link=f"{settings.APP_BASE_URL}/view-split/{split_id}",
+                split_id=split_id,
+            )
+
+    # Check for existing split in MinIO
     existing_metadata = get_metadata_from_minio(split_id)
     if existing_metadata and existing_metadata.get("share_link"):
+        logger.info(f"Using existing split data for ID: {split_id}")
         return CalculateSplitResponse(
             split_results=existing_metadata.get("calculated_split_results"),
             share_link=existing_metadata["share_link"],
@@ -132,11 +141,13 @@ async def calculate_split_endpoint(
         )
 
     # Calculate split
+    logger.info("Calculating split")
     subtotal_for_even_split = (
         request.extracted_subtotal_from_gemini if request.split_evenly else 0.0
-    ) or 0.0  # Ensure it's always a float, never None
+    ) or 0.0
+
     calculated_split = calculate_split(
-        final_assignments_for_calc,
+        request.item_assignments,
         str(request.tax_amount_input),
         str(request.tip_amount_input),
         request.person_names,
@@ -149,6 +160,11 @@ async def calculate_split_endpoint(
         raise HTTPException(
             status_code=500, detail=f"Calculation error: {calculated_split['Error']}"
         )
+
+    # Cache the result if caching is enabled
+    if cache_integration and cache_integration.cache_enabled:
+        await cache_integration.cache_split_result(split_id, calculated_split)
+        logger.info(f"Cached split result for ID: {split_id}")
 
     # Upload image if provided
     minio_image_object_name = None
@@ -170,12 +186,12 @@ async def calculate_split_endpoint(
     app_base_url = settings.APP_BASE_URL
     current_share_link = f"{app_base_url}/view-split/{split_id}"
 
-    # Save metadata
+    # Save metadata to MinIO
     metadata_to_save = {
         "split_id": split_id,
         "original_parsed_data": request.original_parsed_data,
         "person_names": request.person_names,
-        "item_assignments": [a.dict() for a in final_assignments_for_calc],
+        "item_assignments": [a.dict() for a in request.item_assignments],
         "split_evenly_choice": request.split_evenly,
         "total_discount_applied": request.extracted_total_discount,
         "user_adjusted_tax": request.tax_amount_input,
@@ -193,6 +209,8 @@ async def calculate_split_endpoint(
     meta_upload_obj_name = upload_metadata_to_minio(metadata_to_save, split_id)
     if not meta_upload_obj_name:
         logger.error(f"Failed to save split metadata for {split_id}.")
+
+    logger.info(f"Split calculation completed for ID: {split_id}")
 
     return CalculateSplitResponse(
         split_results=calculated_split, share_link=current_share_link, split_id=split_id
@@ -213,11 +231,50 @@ async def view_split(split_id: str, api_key: str = Depends(get_api_key)):
     Raises:
         HTTPException: If split data not found
     """
+    logger.info(f"Retrieving split data for ID: {split_id}")
+
+    # Try to get from cache first
+    if cache_integration and cache_integration.cache_enabled:
+        cached_data = await cache_integration.get_cached_share_data(split_id)
+        if cached_data:
+            logger.info(f"Using cached share data for ID: {split_id}")
+            # Convert back to response format
+            item_assignments_converted = [
+                ItemAssignment(**item)
+                for item in cached_data.get("item_assignments", [])
+            ]
+
+            return SharedSplitDataResponse(
+                split_id=cached_data["split_id"],
+                original_parsed_data=cached_data.get("original_parsed_data", {}),
+                person_names=cached_data.get("person_names", []),
+                item_assignments=item_assignments_converted,
+                split_evenly_choice=cached_data.get("split_evenly_choice", False),
+                total_discount_applied=cached_data.get("total_discount_applied", 0.0),
+                user_adjusted_tax=cached_data.get("user_adjusted_tax", 0.0),
+                user_adjusted_tip=cached_data.get("user_adjusted_tip", 0.0),
+                calculated_split_results=cached_data.get(
+                    "calculated_split_results", {}
+                ),
+                minio_image_object_name=cached_data.get("minio_image_object_name"),
+                share_link=cached_data.get("share_link"),
+                creation_timestamp=cached_data.get("creation_timestamp", 0.0),
+                image_bytes_for_display_base64=None,
+                notes_text=cached_data.get("notes_text", ""),
+                payment_details=cached_data.get("payment_details", {}),
+            )
+
+    # Load from MinIO
     loaded_data_dict = load_shared_split_data(split_id)
     if not loaded_data_dict:
         raise HTTPException(
             status_code=404, detail=f"Split data for ID '{split_id}' not found."
         )
+
+    # Cache the result if caching is enabled
+    if cache_integration and cache_integration.cache_enabled:
+        await cache_integration.cache_share_data(split_id, loaded_data_dict)
+        logger.info(f"Cached share data for ID: {split_id}")
 
     # Convert item_assignments to proper format
     item_assignments_converted = [
@@ -229,6 +286,8 @@ async def view_split(split_id: str, api_key: str = Depends(get_api_key)):
     if payment_details is None:
         payment_option_value = loaded_data_dict.get("payment_option", "Cash")
         payment_details = {"method": payment_option_value}
+
+    logger.info(f"Successfully retrieved split data for ID: {split_id}")
 
     return SharedSplitDataResponse(
         split_id=loaded_data_dict["split_id"],

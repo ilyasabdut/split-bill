@@ -29,4 +29,20 @@ services:
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8000}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: valkey/valkey:alpine3.23
+    container_name: split-bill-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+volumes:
+  redis_data:
