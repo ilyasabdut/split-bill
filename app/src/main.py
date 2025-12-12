@@ -169,7 +169,7 @@ def load_shared_split_data_from_api(split_id: str) -> dict[str, Any] | None:
     try:
         headers = get_api_headers()
         response = requests.get(
-            f"{FASTAPI_API_URL}/view-split/{split_id}", headers=headers
+            f"{FASTAPI_API_URL}/splits/view/{split_id}", headers=headers
         )
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.json()
@@ -671,10 +671,11 @@ def main_app_flow():
                         "payment_details": st.session_state.payment_details,
                     }
                     with st.spinner("Calculating split and generating link..."):
+                        response = None  # Initialize response variable
                         try:
                             headers = get_api_headers()
                             response = requests.post(
-                                f"{FASTAPI_API_URL}/calculate-split",
+                                f"{FASTAPI_API_URL}/splits/calculate",
                                 json=calculate_payload,
                                 headers=headers,
                             )

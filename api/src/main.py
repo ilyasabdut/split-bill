@@ -1,12 +1,6 @@
 """
 Production Split Bill API
 Single entry point with modular architecture, security, and caching.
-
-This is the main FastAPI application that combines:
-- Modular router structure for maintainability
-- Enterprise security (API key auth, rate limiting, security headers)
-- High performance caching with Redis
-- Clean separation of concerns
 """
 
 import hashlib
@@ -49,22 +43,29 @@ APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8000")
 CACHE_AVAILABLE = False
 CACHE_SERVICE = None
 
+# Simple monitoring data
+MONITORING_DATA = {
+    "request_count": 0,
+    "error_count": 0,
+    "splits_calculated": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "start_time": time.time(),
+}
 
-# Lazy import for cache service to avoid startup errors
+
+# Lazy import for cache service
 def get_cache_service():
     """Lazy import cache service."""
     global CACHE_SERVICE, CACHE_AVAILABLE
     if not CACHE_AVAILABLE:
         try:
-            # Use try-except to handle import errors gracefully
             cache_module = __import__("core.cache", fromlist=["cache_service"])
             CACHE_SERVICE = getattr(cache_module, "cache_service")
             CACHE_AVAILABLE = True
             logger.info("Cache service available")
         except (ImportError, AttributeError) as e:
-            logger.warning(
-                f"Cache service not available - running without caching: {e}"
-            )
+            logger.warning(f"Cache service not available: {e}")
     return CACHE_SERVICE
 
 
@@ -129,7 +130,6 @@ def rate_limit(requests_per_minute: int):
                     break
 
             if not request:
-                # If no request object, allow the request
                 return await func(*args, **kwargs)
 
             client_ip = request.client.host if request.client else "unknown"
@@ -152,7 +152,6 @@ def rate_limit(requests_per_minute: int):
 # =============================================================================
 
 
-# Cache helper functions
 async def get_cached_split(split_id: str) -> Optional[Dict[str, Any]]:
     """Get cached split result."""
     cache_service = get_cache_service()
@@ -190,10 +189,6 @@ class CalculateSplitRequest(BaseModel):
     split_evenly: bool = False
     extracted_subtotal_from_gemini: Optional[float] = None
     extracted_total_discount: float = 0.0
-    processed_image_bytes_for_minio_base64: Optional[str] = None
-    original_parsed_data: Dict[str, Any] = {}
-    notes_text: Optional[str] = None
-    payment_details: Optional[Dict[str, Any]] = None
 
 
 class CalculateSplitResponse(BaseModel):
@@ -212,12 +207,7 @@ class SharedSplitDataResponse(BaseModel):
     user_adjusted_tax: float
     user_adjusted_tip: float
     calculated_split_results: Dict[str, Any]
-    minio_image_object_name: Optional[str] = None
-    share_link: Optional[str] = None
     creation_timestamp: float
-    image_bytes_for_display_base64: Optional[str] = None
-    notes_text: str = ""
-    payment_details: Dict[str, Any] = {}
 
 
 # =============================================================================
@@ -234,23 +224,22 @@ def calculate_split(
     overall_subtotal_for_even_split: float = 0.0,
     total_discount_amount: float = 0.0,
 ) -> Dict[str, Any]:
-    """Calculate bill split - simplified version."""
+    """Calculate bill split."""
     try:
-        # Initialize results
         split_results = {
             person: {"subtotal": 0.0, "items": []} for person in person_names
         }
 
         if split_evenly_flag:
-            # Split evenly among all people
             num_people = len(person_names)
-            subtotal_per_person = overall_subtotal_for_even_split / num_people
+            subtotal_per_person = (
+                overall_subtotal_for_even_split / num_people if num_people > 0 else 0.0
+            )
 
             for person in person_names:
                 split_results[person]["subtotal"] = subtotal_per_person
                 split_results[person]["items"] = []
         else:
-            # Split based on assignments
             for assignment in item_assignments:
                 item_details = assignment.get("item_details", {})
                 assigned_to = assignment.get("assigned_to", [])
@@ -276,7 +265,6 @@ def calculate_split(
             tax_amount = 0.0
             tip_amount = 0.0
 
-        # Apply tax and tip
         total_subtotal = sum(
             person_data["subtotal"] for person_data in split_results.values()
         )
@@ -291,9 +279,12 @@ def calculate_split(
                     + split_results[person]["tip"]
                 )
         else:
-            # Split tax and tip evenly if no subtotal
-            tax_per_person = tax_amount / len(person_names)
-            tip_per_person = tip_amount / len(person_names)
+            tax_per_person = (
+                tax_amount / len(person_names) if len(person_names) > 0 else 0.0
+            )
+            tip_per_person = (
+                tip_amount / len(person_names) if len(person_names) > 0 else 0.0
+            )
             for person in person_names:
                 split_results[person]["tax"] = tax_per_person
                 split_results[person]["tip"] = tip_per_person
@@ -318,20 +309,24 @@ health_router = APIRouter(prefix="/health", tags=["health"])
 
 @health_router.get("/")
 async def health_check():
-    """Health check endpoint."""
+    """Enhanced health check with monitoring."""
     health_status = {
         "status": "healthy",
         "timestamp": time.time(),
         "version": "2.0.0",
         "security": "enabled",
         "caching": "enabled" if get_cache_service() else "disabled",
+        "monitoring": {
+            "uptime_seconds": time.time() - MONITORING_DATA["start_time"],
+            "requests_total": MONITORING_DATA["request_count"],
+            "errors_total": MONITORING_DATA["error_count"],
+            "splits_calculated": MONITORING_DATA["splits_calculated"],
+        },
     }
 
-    # Check cache if available
     cache_service = get_cache_service()
     if cache_service:
         try:
-            # Simple cache ping
             await cache_service.get("health_check")
             health_status["cache"] = "connected"
         except Exception as e:
@@ -340,8 +335,39 @@ async def health_check():
     return health_status
 
 
-# Core API Router
-api_router = APIRouter(prefix="/api", tags=["api"])
+# Metrics Router
+metrics_router = APIRouter(prefix="/metrics", tags=["metrics"])
+
+
+@metrics_router.get("/")
+async def get_metrics():
+    """Get application metrics."""
+    uptime = time.time() - MONITORING_DATA["start_time"]
+    cache_hit_rate = 0
+    total_cache_ops = MONITORING_DATA["cache_hits"] + MONITORING_DATA["cache_misses"]
+    if total_cache_ops > 0:
+        cache_hit_rate = MONITORING_DATA["cache_hits"] / total_cache_ops
+
+    return {
+        "application": {
+            "version": "2.0.0",
+            "uptime_seconds": uptime,
+            "status": "running",
+        },
+        "requests": {
+            "total": MONITORING_DATA["request_count"],
+            "errors": MONITORING_DATA["error_count"],
+            "error_rate": MONITORING_DATA["error_count"]
+            / max(MONITORING_DATA["request_count"], 1),
+        },
+        "business": {"splits_calculated": MONITORING_DATA["splits_calculated"]},
+        "cache": {
+            "hits": MONITORING_DATA["cache_hits"],
+            "misses": MONITORING_DATA["cache_misses"],
+            "hit_rate": cache_hit_rate,
+        },
+        "timestamp": time.time(),
+    }
 
 
 # Split Router
@@ -349,120 +375,116 @@ splits_router = APIRouter(prefix="/splits", tags=["splits"])
 
 
 @splits_router.post("/calculate", response_model=CalculateSplitResponse)
-@rate_limit(30)  # 30 calculations per minute
+@rate_limit(30)
 async def calculate_split_endpoint(
-    request: Request,  # Add request for rate limiting
+    request: Request,
     split_request: CalculateSplitRequest,
     api_key: str = Depends(get_api_key),
 ):
-    """
-    Calculate bill split with caching and security.
+    """Calculate bill split with caching and security."""
+    global MONITORING_DATA
 
-    - **Security**: API Key authentication required
-    - **Rate Limiting**: 30 requests per minute
-    - **Caching**: Results cached for 1 hour
-    """
-    logger.info(
-        f"Processing split calculation for {len(split_request.person_names)} people"
-    )
+    MONITORING_DATA["request_count"] += 1
 
-    # Generate split ID based on request data
-    idempotency_key_material = {
-        "people": sorted(split_request.person_names),
-        "assignments": sorted(
-            [
-                {
-                    "item": a.get("item_details", {}).get("item", ""),
-                    "qty": a.get("item_details", {}).get("qty", ""),
-                    "price": a.get("item_details", {}).get("price", ""),
-                    "assigned_to": sorted(a.get("assigned_to", [])),
-                }
-                for a in split_request.item_assignments
-            ],
-            key=lambda x: x["item"],
-        ),
-        "tax": split_request.tax_amount_input,
-        "tip": split_request.tip_amount_input,
-        "split_evenly": split_request.split_evenly,
-        "subtotal": split_request.extracted_subtotal_from_gemini or 0,
-        "discount": split_request.extracted_total_discount,
-    }
+    try:
+        logger.info(
+            f"Processing split calculation for {len(split_request.person_names)} people"
+        )
 
-    id_hasher = hashlib.sha256()
-    id_hasher.update(
-        json.dumps(idempotency_key_material, sort_keys=True).encode("utf-8")
-    )
-    split_id = id_hasher.hexdigest()[:12]
+        # Generate split ID
+        idempotency_key_material = {
+            "people": sorted(split_request.person_names),
+            "assignments": sorted(
+                [
+                    {
+                        "item": a.get("item_details", {}).get("item", ""),
+                        "price": a.get("item_details", {}).get("price", ""),
+                        "assigned_to": sorted(a.get("assigned_to", [])),
+                    }
+                    for a in split_request.item_assignments
+                ],
+                key=lambda x: x["item"],
+            ),
+            "tax": split_request.tax_amount_input,
+            "tip": split_request.tip_amount_input,
+            "split_evenly": split_request.split_evenly,
+        }
 
-    logger.info(f"Generated split ID: {split_id}")
+        id_hasher = hashlib.sha256()
+        id_hasher.update(
+            json.dumps(idempotency_key_material, sort_keys=True).encode("utf-8")
+        )
+        split_id = id_hasher.hexdigest()[:12]
 
-    # Check cache first
-    cached_result = await get_cached_split(split_id)
-    if cached_result:
-        logger.info(f"Using cached result for split ID: {split_id}")
+        logger.info(f"Generated split ID: {split_id}")
+
+        # Check cache first
+        cached_result = await get_cached_split(split_id)
+        if cached_result:
+            logger.info(f"Using cached result for split ID: {split_id}")
+            MONITORING_DATA["cache_hits"] += 1
+            share_link = f"{APP_BASE_URL}/splits/view/{split_id}"
+            return CalculateSplitResponse(
+                split_results=cached_result,
+                share_link=share_link,
+                split_id=split_id,
+            )
+        else:
+            MONITORING_DATA["cache_misses"] += 1
+
+        # Calculate split
+        logger.info("Calculating split...")
+        subtotal_for_even = split_request.extracted_subtotal_from_gemini or 0.0
+
+        calculated_split = calculate_split(
+            split_request.item_assignments,
+            str(split_request.tax_amount_input),
+            str(split_request.tip_amount_input),
+            split_request.person_names,
+            split_evenly_flag=split_request.split_evenly,
+            overall_subtotal_for_even_split=subtotal_for_even,
+            total_discount_amount=split_request.extracted_total_discount,
+        )
+
+        if "Error" in calculated_split:
+            MONITORING_DATA["error_count"] += 1
+            raise HTTPException(
+                status_code=500,
+                detail=f"Calculation error: {calculated_split['Error']}",
+            )
+
+        # Cache the result
+        await cache_split_result(split_id, calculated_split)
+        logger.info(f"Cached result for split ID: {split_id}")
+
+        # Record business metrics
+        MONITORING_DATA["splits_calculated"] += 1
+
         share_link = f"{APP_BASE_URL}/splits/view/{split_id}"
+
         return CalculateSplitResponse(
-            split_results=cached_result,
+            split_results=calculated_split,
             share_link=share_link,
             split_id=split_id,
         )
 
-    # Calculate split
-    logger.info("Calculating split...")
-    subtotal_for_even = (
-        split_request.extracted_subtotal_from_gemini
-        if split_request.split_evenly
-        else 0.0
-    ) or 0.0
-
-    calculated_split = calculate_split(
-        split_request.item_assignments,
-        str(split_request.tax_amount_input),
-        str(split_request.tip_amount_input),
-        split_request.person_names,
-        split_evenly_flag=split_request.split_evenly,
-        overall_subtotal_for_even_split=subtotal_for_even,
-        total_discount_amount=split_request.extracted_total_discount,
-    )
-
-    if "Error" in calculated_split:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Calculation error: {calculated_split['Error']}",
-        )
-
-    # Cache the result
-    await cache_split_result(split_id, calculated_split)
-    logger.info(f"Cached result for split ID: {split_id}")
-
-    share_link = f"{APP_BASE_URL}/splits/view/{split_id}"
-
-    return CalculateSplitResponse(
-        split_results=calculated_split,
-        share_link=share_link,
-        split_id=split_id,
-    )
+    except Exception as e:
+        MONITORING_DATA["error_count"] += 1
+        logger.error(f"Split calculation error: {e}", exc_info=True)
+        raise
 
 
 @splits_router.get("/view/{split_id}", response_model=SharedSplitDataResponse)
-@rate_limit(100)  # 100 views per minute
+@rate_limit(100)
 async def view_split(
-    request: Request,  # Add request for rate limiting
+    request: Request,
     split_id: str,
     api_key: str = Depends(get_api_key),
 ):
-    """
-    View shared split data with caching.
-
-    - **Security**: API Key authentication required
-    - **Rate Limiting**: 100 requests per minute
-    - **Caching**: Results cached for 24 hours
-    """
+    """View shared split data."""
     logger.info(f"Retrieving split data for ID: {split_id}")
 
-    # For demo purposes, return mock data since we don't have MinIO setup
-    # In production, this would fetch from MinIO and cache the result
-
+    # Mock data for demonstration
     mock_data = {
         "split_id": split_id,
         "original_parsed_data": {"mock": "data"},
@@ -473,11 +495,7 @@ async def view_split(
         "user_adjusted_tax": 2.50,
         "user_adjusted_tip": 5.00,
         "calculated_split_results": {"Alice": {"total": 15.0}, "Bob": {"total": 15.0}},
-        "minio_image_object_name": None,
-        "share_link": f"{APP_BASE_URL}/splits/view/{split_id}",
         "creation_timestamp": time.time(),
-        "notes_text": "Demo split data",
-        "payment_details": {"method": "Cash"},
     }
 
     return SharedSplitDataResponse(**mock_data)
@@ -491,8 +509,7 @@ async def view_split(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan management."""
-    # Startup
-    logger.info("Starting Split Bill API with Security & Caching...")
+    logger.info("Starting Split Bill API...")
 
     cache_service = get_cache_service()
     if cache_service:
@@ -504,7 +521,6 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown
     logger.info("Shutting down Split Bill API...")
     cache_service = get_cache_service()
     if cache_service:
@@ -519,7 +535,6 @@ async def lifespan(app: FastAPI):
 # MAIN APPLICATION
 # =============================================================================
 
-# Create FastAPI app
 app = FastAPI(
     title="Split Bill API",
     description="Secure API with caching for bill splitting and receipt processing.",
@@ -535,13 +550,11 @@ app = FastAPI(
 # =============================================================================
 
 
-# Security Middleware
 @app.middleware("http")
 async def add_security_headers(request, call_next):
     """Add security headers to all responses."""
     response = await call_next(request)
 
-    # Add security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -566,7 +579,6 @@ async def validate_input_size(request: Request, call_next):
     return await call_next(request)
 
 
-# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -580,7 +592,6 @@ app.add_middleware(
 # =============================================================================
 
 
-# Root endpoint
 @app.get("/")
 async def root():
     """Root endpoint with API information."""
@@ -595,9 +606,8 @@ async def root():
     }
 
 
-# Include routers
 app.include_router(health_router)
-app.include_router(api_router)
+app.include_router(metrics_router)
 app.include_router(splits_router)
 
 # =============================================================================

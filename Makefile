@@ -1,4 +1,4 @@
-.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1
+.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit stop stop-api check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1
 
 # Default target: install dependencies and start the Streamlit app
 all: start
@@ -13,7 +13,19 @@ up:
 	@echo "Starting services with Docker Compose..."
 	docker-compose up --build -d
 
-# Stop and remove Docker Compose services
+# Stop all running services
+stop:
+	@echo "🛑 Stopping all services..."
+	pkill -f "uvicorn" || true
+	pkill -f "streamlit" || true
+	docker-compose down || true
+	@echo "✅ All services stopped."
+
+# Stop API server specifically
+stop-api:
+	@echo "🛑 Stopping API server..."
+	pkill -f "uvicorn.*8000" || true
+	@echo "✅ API server stopped."
 down:
 	@echo "Stopping and removing Docker Compose services..."
 	docker-compose down
@@ -57,9 +69,11 @@ run-streamlit:
 
 # Start the FastAPI application with Uvicorn locally
 run-api:
-	@echo "Starting FastAPI app with Uvicorn locally..."
+	@echo "🚀 Starting FastAPI app with Uvicorn locally..."
 	cd api && { \
 		uv pip show python-dotenv && \
+		(pkill -f "uvicorn.*8000" || true) && \
+		sleep 2 && \
 		uv run python -m dotenv -f ../.env run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload; \
 	} || echo "python-dotenv not found; run 'make install'"
 
