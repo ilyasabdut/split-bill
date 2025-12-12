@@ -1,16 +1,16 @@
 import base64
 import io
-import json
 import os
 import time
-import threading
 from typing import Any
 
-import pandas as pd
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from constants import BANK_NAMES, E_WALLET_PROVIDERS, MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_SIZE_MB
+from constants import (
+    MAX_IMAGE_SIZE_BYTES,
+    MAX_IMAGE_SIZE_MB,
+)
 from PIL import Image as PILImage
 
 # Configuration for FastAPI backend URL
@@ -25,6 +25,7 @@ API_KEY = os.environ.get("API_KEY")  # Get API key from environment variable
 # Initialize theme state
 if "theme" not in st.session_state:
     st.session_state.theme = "light"
+
 
 # Apply theme CSS
 def apply_theme():
@@ -71,10 +72,11 @@ def apply_theme():
             color: #ffffff;
         }
         </style>
-        """
+        """,
     }
-    
+
     st.markdown(theme_css[st.session_state.theme], unsafe_allow_html=True)
+
 
 # Apply initial theme
 apply_theme()
@@ -123,9 +125,11 @@ components.html(
 # --- Theme Toggle ---
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🌙" if st.session_state.theme == "light" else "☀️", 
-                help="Toggle dark/light theme", 
-                key="theme_toggle"):
+    if st.button(
+        "🌙" if st.session_state.theme == "light" else "☀️",
+        help="Toggle dark/light theme",
+        key="theme_toggle",
+    ):
         st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
         apply_theme()
         st.rerun()
@@ -222,12 +226,15 @@ components.html(
     height=0,
 )
 
+
 # --- Enhanced Status Update Function ---
 def update_status(message: str, progress: int | None = None):
     """Update processing status with accessibility announcements."""
     if progress is not None:
-        st.session_state.processing_progress = max(0, min(100, progress))  # Clamp between 0-100
-    
+        st.session_state.processing_progress = max(
+            0, min(100, progress)
+        )  # Clamp between 0-100
+
     # Update ARIA live region
     components.html(
         f"""
@@ -237,27 +244,40 @@ def update_status(message: str, progress: int | None = None):
         """,
         height=0,
     )
-    
+
     # Update Streamlit status
     st.session_state.processing_status = message
+
 
 # --- Helper functions ---
 def update_tax_amount():
     st.session_state.tax_amount_input = st.session_state.tax_input_s3
     st.rerun()
 
+
 def update_tip_amount():
     st.session_state.tip_amount_input = st.session_state.tip_input_s3
     st.rerun()
 
+
 def reset_app_state_full():
     keys_to_reset = [
-        "current_step", "parsed_data", "last_uploaded_file_info",
-        "uploaded_image_bytes", "processed_image_bytes_for_minio_base64",
-        "minio_image_object_name", "item_assignments", "split_results",
-        "share_link", "view_split_id", "loaded_share_data", "split_evenly",
-        "extracted_subtotal_from_gemini", "extracted_total_discount",
-        "processing_status", "processing_progress"
+        "current_step",
+        "parsed_data",
+        "last_uploaded_file_info",
+        "uploaded_image_bytes",
+        "processed_image_bytes_for_minio_base64",
+        "minio_image_object_name",
+        "item_assignments",
+        "split_results",
+        "share_link",
+        "view_split_id",
+        "loaded_share_data",
+        "split_evenly",
+        "extracted_subtotal_from_gemini",
+        "extracted_total_discount",
+        "processing_status",
+        "processing_progress",
     ]
     for key in keys_to_reset:
         st.session_state.pop(key, None)
@@ -268,6 +288,7 @@ def reset_app_state_full():
     st.session_state.tip_amount_input = 0.0
     st.session_state.processing_status = "idle"
     st.session_state.processing_progress = 0
+
 
 def reset_to_step(step_number: int, full_reset: bool = False):
     st.session_state.current_step = step_number
@@ -284,11 +305,13 @@ def reset_to_step(step_number: int, full_reset: bool = False):
         if step_number <= 0:
             st.session_state._start_new_split_requested = True
 
+
 def get_api_headers():
     headers = {}
     if API_KEY:
         headers["Authorization"] = f"Bearer {API_KEY}"
     return headers
+
 
 def load_shared_split_data_from_api(split_id: str) -> dict[str, Any] | None:
     try:
@@ -302,17 +325,18 @@ def load_shared_split_data_from_api(split_id: str) -> dict[str, Any] | None:
         st.error(f"Error loading shared split data: {e}")
         return None
 
+
 # --- Enhanced Processing Function with Real-time Feedback ---
 def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
     """Process receipt with real-time progress updates."""
-    
+
     # Step 1: Preparing
     update_status("Preparing to process receipt...", 10)
     time.sleep(0.5)
-    
+
     # Step 2: Uploading
     update_status("Uploading receipt to server...", 25)
-    
+
     try:
         files = {
             "file": (
@@ -322,29 +346,29 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
             )
         }
         headers = get_api_headers()
-        
+
         # Step 3: Processing with OCR
         update_status("Processing receipt with AI (OCR)...", 50)
-        
+
         response = requests.post(
             f"{FASTAPI_API_URL}/upload-receipt",
             files=files,
             headers=headers,
         )
-        
+
         # Step 4: Parsing results
         update_status("Parsing receipt data...", 75)
-        
+
         response.raise_for_status()
         api_response = response.json()
-        
+
         # Step 5: Finalizing
         update_status("Finalizing results...", 90)
-        
+
         # Update session state
         st.session_state.parsed_data = api_response["parsed_data"]
-        st.session_state.processed_image_bytes_for_minio_base64 = (
-            api_response.get("processed_image_bytes_base64")
+        st.session_state.processed_image_bytes_for_minio_base64 = api_response.get(
+            "processed_image_bytes_base64"
         )
         st.session_state.extracted_subtotal_from_gemini = api_response[
             "extracted_subtotal_from_gemini"
@@ -352,28 +376,29 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
         st.session_state.extracted_total_discount = api_response[
             "extracted_total_discount"
         ]
-        
+
         # Complete
         update_status("Receipt processed successfully!", 100)
         time.sleep(0.5)
-        
+
         return api_response
-        
+
     except requests.exceptions.RequestException as e:
         update_status(f"Error processing receipt: {str(e)}", 0)
         return None
 
+
 # --- Main App Flow ---
 def main_app_flow():
     st.title("🧾 Split Bill")
-    
+
     # Accessibility: Main content identifier
     st.markdown('<div id="main-content">', unsafe_allow_html=True)
 
     if not API_KEY:
         st.error(
             "API_KEY environment variable is not set. Please set it to connect to the backend API.",
-            icon="⚠️"
+            icon="⚠️",
         )
         st.stop()
 
@@ -385,24 +410,24 @@ def main_app_flow():
     # --- STEP 0: Upload Image ---
     if st.session_state.current_step == 0:
         st.header("📸 Step 1: Upload Receipt", anchor="upload-step")
-        
+
         # Mobile-friendly file uploader
         uploaded_file = st.file_uploader(
             "Select a receipt image",
             type=["jpg", "jpeg", "png"],
             label_visibility="collapsed",
             help="Upload a clear photo of your receipt for best results",
-            accept_multiple_files=False
+            accept_multiple_files=False,
         )
-        
+
         if uploaded_file is not None:
             if uploaded_file.size > MAX_IMAGE_SIZE_BYTES:
                 st.error(
                     f"📏 Image too large ({uploaded_file.size / (1024*1024):.2f} MB). Max {MAX_IMAGE_SIZE_MB} MB.",
-                    icon="⚠️"
+                    icon="⚠️",
                 )
                 st.stop()
-            
+
             current_file_info = (uploaded_file.name, uploaded_file.size)
             if (
                 st.session_state.parsed_data is None
@@ -417,19 +442,25 @@ def main_app_flow():
                 with st.container():
                     # Create columns for better mobile layout
                     col1, col2 = st.columns([3, 1])
-                    
+
                     with col1:
-                        if st.button("🚀 Process Receipt", 
-                                   type="primary",
-                                   use_container_width=True,
-                                   help="Click to start processing your receipt"):
-                            
+                        if st.button(
+                            "🚀 Process Receipt",
+                            type="primary",
+                            use_container_width=True,
+                            help="Click to start processing your receipt",
+                        ):
+
                             # Process with enhanced feedback
-                            result = process_receipt_with_feedback(uploaded_file, raw_image_bytes)
-                            
+                            result = process_receipt_with_feedback(
+                                uploaded_file, raw_image_bytes
+                            )
+
                             if result:
                                 # Display processed image
-                                if st.session_state.processed_image_bytes_for_minio_base64:
+                                if (
+                                    st.session_state.processed_image_bytes_for_minio_base64
+                                ):
                                     try:
                                         pil_image_display = PILImage.open(
                                             io.BytesIO(
@@ -445,36 +476,46 @@ def main_app_flow():
                                         )
                                     except Exception as e:
                                         st.warning(f"Could not display image: {e}")
-                                
-                                st.success("🎉 Receipt processed successfully!", icon="✅")
-                                
+
+                                st.success(
+                                    "🎉 Receipt processed successfully!", icon="✅"
+                                )
+
                                 # Reset processing status
                                 st.session_state.processing_status = "idle"
                                 st.session_state.processing_progress = 0
-                                
+
                                 # Move to next step
                                 st.session_state.current_step = 1
                                 st.rerun()
                             else:
                                 # Enhanced error handling
-                                st.error("❌ Failed to process receipt. Please try again.", icon="🚫")
-                                
+                                st.error(
+                                    "❌ Failed to process receipt. Please try again.",
+                                    icon="🚫",
+                                )
+
                                 # Recovery suggestions
-                                with st.expander("💡 Recovery Suggestions", expanded=True):
-                                    st.markdown("""
+                                with st.expander(
+                                    "💡 Recovery Suggestions", expanded=True
+                                ):
+                                    st.markdown(
+                                        """
                                     **Try these solutions:**
                                     - 📸 Take a clearer, well-lit photo
                                     - ✂️ Make sure the receipt is fully visible
                                     - 🔄 Try uploading a different image
                                     - ⏰ Wait a moment and try again
-                                    """)
-                                
+                                    """
+                                    )
+
                                 # Reset processing status
                                 st.session_state.processing_status = "idle"
                                 st.session_state.processing_progress = 0
 
     # Close main content div
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Run the app
 if __name__ == "__main__":
