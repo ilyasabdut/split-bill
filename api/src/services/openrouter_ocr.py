@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 OPENROUTER_API_BASE_URL = os.getenv(
     "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
 )
-DEFAULT_OPENROUTER_MODEL = "amazon/nova-2-lite-v1:free"
+DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o"
 
 
 class LineItem(BaseModel):
@@ -364,7 +364,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
         ]
 
         logger.info("Sending classification request to OpenRouter API...")
-        response_payload = _call_openrouter(messages, temperature=0.0, max_tokens=16)
+        response_payload = _call_openrouter(messages, temperature=0.0, max_tokens=50)
         logger.debug(f"OpenRouter classification response payload: {response_payload}")
         classification_result = _extract_message_text(response_payload).upper().strip()
         elapsed = time.time() - start_time
