@@ -614,13 +614,7 @@ async def root():
         "caching": (
             "Redis caching enabled" if get_cache_service() else "Caching disabled"
         ),
-        "monitoring": {
-            "endpoints_available": MONITORING_AVAILABLE,
-            "health": "/monitoring/health",
-            "metrics": "/monitoring/metrics",
-            "system_metrics": "/monitoring/system-metrics",
-            "status": "/monitoring/status"
-        },
+        "monitoring": MONITORING_AVAILABLE,
         "docs": "/docs",
     }
 
