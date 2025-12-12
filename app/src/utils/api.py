@@ -40,10 +40,12 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
     from .ui import update_status
 
     # Step 1: Preparing
+    st.session_state.processing_progress = 10
     update_status("Preparing to process receipt...", 10)
     time.sleep(0.5)
 
     # Step 2: Uploading
+    st.session_state.processing_progress = 25
     update_status("Uploading receipt to server...", 25)
 
     try:
@@ -57,6 +59,7 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
         headers = get_api_headers()
 
         # Step 3: Processing with OCR
+        st.session_state.processing_progress = 50
         update_status("Processing receipt with AI (OCR)...", 50)
 
         response = requests.post(
@@ -66,12 +69,14 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
         )
 
         # Step 4: Parsing results
+        st.session_state.processing_progress = 75
         update_status("Parsing receipt data...", 75)
 
         response.raise_for_status()
         api_response = response.json()
 
         # Step 5: Finalizing
+        st.session_state.processing_progress = 90
         update_status("Finalizing results...", 90)
 
         # Update session state
@@ -87,11 +92,13 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
         ]
 
         # Complete
+        st.session_state.processing_progress = 100
         update_status("Receipt processed successfully!", 100)
         time.sleep(0.5)
 
         return api_response
 
     except requests.exceptions.RequestException as e:
+        st.session_state.processing_progress = 0
         update_status(f"Error processing receipt: {str(e)}", 0)
         return None

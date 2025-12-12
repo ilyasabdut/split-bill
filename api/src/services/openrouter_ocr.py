@@ -365,6 +365,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
 
         logger.info("Sending classification request to OpenRouter API...")
         response_payload = _call_openrouter(messages, temperature=0.0, max_tokens=16)
+        logger.debug(f"OpenRouter classification response payload: {response_payload}")
         classification_result = _extract_message_text(response_payload).upper().strip()
         elapsed = time.time() - start_time
         logger.info(

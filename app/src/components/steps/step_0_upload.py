@@ -39,6 +39,11 @@ def render_upload_step():
                         use_container_width=True,
                         help="Click to start processing your receipt",
                     ):
+                        # Set processing status before starting
+                        st.session_state.processing_status = "processing"
+                        st.session_state.processing_progress = 10
+                        st.rerun()  # Trigger re-render to show progress bar
+
                         result = process_receipt_with_feedback(
                             uploaded_file, raw_image_bytes
                         )
