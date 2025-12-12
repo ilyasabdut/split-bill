@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 OPENROUTER_API_BASE_URL = os.getenv(
     "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
 )
-DEFAULT_OPENROUTER_MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
+DEFAULT_OPENROUTER_MODEL = "microsoft/phi-3-mini-128k-instruct:free"
 
 
 class LineItem(BaseModel):
