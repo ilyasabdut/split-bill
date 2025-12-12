@@ -29,7 +29,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          file: docker/Dockerfile
           platforms: linux/arm64
           push: true
           tags: registry.ilyasabdut.loseyourip.com/split-bill-app:latest # Updated image name
@@ -38,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.api
+          file: docker/Dockerfile.api
           platforms: linux/arm64
           push: true
           tags: registry.ilyasabdut.loseyourip.com/split-bill-api:latest # Updated image name
@@ -73,11 +73,11 @@ jobs:
             exit 1
           fi
 
-          echo "Pulling latest images for both services using docker-compose.prod.yml..."
-          docker compose pull split-bill-app split-bill-api
+          echo "Pulling latest images for both services using docker/docker-compose.prod.yml..."
+          docker compose -f docker/docker-compose.prod.yml pull split-bill-app split-bill-api
 
-          echo "Restarting containers using docker-compose.prod.yml..."
-          docker compose up -d --force-recreate --remove-orphans
+          echo "Restarting containers using docker/docker-compose.prod.yml..."
+          docker compose -f docker/docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
           echo "Cleaning up unused Docker images (optional)..."
           docker image prune -af

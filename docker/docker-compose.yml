@@ -3,8 +3,8 @@ version: "3.8"
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     image: registry.ilyasabdut.loseyourip.com/split-bill-app:latest
     container_name: split-bill-app
     ports:
@@ -19,8 +19,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ..
+      dockerfile: docker/Dockerfile.api
     image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
     container_name: split-bill-api
     ports:

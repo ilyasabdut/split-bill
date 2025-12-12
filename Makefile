@@ -6,39 +6,27 @@ all: start
 # Build Docker images
 build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker-compose -f docker/docker-compose.yml build
 
 # Start services with Docker Compose
 up:
 	@echo "Starting services with Docker Compose..."
-	docker-compose up --build -d
+	docker-compose -f docker/docker-compose.yml up --build -d
 
-# Stop all running services
-stop:
-	@echo "🛑 Stopping all services..."
-	pkill -f "uvicorn" || true
-	pkill -f "streamlit" || true
-	docker-compose down || true
-	@echo "✅ All services stopped."
-
-# Stop API server specifically
-stop-api:
-	@echo "🛑 Stopping API server..."
-	pkill -f "uvicorn.*8000" || true
-	@echo "✅ API server stopped."
+# Stop and remove Docker Compose services
 down:
 	@echo "Stopping and removing Docker Compose services..."
-	docker-compose down
+	docker-compose -f docker/docker-compose.yml down || true
 
 # Display logs for all services
 logs:
 	@echo "Displaying logs for all services (Ctrl+C to exit)..."
-	docker-compose logs -f
+	docker-compose -f docker/docker-compose.yml logs -f
 
 # Clean up Docker images and volumes
 clean:
 	@echo "Cleaning up Docker images and volumes..."
-	docker-compose down --volumes --rmi all
+	docker-compose -f docker/docker-compose.yml down --volumes --rmi all
 	docker volume prune -f
 	docker image prune -a -f
 	@echo "Cleanup complete."
@@ -46,11 +34,11 @@ clean:
 # Helper for development: rebuild and restart a specific service
 rebuild-api:
 	@echo "Rebuilding and restarting API service..."
-	docker-compose up --build -d api
+	docker-compose -f docker/docker-compose.yml up --build -d api
 
 rebuild-app:
 	@echo "Rebuilding and restarting App service..."
-	docker-compose up --build -d app
+	docker-compose -f docker/docker-compose.yml up --build -d app
 
 # Install dependencies using uv
 install:

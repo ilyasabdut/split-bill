@@ -79,7 +79,7 @@ LOG_LEVEL=INFO
 
 ### 2. Production Docker Compose
 
-Create `docker-compose.prod.yml`:
+Create `docker/docker-compose.prod.yml`:
 
 ```yaml
 version: "3.8"
@@ -280,7 +280,7 @@ openssl req -new -key privkey.pem -out cert.csr
 
 ```bash
 # Build images
-docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker/docker-compose.prod.yml build
 
 # Tag for registry
 docker tag split-bill-api:latest registry.ilyasabdut.loseyourip.com/split-bill-api:latest
@@ -309,7 +309,7 @@ cp .env.example .env.production
 nano .env.production  # Edit with production values
 
 # Copy production compose file
-cp docker-compose.prod.yml ./
+cp docker/docker-compose.prod.yml ./
 
 # Set permissions
 chmod 600 .env.production
@@ -320,13 +320,13 @@ chown -R $USER:$USER .
 
 ```bash
 # Start services
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.prod.yml up -d
 
 # Check status
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker/docker-compose.prod.yml ps
 
 # View logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose -f docker/docker-compose.prod.yml logs -f
 ```
 
 ## 🧪 Testing Deployment
@@ -433,8 +433,8 @@ time curl -H "Authorization: Bearer YOUR_API_KEY" \
 
 ```bash
 # View application logs
-docker-compose -f docker-compose.prod.yml logs -f app
-docker-compose -f docker-compose.prod.yml logs -f api
+docker-compose -f docker/docker-compose.prod.yml logs -f app
+docker-compose -f docker/docker-compose.prod.yml logs -f api
 
 # View Nginx logs
 docker exec split-bill-nginx tail -f /var/log/nginx/access.log
@@ -462,8 +462,8 @@ curl -w "@curl-format.txt" -o /dev/null -s \
 
 ```bash
 # Update images
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.prod.yml pull
+docker-compose -f docker/docker-compose.prod.yml up -d
 
 # Clean up old images
 docker image prune -a
@@ -530,7 +530,7 @@ echo "maxmemory-policy allkeys-lru" >> redis.conf
 **3. Application Scaling**
 ```yaml
 # Scale API services
-docker-compose -f docker-compose.prod.yml up -d --scale api=3
+docker-compose -f docker/docker-compose.prod.yml up -d --scale api=3
 ```
 
 ## 📈 Scaling Considerations
@@ -559,7 +559,7 @@ Consider adding:
 sudo apt update && sudo apt upgrade
 
 # Update Docker images
-docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker/docker-compose.prod.yml pull
 ```
 
 ### 2. Firewall Configuration

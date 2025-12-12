@@ -208,7 +208,7 @@ async def get_cache_stats(self) -> Dict[str, Any]:
 
 ### **Docker Integration**
 ```yaml
-# docker-compose.yml
+# docker/docker-compose.yml
 services:
   redis:
     image: valkey/valkey:alpine3.23

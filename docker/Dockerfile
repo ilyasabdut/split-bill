@@ -31,7 +31,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
-COPY /app/src/ /app/src/
+COPY api/src/ /app/src/
 COPY .streamlit/ .streamlit/
 
 ENV PATH="/usr/local/bin:$PATH"

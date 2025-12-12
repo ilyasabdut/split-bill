@@ -101,7 +101,7 @@ This plan outlines systematic improvements to enhance security, performance, sca
 **Priority: High**
 - [ ] **Add Redis to Docker Compose**
   ```yaml
-  # Add to docker-compose.yml
+  # Add to docker/docker-compose.yml
   redis:
     image: valkey/valkey:alpine3.23
     container_name: split-bill-redis

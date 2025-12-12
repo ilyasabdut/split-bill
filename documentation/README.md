@@ -18,7 +18,7 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 *   **Persistent Shareable Links:** Saves split results and generates a unique link for sharing (stores images and metadata in MinIO).
 *   **Idempotent Processing:** Prevents duplicate storage for identical split requests.
 *   **Mobile-Friendly Design:** Aims for a good user experience on smaller screens.
-*   **Dockerized Deployment:** Includes `Dockerfile`s and `docker-compose.yml` for easy deployment of both services.
+*   **Dockerized Deployment:** Includes Dockerfiles and `docker-compose.yml` for easy deployment of both services.
 *   **CI/CD Ready:** Example GitHub Actions workflow for automated build and deployment.
 *   **Code Quality Tools:** Automated code formatting, linting, and quality checks with pre-commit hooks.
 
@@ -84,11 +84,12 @@ bill-splitter/
 ├── .streamlit/             # Streamlit configuration
 │   └── config.toml
 ├── .pre-commit-config.yaml # Pre-commit hooks configuration
-├── Dockerfile              # Frontend Dockerfile (Streamlit app)
-├── Dockerfile.api          # Backend Dockerfile (FastAPI API)
-├── Makefile                # Build automation commands
-├── docker-compose.yml      # Development docker-compose
-├── docker-compose.prod.yml # Production docker-compose
+├── docker/                 # Docker configurations
+│   ├── Dockerfile          # Frontend Dockerfile (Streamlit app)
+│   ├── Dockerfile.api      # Backend Dockerfile (FastAPI API)
+│   ├── docker-compose.yml  # Development docker-compose
+│   ├── docker-compose.prod.yml # Production docker-compose
+│   └── .dockerignore       # Docker ignore rules
 ├── documentation/          # Project documentation
 │   ├── planning/           # Improvement plans and roadmaps
 │   │   └── IMPROVEMENT_PLAN.md
@@ -242,12 +243,12 @@ make check_dotenv     # Check python-dotenv setup
 
 #### Development
 ```bash
-docker compose -f docker-compose.yml up --build
+    docker compose -f docker/docker-compose.yml up --build
 ```
 
 #### Production
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+    docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
 Access the Streamlit app at `http://localhost:8501` and the FastAPI API docs at `http://localhost:8000/docs` (if exposed).

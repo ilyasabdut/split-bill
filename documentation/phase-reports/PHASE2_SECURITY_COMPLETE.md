@@ -217,7 +217,7 @@ RATE_LIMIT_PER_MINUTE=60
 MAX_REQUEST_SIZE_MB=10
 
 # Docker deployment includes all security features
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.prod.yml up -d
 ```
 
 ---
