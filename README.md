@@ -547,4 +547,4 @@ For bugs or feature requests, open an Issue.
 - [DUPLICATE_FUNCTION_FIX.md](phase-reports/DUPLICATE_FUNCTION_FIX.md) - Code quality improvements
 - [MAKEFILE_DOCS_UPDATE.md](phase-reports/MAKEFILE_DOCS_UPDATE.md) - Makefile and documentation enhancements
 - [COMPLETE_FIX_SUMMARY.md](phase-reports/COMPLETE_FIX_SUMMARY.md) - Comprehensive code quality fixes summary
-- [REORGANIZATION_COMPLETE.md](../REORGANIZATION_COMPLETE.md) - Documentation and scripts reorganization
+- [REORGANIZATION_COMPLETE.md](REORGANIZATION_COMPLETE.md) - Documentation and scripts reorganization
