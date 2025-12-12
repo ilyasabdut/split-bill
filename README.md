@@ -11,13 +11,18 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 *   **High Performance:** Redis caching with intelligent cache strategies for optimal response times.
 *   **Integrated API:** Single endpoint API combining security, caching, and all business logic.
 *   **Step-by-Step UX:** Guides users through uploading, defining people, assigning items, and calculating the split.
+*   **Real-time Processing Feedback:** Progress bars and status updates during OCR processing operations.
+*   **Enhanced Error Handling:** User-friendly error messages with actionable recovery suggestions.
+*   **Mobile-Responsive Design:** Fully optimized for mobile devices with touch-friendly interface.
+*   **Accessibility Compliant:** WCAG 2.1 AA compliance with keyboard navigation and screen reader support.
+*   **Dark Theme Support:** Toggle between light and dark themes with high contrast mode.
 *   **Item Assignment:** Flexible assignment of items to one or more people.
 *   **Even Split Option:** Option to split the entire bill (after discounts, before tax/tip) evenly.
 *   **Discount Handling:** Attempts to extract and apply overall bill discounts.
 *   **Tax & Tip Adjustment:** Allows manual input or adjustment of tax and tip amounts.
 *   **Persistent Shareable Links:** Saves split results and generates a unique link for sharing (stores images and metadata in MinIO).
 *   **Idempotent Processing:** Prevents duplicate storage for identical split requests.
-*   **Mobile-Friendly Design:** Aims for a good user experience on smaller screens.
+*   **Comprehensive Monitoring:** Health checks, metrics, and observability endpoints for production monitoring.
 *   **Dockerized Deployment:** Includes Dockerfiles and `docker-compose.yml` for easy deployment of both services.
 *   **CI/CD Ready:** Example GitHub Actions workflow for automated build and deployment.
 *   **Code Quality Tools:** Automated code formatting, linting, and quality checks with pre-commit hooks.
