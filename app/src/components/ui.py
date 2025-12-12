@@ -14,9 +14,17 @@ from .steps.step_4_results import render_results_step
 
 def inject_custom_html():
     """Injects custom HTML for analytics, accessibility, and styling."""
-    components.html(
-        """
-        <style>
+    # Try to load external CSS file
+    css_content = ""
+    try:
+        import os
+
+        css_path = os.path.join(os.path.dirname(__file__), "..", "styles", "main.css")
+        with open(css_path, "r") as f:
+            css_content = f.read()
+    except (FileNotFoundError, OSError):
+        # Fallback CSS if file not found
+        css_content = """
         .skip-link {
             position: absolute;
             top: -40px;
@@ -30,6 +38,12 @@ def inject_custom_html():
         .skip-link:focus {
             top: 6px;
         }
+        """
+
+    components.html(
+        f"""
+        <style>
+        {css_content}
         </style>
         <a href="#main-content" class="skip-link" aria-label="Skip to main content">Skip to main content</a>
         """,
@@ -50,11 +64,6 @@ def inject_custom_html():
         """,
         height=0,
     )
-    try:
-        with open("app/src/styles/main.css") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("main.css not found. App will run with default styles.")
 
 
 def render_receipt_details(data_source, is_view_mode):

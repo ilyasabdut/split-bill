@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 OPENROUTER_API_BASE_URL = os.getenv(
     "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
 )
-DEFAULT_OPENROUTER_MODEL = "amazon/nova-2-lite-v1:free"
+DEFAULT_OPENROUTER_MODEL = "google/gemini-pro-vision"
 
 
 class LineItem(BaseModel):
