@@ -3,12 +3,10 @@ Simple monitoring endpoints for Split Bill API.
 Provides essential health checks and metrics without excessive detail.
 """
 
-import time
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
-
 
 # Create router
 monitoring_router = APIRouter(prefix="/monitoring", tags=["monitoring"])
@@ -23,7 +21,7 @@ async def simple_health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "split-bill-api"
+        "service": "split-bill-api",
     }
 
 
@@ -37,7 +35,7 @@ async def basic_metrics():
         "# Split Bill API Metrics\n"
         "api_uptime_seconds 0\n"
         "splits_calculated_total 0\n",
-        media_type="text/plain"
+        media_type="text/plain",
     )
 
 
@@ -46,8 +44,4 @@ async def basic_status():
     """
     Basic application status.
     """
-    return {
-        "app": "split-bill-api",
-        "status": "running",
-        "version": "2.0.0"
-    }
+    return {"app": "split-bill-api", "status": "running", "version": "2.0.0"}

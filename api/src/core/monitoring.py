@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 
-
 @dataclass
 class HealthStatus:
     """Health check status for a service."""
