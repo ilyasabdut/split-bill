@@ -15,7 +15,7 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 *   **Enhanced Error Handling:** User-friendly error messages with actionable recovery suggestions.
 *   **Mobile-Responsive Design:** Fully optimized for mobile devices with touch-friendly interface.
 *   **Accessibility Compliant:** WCAG 2.1 AA compliance with keyboard navigation and screen reader support.
-*   **Dark Theme Support:** Toggle between light and dark themes with high contrast mode.
+*   **Dark Theme:** Clean, professional dark theme for optimal viewing experience.
 *   **Item Assignment:** Flexible assignment of items to one or more people.
 *   **Even Split Option:** Option to split the entire bill (after discounts, before tax/tip) evenly.
 *   **Discount Handling:** Attempts to extract and apply overall bill discounts.
@@ -26,6 +26,14 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 *   **Dockerized Deployment:** Includes Dockerfiles and `docker-compose.yml` for easy deployment of both services.
 *   **CI/CD Ready:** Example GitHub Actions workflow for automated build and deployment.
 *   **Code Quality Tools:** Automated code formatting, linting, and quality checks with pre-commit hooks.
+
+## 🔄 Recent Updates
+
+### **Latest Fixes & Improvements**
+- **✅ Fixed Streamlit Configuration:** Resolved page config order issues for proper Streamlit functionality
+- **✅ Fixed API Endpoint:** Resolved 404 error for receipt upload by implementing `/receipts/upload` endpoint
+- **✅ Streamlined UI:** Removed light mode toggle, now featuring clean dark theme only
+- **✅ Enhanced Architecture:** Improved API router structure with proper endpoint organization
 
 ## 🛠️ Tech Stack
 
@@ -340,10 +348,11 @@ Optimized for high performance with intelligent caching strategies:
 
 ## 📊 API Endpoints
 
-### **Production API (`integrated_api.py`)**
+### **Production API (`main.py`)**
 ```
 GET  /                     # API information
 GET  /health               # Health check with cache status
+POST /receipts/upload      # Upload receipt for OCR processing (30/min)
 POST /splits/calculate     # Calculate split with caching (30/min)
 GET  /splits/view/{id}     # View shared split (100/min)
 ```
@@ -421,6 +430,7 @@ Environment variables for Redis:
 -   Validate `OPENROUTER_API_KEY`
 -   Ensure the API key has access to the selected model in OpenRouter
 -   Verify `OPENROUTER_MODEL_NAME` if you override the default
+-   **Receipt Upload:** Use `/receipts/upload` endpoint (not deprecated `/upload-receipt`)
 
 ### Share Links
 -   Confirm correct `APP_BASE_URL`

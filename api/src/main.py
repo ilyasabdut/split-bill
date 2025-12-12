@@ -3,6 +3,7 @@ Production Split Bill API
 Single entry point with modular architecture, security, and caching.
 """
 
+import base64
 import hashlib
 import json
 import logging
@@ -15,7 +16,16 @@ from functools import wraps
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
@@ -384,6 +394,7 @@ async def get_metrics():
 
 # Split Router
 splits_router = APIRouter(prefix="/splits", tags=["splits"])
+receipts_router = APIRouter(prefix="/receipts", tags=["receipts"])
 
 
 @splits_router.post("/calculate", response_model=CalculateSplitResponse)
@@ -513,6 +524,65 @@ async def view_split(
     return SharedSplitDataResponse(**mock_data)
 
 
+@receipts_router.post("/upload")
+@rate_limit(30)
+async def upload_receipt(
+    request: Request,
+    file: UploadFile = File(...),
+    api_key: str = Depends(get_api_key),
+):
+    """Upload a receipt image, process it with OCR, and return extracted data."""
+    global MONITORING_DATA
+
+    MONITORING_DATA["request_count"] += 1
+
+    try:
+        # Import services for processing
+        try:
+            from services.image_service import compress_image
+            from services.openrouter_ocr import extract_receipt_data
+        except ImportError as e:
+            logger.error(f"Failed to import receipt processing services: {e}")
+            raise HTTPException(
+                status_code=500, detail="Receipt processing service unavailable"
+            )
+
+        logger.info(f"Processing receipt upload: {file.filename}")
+
+        # Read file content
+        image_bytes = await file.read()
+
+        # Compress the image before sending it to OCR
+        compressed_image_bytes = compress_image(image_bytes)
+
+        # Perform OCR
+        parsed_data = extract_receipt_data(compressed_image_bytes)
+
+        if "Error" in parsed_data:
+            raise HTTPException(status_code=400, detail=parsed_data)
+
+        # The base64 of the processed image is needed for display and MinIO upload in the frontend
+        processed_image_bytes_base64 = base64.b64encode(compressed_image_bytes).decode(
+            "utf-8"
+        )
+
+        return {
+            "parsed_data": parsed_data,
+            "processed_image_bytes_base64": processed_image_bytes_base64,
+            "extracted_subtotal_from_gemini": parsed_data.get("subtotal"),
+            "extracted_total_discount": sum(
+                d.get("amount", 0) for d in parsed_data.get("discounts", [])
+            ),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        MONITORING_DATA["error_count"] += 1
+        logger.error(f"Error processing receipt: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # =============================================================================
 # APPLICATION LIFESPAN
 # =============================================================================
@@ -599,6 +669,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+app.include_router(splits_router)
+app.include_router(receipts_router)
+
 # =============================================================================
 # ROUTES
 # =============================================================================
@@ -618,15 +692,6 @@ async def root():
         "docs": "/docs",
     }
 
-
-app.include_router(health_router)
-app.include_router(metrics_router)
-app.include_router(splits_router)
-
-# Add monitoring router if available
-if MONITORING_AVAILABLE and monitoring_router:
-    app.include_router(monitoring_router)
-    logger.info("Monitoring endpoints added to API")
 
 # =============================================================================
 # EXCEPTION HANDLERS
