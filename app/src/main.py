@@ -74,6 +74,9 @@ def main():
 
 
 if __name__ == "__main__":
+    # Initialize session state first to prevent KeyError
+    initialize_session_state()
+
     if st.session_state.pop("_start_new_split_requested", False):
         if st.session_state.pop("_force_query_params_clear", False):
             st.query_params.clear()

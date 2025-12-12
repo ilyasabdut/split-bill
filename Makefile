@@ -51,8 +51,8 @@ start: run-streamlit
 
 run-streamlit:
 	@echo "Starting Streamlit app locally..."
-	uv pip show python-dotenv && \
-	uv run python -m dotenv run -- streamlit run app/src/main.py || \
+	cd app/src && uv pip show python-dotenv && \
+	uv run python -m dotenv run -- streamlit run main.py || \
 	echo "python-dotenv not found; run 'make install'"
 
 # Start the FastAPI application with Uvicorn locally
