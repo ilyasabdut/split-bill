@@ -365,12 +365,52 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
 
         logger.info("Sending classification request to OpenRouter API...")
         response_payload = _call_openrouter(messages, temperature=0.0, max_tokens=16)
-        classification_result = _extract_message_text(response_payload).upper()
+        classification_result = _extract_message_text(response_payload).upper().strip()
         elapsed = time.time() - start_time
         logger.info(
-            f"OpenRouter classification result: {classification_result} (took {elapsed:.2f} seconds)"
+            f"OpenRouter classification result: '{classification_result}' (took {elapsed:.2f} seconds)"
         )
-        return classification_result.startswith("YES")
+
+        # Handle empty or invalid responses more gracefully
+        if not classification_result:
+            logger.warning(
+                "Empty classification result from OpenRouter, assuming it's a receipt"
+            )
+            return True  # Assume it's a receipt if we can't determine
+
+        # More flexible matching for YES/NO responses
+        if "YES" in classification_result or classification_result in [
+            "Y",
+            "TRUE",
+            "1",
+        ]:
+            return True
+        elif "NO" in classification_result or classification_result in [
+            "N",
+            "FALSE",
+            "0",
+        ]:
+            return False
+        else:
+            # If response contains receipt-related keywords, assume it's a receipt
+            receipt_keywords = [
+                "RECEIPT",
+                "BILL",
+                "INVOICE",
+                "RETAIL",
+                "PURCHASE",
+                "TRANSACTION",
+            ]
+            if any(keyword in classification_result for keyword in receipt_keywords):
+                logger.info(
+                    f"Found receipt keywords in response: {classification_result}"
+                )
+                return True
+            else:
+                logger.warning(
+                    f"Unexpected classification response: '{classification_result}', assuming it's a receipt"
+                )
+                return True  # Default to treating as receipt
     except Exception as exc:  # noqa: BLE001 - surface upstream
         logger.error(f"An error occurred during OpenRouter image classification: {exc}")
         raise RuntimeError(f"OpenRouter classification failed: {exc}") from exc
