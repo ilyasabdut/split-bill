@@ -35,14 +35,18 @@ def load_shared_split_data_from_api(split_id: str) -> dict[str, Any] | None:
 
 def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
     """Process receipt with real-time progress updates."""
+    import streamlit as st
+
     from .ui import update_status
 
     # Step 1: Preparing
     update_status("Preparing to process receipt...", 10)
+    st.rerun()
     time.sleep(0.5)
 
     # Step 2: Uploading
     update_status("Uploading receipt to server...", 25)
+    st.rerun()
 
     try:
         files = {
@@ -56,6 +60,7 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
 
         # Step 3: Processing with OCR
         update_status("Processing receipt with AI (OCR)...", 50)
+        st.rerun()
 
         response = requests.post(
             f"{FASTAPI_API_URL}/receipts/upload",
@@ -65,12 +70,14 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
 
         # Step 4: Parsing results
         update_status("Parsing receipt data...", 75)
+        st.rerun()
 
         response.raise_for_status()
         api_response = response.json()
 
         # Step 5: Finalizing
         update_status("Finalizing results...", 90)
+        st.rerun()
 
         # Update session state
         st.session_state.parsed_data = api_response["parsed_data"]
@@ -86,10 +93,12 @@ def process_receipt_with_feedback(uploaded_file, raw_image_bytes):
 
         # Complete
         update_status("Receipt processed successfully!", 100)
+        st.rerun()
         time.sleep(0.5)
 
         return api_response
 
     except requests.exceptions.RequestException as e:
         update_status(f"Error processing receipt: {str(e)}", 0)
+        st.rerun()
         return None
