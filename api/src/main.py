@@ -69,6 +69,18 @@ def get_cache_service():
     return CACHE_SERVICE
 
 
+# Import monitoring router
+try:
+    # Use sys.path for consistent import pattern
+    monitoring_module = __import__("routers.monitoring", fromlist=["monitoring_router"])
+    monitoring_router = getattr(monitoring_module, "monitoring_router")
+    MONITORING_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Monitoring router not available: {e}")
+    MONITORING_AVAILABLE = False
+    monitoring_router = None
+
+
 # =============================================================================
 # SECURITY COMPONENTS
 # =============================================================================
@@ -602,6 +614,13 @@ async def root():
         "caching": (
             "Redis caching enabled" if get_cache_service() else "Caching disabled"
         ),
+        "monitoring": {
+            "endpoints_available": MONITORING_AVAILABLE,
+            "health": "/monitoring/health",
+            "metrics": "/monitoring/metrics",
+            "system_metrics": "/monitoring/system-metrics",
+            "status": "/monitoring/status"
+        },
         "docs": "/docs",
     }
 
@@ -609,6 +628,11 @@ async def root():
 app.include_router(health_router)
 app.include_router(metrics_router)
 app.include_router(splits_router)
+
+# Add monitoring router if available
+if MONITORING_AVAILABLE and monitoring_router:
+    app.include_router(monitoring_router)
+    logger.info("Monitoring endpoints added to API")
 
 # =============================================================================
 # EXCEPTION HANDLERS
