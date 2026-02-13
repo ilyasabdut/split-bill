@@ -1,4 +1,8 @@
-"""Receipt OCR helpers backed by OpenRouter chat completions."""
+"""Receipt OCR helpers backed by OpenRouter chat completions.
+
+This module provides both synchronous and asynchronous OCR functionality
+for receipt image processing using OpenRouter's API.
+"""
 
 import base64
 import io
@@ -8,8 +12,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+import httpx
 import PIL.Image
-import requests
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -18,24 +22,35 @@ OPENROUTER_API_BASE_URL = os.getenv(
 )
 DEFAULT_OPENROUTER_MODEL = "amazon/nova-2-lite-v1:free"
 
+# Default timeout for API requests (seconds)
+DEFAULT_TIMEOUT = 60.0
+
 
 class LineItem(BaseModel):
+    """Schema for a line item extracted from receipt."""
+
     item_description: str = Field(description="Full description of the item")
     quantity: float = Field(default=1.0, description="Quantity of the item")
     item_total_price: float = Field(description="Total price for the item line")
 
 
 class Discount(BaseModel):
+    """Schema for a discount applied to receipt."""
+
     description: str = Field(description="Description of the discount")
     amount: float = Field(description="Positive numeric value of the discount")
 
 
 class TaxDetail(BaseModel):
+    """Schema for tax details on receipt."""
+
     tax_label: str = Field(description="Label for the tax or charge")
     tax_amount: float = Field(description="Amount of the tax or charge")
 
 
 class ReceiptData(BaseModel):
+    """Schema for extracted receipt data."""
+
     store_name: Optional[str] = Field(default=None, description="Name of the store")
     transaction_date: Optional[str] = Field(
         default=None, description="Transaction date (YYYY-MM-DD)"
@@ -59,6 +74,8 @@ class ReceiptData(BaseModel):
 
 @dataclass
 class OpenRouterConfig:
+    """Configuration for OpenRouter API."""
+
     api_key: str
     model_name: str
     referer: Optional[str]
@@ -164,6 +181,7 @@ def create_flattened_schema() -> Dict[str, Any]:
 
 
 def generate_extraction_prompt(schema_json: str) -> str:
+    """Generate the extraction prompt for the LLM."""
     return (
         "You are an expert receipt processing assistant."
         "\nAnalyze the provided receipt image and return ONLY valid JSON that conforms to the schema below."
@@ -174,6 +192,7 @@ def generate_extraction_prompt(schema_json: str) -> str:
 
 
 def get_openrouter_config() -> OpenRouterConfig:
+    """Get OpenRouter configuration from environment variables."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError(
@@ -188,6 +207,7 @@ def get_openrouter_config() -> OpenRouterConfig:
 
 
 def _build_headers(config: OpenRouterConfig) -> Dict[str, str]:
+    """Build HTTP headers for OpenRouter API requests."""
     headers = {
         "Authorization": f"Bearer {config.api_key}",
         "Content-Type": "application/json",
@@ -205,7 +225,7 @@ def _detect_mime_type(image_bytes: bytes) -> str:
     try:
         with PIL.Image.open(io.BytesIO(image_bytes)) as img:
             img_format = (img.format or "JPEG").upper()
-    except Exception as exc:  # noqa: BLE001 - fall back to jpeg if detection fails
+    except Exception as exc:
         logger.debug(
             f"Could not detect image format for payload: {exc}. Defaulting to JPEG MIME type."
         )
@@ -230,12 +250,32 @@ def _encode_image_for_payload(image_bytes: bytes) -> str:
     return f"data:{mime_type};base64,{base64_data}"
 
 
-def _call_openrouter(
+# =============================================================================
+# ASYNC IMPLEMENTATION (Primary)
+# =============================================================================
+
+
+async def _call_openrouter_async(
+    client: httpx.AsyncClient,
     messages: List[Dict[str, Any]],
     *,
     temperature: float = 0.0,
     max_tokens: int = 1024,
 ) -> Dict[str, Any]:
+    """Make an async call to OpenRouter API.
+
+    Args:
+        client: httpx async client
+        messages: List of messages for the chat completion
+        temperature: Sampling temperature (0.0 to 1.0)
+        max_tokens: Maximum tokens to generate
+
+    Returns:
+        JSON response from OpenRouter
+
+    Raises:
+        RuntimeError: If the API call fails
+    """
     config = get_openrouter_config()
     payload: Dict[str, Any] = {
         "model": config.model_name,
@@ -247,13 +287,13 @@ def _call_openrouter(
     url = f"{OPENROUTER_API_BASE_URL.rstrip('/')}/chat/completions"
 
     try:
-        response = requests.post(
+        response = await client.post(
             url,
             headers=_build_headers(config),
             json=payload,
-            timeout=60,
+            timeout=DEFAULT_TIMEOUT,
         )
-    except requests.RequestException as exc:
+    except httpx.RequestError as exc:
         raise RuntimeError(f"Failed to reach OpenRouter API: {exc}") from exc
 
     if response.status_code >= 400:
@@ -262,20 +302,21 @@ def _call_openrouter(
         )
         try:
             response.raise_for_status()
-        except requests.HTTPError as exc:  # noqa: B904 - we want to preserve context
+        except httpx.HTTPStatusError as exc:
             raise RuntimeError(
                 f"OpenRouter API error {response.status_code}: {response.text}"
             ) from exc
 
     try:
         return response.json()
-    except ValueError as exc:  # JSON decoding error
+    except ValueError as exc:
         raise RuntimeError(
             f"Failed to decode OpenRouter response as JSON: {exc}"
         ) from exc
 
 
-def _extract_message_text(response_payload: Dict[str, Any]) -> str:
+async def _extract_message_text_async(response_payload: Dict[str, Any]) -> str:
+    """Extract text content from OpenRouter response."""
     choices = response_payload.get("choices") or []
     if not choices:
         raise ValueError("OpenRouter response contained no choices.")
@@ -299,6 +340,7 @@ def _extract_message_text(response_payload: Dict[str, Any]) -> str:
 
 
 def _parse_json_response(raw_text: str) -> Dict[str, Any]:
+    """Parse JSON from model response text."""
     cleaned_text = raw_text.strip()
 
     if cleaned_text.startswith("```"):
@@ -332,7 +374,19 @@ def _parse_json_response(raw_text: str) -> Dict[str, Any]:
     )
 
 
-def classify_image_as_receipt(image_bytes: bytes) -> bool:
+async def classify_image_as_receipt_async(
+    image_bytes: bytes,
+    client: Optional[httpx.AsyncClient] = None,
+) -> bool:
+    """Classify if an image is a receipt (async version).
+
+    Args:
+        image_bytes: Raw image bytes
+        client: Optional httpx async client (will create if not provided)
+
+    Returns:
+        True if the image is likely a receipt
+    """
     try:
         start_time = time.time()
         encoded_image = _encode_image_for_payload(image_bytes)
@@ -364,9 +418,23 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
         ]
 
         logger.info("Sending classification request to OpenRouter API...")
-        response_payload = _call_openrouter(messages, temperature=0.0, max_tokens=16)
+        should_close_client = False
+        if client is None:
+            client = httpx.AsyncClient(timeout=DEFAULT_TIMEOUT)
+            should_close_client = True
+
+        try:
+            response_payload = await _call_openrouter_async(
+                client, messages, temperature=0.0, max_tokens=16
+            )
+        finally:
+            if should_close_client:
+                await client.aclose()
+
         logger.debug(f"OpenRouter classification response payload: {response_payload}")
-        classification_result = _extract_message_text(response_payload).upper().strip()
+        classification_result = (
+            (await _extract_message_text_async(response_payload)).upper().strip()
+        )
         elapsed = time.time() - start_time
         logger.info(
             f"OpenRouter classification result: '{classification_result}' (took {elapsed:.2f} seconds)"
@@ -377,7 +445,7 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
             logger.warning(
                 "Empty classification result from OpenRouter, assuming it's a receipt"
             )
-            return True  # Assume it's a receipt if we can't determine
+            return True
 
         # More flexible matching for YES/NO responses
         if "YES" in classification_result or classification_result in [
@@ -411,20 +479,32 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
                 logger.warning(
                     f"Unexpected classification response: '{classification_result}', assuming it's a receipt"
                 )
-                return True  # Default to treating as receipt
-    except Exception as exc:  # noqa: BLE001 - surface upstream
+                return True
+    except Exception as exc:
         logger.error(f"An error occurred during OpenRouter image classification: {exc}")
         raise RuntimeError(f"OpenRouter classification failed: {exc}") from exc
 
 
-def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
+async def extract_receipt_data_async(
+    image_bytes: bytes,
+    client: Optional[httpx.AsyncClient] = None,
+) -> Dict[str, Any]:
+    """Extract receipt data from an image (async version).
+
+    Args:
+        image_bytes: Raw image bytes
+        client: Optional httpx async client (will create if not provided)
+
+    Returns:
+        Dictionary containing extracted receipt data
+    """
     start_time = time.time()
     logger.info(
         f"Starting receipt data extraction via OpenRouter at {time.strftime('%Y-%m-%d %H:%M:%S')}"
     )
 
     try:
-        is_receipt = classify_image_as_receipt(image_bytes)
+        is_receipt = await classify_image_as_receipt_async(image_bytes, client)
     except RuntimeError as exc:
         return {"Error": "CLASSIFICATION_FAILED", "message": str(exc)}
 
@@ -465,8 +545,20 @@ def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
         ]
 
         logger.info("Sending OCR request to OpenRouter API...")
-        response_payload = _call_openrouter(messages, temperature=0.1, max_tokens=2048)
-        model_text = _extract_message_text(response_payload)
+        should_close_client = False
+        if client is None:
+            client = httpx.AsyncClient(timeout=DEFAULT_TIMEOUT)
+            should_close_client = True
+
+        try:
+            response_payload = await _call_openrouter_async(
+                client, messages, temperature=0.1, max_tokens=2048
+            )
+            model_text = await _extract_message_text_async(response_payload)
+        finally:
+            if should_close_client:
+                await client.aclose()
+
         parsed_json = _parse_json_response(model_text)
 
         logger.info("\n--- Successfully Parsed Data from OpenRouter ---")
@@ -480,16 +572,53 @@ def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
                 f"Receipt data extraction completed in {elapsed_time:.2f} seconds"
             )
             return validated_data.model_dump()
-        except (
-            Exception
-        ) as validation_error:  # noqa: BLE001 - log validation issues and return raw data
+        except Exception as validation_error:
             logger.warning(f"Pydantic validation warning: {validation_error}")
             logger.info("Returning raw extracted data...")
             return parsed_json
 
-    except Exception as exc:  # noqa: BLE001 - provide helpful error context to caller
+    except Exception as exc:
         logger.error(f"An error occurred calling OpenRouter API: {exc}")
         return {"Error": f"OpenRouter API call failed: {exc}"}
+
+
+# =============================================================================
+# SYNC WRAPPERS (Backwards Compatibility)
+# =============================================================================
+
+
+def classify_image_as_receipt(image_bytes: bytes) -> bool:
+    """Classify if an image is a receipt (sync wrapper).
+
+    Note: For production use, prefer the async version (classify_image_as_receipt_async)
+    for better concurrency handling.
+    """
+    import asyncio
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop.run_until_complete(classify_image_as_receipt_async(image_bytes))
+
+
+def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
+    """Extract receipt data from an image (sync wrapper).
+
+    Note: For production use, prefer the async version (extract_receipt_data_async)
+    for better concurrency handling.
+    """
+    import asyncio
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop.run_until_complete(extract_receipt_data_async(image_bytes))
 
 
 # Backwards compatibility export for callers expecting the old name

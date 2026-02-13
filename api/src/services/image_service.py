@@ -22,14 +22,15 @@ def compress_image(
     quality: int = 90,
     min_quality: int = 70,
 ) -> Optional[bytes]:
-    """
-    Compress image to meet size requirements.
+    """Compress image using binary search for optimal quality.
+
+    Optimized from O(n) to O(log n) iterations.
 
     Args:
         image_bytes: Raw image bytes
         target_size_bytes: Target size in bytes
-        quality: Initial compression quality
-        min_quality: Minimum compression quality
+        quality: Starting quality (default 90)
+        min_quality: Minimum quality threshold (default 70)
 
     Returns:
         Compressed image bytes or None if compression fails
@@ -39,20 +40,31 @@ def compress_image(
         if img.mode not in ("RGB", "L"):
             img = img.convert("RGB")
 
-        compressed_bytes = None
-        for q in range(quality, min_quality - 1, -5):
+        # Quick check: is original already small enough?
+        if len(image_bytes) <= target_size_bytes:
             buffer = io.BytesIO()
-            img.save(buffer, format="JPEG", quality=q, optimize=True)
-            compressed_bytes = buffer.getvalue()
+            img.save(buffer, format="JPEG", quality=quality, optimize=True)
+            return buffer.getvalue()
 
-            if len(compressed_bytes) <= target_size_bytes:
-                logger.info(
-                    f"Image compressed to {len(compressed_bytes) / 1024:.2f} KB with quality {q}"
-                )
-                return compressed_bytes
+        # Binary search for optimal quality (faster than sequential)
+        low, high = min_quality, quality
+        best_result = None
 
-        if compressed_bytes and len(compressed_bytes) > target_size_bytes:
-            ratio = (target_size_bytes / len(compressed_bytes)) ** 0.5
+        while low <= high:
+            mid = (low + high) // 2
+            buffer = io.BytesIO()
+            img.save(buffer, format="JPEG", quality=mid, optimize=True)
+            compressed = buffer.getvalue()
+
+            if len(compressed) <= target_size_bytes:
+                best_result = compressed
+                low = mid + 1  # Try higher quality
+            else:
+                high = mid - 1  # Need lower quality
+
+        # Resize if still too large
+        if best_result is None or len(best_result) > target_size_bytes:
+            ratio = (target_size_bytes / len(image_bytes)) ** 0.5
             new_width = int(img.width * ratio)
             new_height = int(img.height * ratio)
 
@@ -64,13 +76,10 @@ def compress_image(
                 img_resized.save(
                     buffer, format="JPEG", quality=min_quality, optimize=True
                 )
-                compressed_bytes = buffer.getvalue()
-                logger.info(
-                    f"Resized/compressed image size: {len(compressed_bytes) / 1024:.2f} KB"
-                )
-                return compressed_bytes
+                best_result = buffer.getvalue()
+                logger.info(f"Resized/compressed: {len(best_result) / 1024:.2f} KB")
 
-        return compressed_bytes
+        return best_result
 
     except UnidentifiedImageError:
         raise ValueError("Cannot identify image file.")

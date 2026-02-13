@@ -13,6 +13,10 @@
     "test:ui": "vitest --ui"
   },
   "devDependencies": {
+    "@skeletonlabs/skeleton": "2.10.0",
+    "tailwindcss": "^4.0.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@sveltejs/kit": "^2.8.0",
     "@sveltejs/adapter-static": "^3.0.0",
@@ -22,6 +26,13 @@
     "vitest": "^2.0.0"
   },
   "dependencies": {
-    "vite-plugin-pwa": "^0.21.0"
+    "@skeletonlabs/skeleton": "2.10.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@skeletonlabs/skeleton": "2.10.0",
+    "tailwindcss": "^4.0.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0"
   }
 }

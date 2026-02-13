@@ -5,22 +5,24 @@ Provides caching for split results, OCR processing, and share data.
 
 import json
 import logging
+import os
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
 import redis.asyncio as aioredis
 from redis.asyncio import Redis
 
-from .config import settings
-
 logger = logging.getLogger(__name__)
+
+# Get Redis URL from environment
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
 
 class CacheService:
     """Redis-based cache service for the application."""
 
     def __init__(self):
-        self.redis_url = settings.REDIS_URL
+        self.redis_url = REDIS_URL
         self._redis: Optional[Redis] = None
         self._connection_pool = None
 
@@ -38,8 +40,11 @@ class CacheService:
             )
 
             # Test connection
-            await self._redis.ping()
-            logger.info("Connected to Redis cache successfully")
+            pong: bool = await self._redis.ping()  # type: ignore
+            if pong:
+                logger.info("Connected to Redis cache successfully")
+            else:
+                raise RuntimeError("Redis ping failed")
 
         except Exception as e:
             logger.error(f"Failed to connect to Redis: {e}")

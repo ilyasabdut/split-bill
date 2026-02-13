@@ -103,7 +103,7 @@ sort-imports:
 # Run tests
 test:
 	@echo "🧪 Running tests..."
-	uv run pytest api/tests/ -v || echo "⚠️  Tests failed but continuing..."
+	cd api && python -m pytest tests/ -v || echo "⚠️  Tests failed but continuing..."
 
 # Type checking with MyPy
 type-check:

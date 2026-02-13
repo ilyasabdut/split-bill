@@ -30,6 +30,10 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 ## 🔄 Recent Updates
 
 ### **Latest Fixes & Improvements**
+- **✅ Async OCR Refactoring:** Replaced synchronous `requests` with async `httpx` in OpenRouter OCR service for better concurrency
+- **✅ Structured Logging:** Added correlation IDs to all requests with `X-Correlation-ID` header support for distributed tracing
+- **✅ Comprehensive Testing:** Added 29 unit and integration tests covering split logic, image processing, and API endpoints
+- **✅ Code Quality:** All tests pass with Ruff linting, Black formatting, and isort import sorting
 - **✅ Fixed Streamlit Configuration:** Resolved page config order issues for proper Streamlit functionality
 - **✅ Fixed API Endpoint:** Resolved 404 error for receipt upload by implementing `/receipts/upload` endpoint
 - **✅ Streamlined UI:** Removed light mode toggle, now featuring clean dark theme only

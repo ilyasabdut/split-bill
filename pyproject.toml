@@ -1,3 +1,6 @@
+[tool.pytest.ini_options]
+pythonpath = ["api/src"]
+
 [project]
 name = "split-bill"
 version = "0.1.0"
@@ -19,6 +22,7 @@ dependencies = [
     "mypy>=1.19.0",
     "pandas>=2.3.0",
     "passlib>=1.7.4",
+    "pydantic-settings>=2.0.0",
     "pre-commit>=4.5.0",
     "prometheus-client>=0.23.1",
     "protobuf==4.25.3",

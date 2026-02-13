@@ -10,8 +10,10 @@ import logging
 import os
 import sys
 import time
+import uuid
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from functools import wraps
 from typing import Any, Dict, List, Optional
 
@@ -37,9 +39,60 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# =============================================================================
+# STRUCTURED LOGGING WITH CORRELATION IDS
+# =============================================================================
+
+# Context variable for correlation ID
+correlation_id_ctx: ContextVar[Optional[str]] = ContextVar(
+    "correlation_id", default=None
+)
+
+
+def get_correlation_id() -> Optional[str]:
+    """Get the current correlation ID from context."""
+    return correlation_id_ctx.get()
+
+
+def generate_correlation_id() -> str:
+    """Generate a new correlation ID."""
+    return str(uuid.uuid4())[:8]
+
+
+class StructuredLogger:
+    """Logger that includes correlation ID and structured output."""
+
+    def __init__(self, name: str):
+        self.logger = logging.getLogger(name)
+
+    def _log_with_ctx(self, level: int, message: str, **kwargs: Any):
+        """Log with correlation ID context."""
+        corr_id = get_correlation_id() or "no-corr-id"
+        extra = {
+            "correlation_id": corr_id,
+            "structured_data": kwargs,
+        }
+        self.logger.log(level, f"[corr_id={corr_id}] {message}", extra=extra)
+
+    def debug(self, message: str, **kwargs: Any):
+        self._log_with_ctx(logging.DEBUG, message, **kwargs)
+
+    def info(self, message: str, **kwargs: Any):
+        self._log_with_ctx(logging.INFO, message, **kwargs)
+
+    def warning(self, message: str, **kwargs: Any):
+        self._log_with_ctx(logging.WARNING, message, **kwargs)
+
+    def error(self, message: str, **kwargs: Any):
+        self._log_with_ctx(logging.ERROR, message, **kwargs)
+
+    def exception(self, message: str, exc_info: Any = True, **kwargs: Any):
+        self._log_with_ctx(logging.ERROR, message, exc_info=exc_info, **kwargs)
+
+
+# Create module logger
+logger = StructuredLogger(__name__)
+
 
 # =============================================================================
 # CONFIGURATION
@@ -555,10 +608,20 @@ async def upload_receipt(
         # Compress the image before sending it to OCR
         compressed_image_bytes = compress_image(image_bytes)
 
+        # Validate compression result before proceeding
+        if compressed_image_bytes is None:
+            logger.error(f"Failed to compress image: {file.filename}")
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to process image. Please ensure it's a valid image file (JPEG, PNG, WEBP).",
+            )
+
         # Perform OCR
         parsed_data = extract_receipt_data(compressed_image_bytes)
 
         if "Error" in parsed_data:
+            error_msg = parsed_data.get("message", "OCR processing failed")
+            logger.error(f"OCR processing error: {error_msg}")
             raise HTTPException(status_code=400, detail=parsed_data)
 
         # The base64 of the processed image is needed for display and MinIO upload in the frontend
@@ -668,6 +731,50 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests_middleware(request: Request, call_next):
+    """Middleware to add correlation ID to all requests and log request details."""
+    corr_id = request.headers.get("X-Correlation-ID") or generate_correlation_id()
+    token = correlation_id_ctx.set(corr_id)
+    start = time.time()
+
+    try:
+        logger.info(
+            f"Incoming request: {request.method} {request.url.path}",
+            method=request.method,
+            path=request.url.path,
+            query_params=dict(request.query_params),
+            client_ip=request.client.host if request.client else None,
+        )
+
+        response = await call_next(request)
+        elapsed = time.time() - start
+
+        logger.info(
+            f"Request completed: {response.status_code}",
+            status_code=response.status_code,
+            elapsed_seconds=round(elapsed, 3),
+        )
+
+        response.headers["X-Correlation-ID"] = corr_id
+        return response
+
+    except Exception as exc:
+        elapsed = time.time() - start
+        logger.error(
+            f"Request failed: {str(exc)}",
+            status_code=500,
+            elapsed_seconds=round(elapsed, 3),
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+            exc_info=True,
+        )
+        raise
+    finally:
+        correlation_id_ctx.reset(token)
+
 
 # Register routers
 app.include_router(splits_router)

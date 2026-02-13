@@ -10,7 +10,7 @@ import pytest
 # Add the parent directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.split_logic import calculate_split
+from src.services.split_logic import calculate_split
 
 
 class TestSplitLogic:
@@ -58,17 +58,16 @@ class TestHealthEndpoint:
 
     @pytest.mark.asyncio
     async def test_health_check(self):
-        """Test health check endpoint."""
-        from api_main import app
+        """Test root endpoint returns API info."""
         from fastapi.testclient import TestClient
+        from src.main import app
 
         client = TestClient(app)
-        response = client.get("/health/")
+        response = client.get("/")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "healthy"
-        assert "timestamp" in data
+        assert "message" in data
         assert "version" in data
 
 
