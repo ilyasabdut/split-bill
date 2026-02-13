@@ -22,6 +22,10 @@
   }: Props = $props();
 
   let inputValue = $state(value);
+
+  $effect(() => {
+    inputValue = value;
+  });
 </script>
 
 <div class="relative">

@@ -80,18 +80,18 @@
       files = e.dataTransfer.files;
     }
   }
+
+  const uploadAreaClass = `border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+    dragActive
+      ? 'border-[--color-primary-500] bg-[--color-primary-50]'
+      : 'border-surface-300'
+  }`;
 </script>
 
-<Card
-  class="relative"
-  class:drag-active={dragActive}
-  ondragover={handleDragOver}
-  ondragleave={handleDragLeave}
-  ondrop={handleDrop}
->
+<Card class="relative" ondragover={handleDragOver} ondragleave={handleDragLeave} ondrop={handleDrop}>
   <div class="space-y-4">
     <!-- Upload Area -->
-    <div class="border-2 border-dashed border-surface-300 rounded-lg p-8 text-center {dragActive ? 'border-primary-500 bg-primary-50' : ''}">
+    <div class={uploadAreaClass}>
       <div class="text-5xl mb-4" aria-hidden="true">📸</div>
       <p class="font-medium mb-2">
         {#if uploading}
@@ -138,9 +138,3 @@
     </Button>
   </div>
 </Card>
-
-<style>
-  .drag-active {
-    @apply border-primary-500;
-  }
-</style>

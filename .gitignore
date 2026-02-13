@@ -93,3 +93,4 @@ logs/
 
 # Docker
 .docker/
+.superdesign
