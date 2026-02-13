@@ -1,2 +1,1 @@
-// Receipt feature components will be exported here
-export {};
+export { default as UploadZone } from './UploadZone.svelte';
