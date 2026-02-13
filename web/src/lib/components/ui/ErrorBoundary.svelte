@@ -3,10 +3,11 @@
 
   interface Props {
     fallback?: Snippet;
+    children?: Snippet;
     class?: string;
   }
 
-  const { fallback, class: className = '' }: Props = $props();
+  const { fallback, children, class: className = '' }: Props = $props();
 
   let error = $state<Error | null>(null);
 
@@ -30,10 +31,10 @@
   </div>
 {:else}
   <div class={className}>
-    {#if fallback}
+    {#if error && fallback}
       {@render fallback()}
-    {:else}
-      <slot />
+    {:else if children}
+      {@render children()}
     {/if}
   </div>
 {/if}

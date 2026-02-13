@@ -1,4 +1,4 @@
-.PHONY: all build up down logs clean rebuild-api install start run-api web-install web-dev web-build web-check web-test stop stop-api check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1 help
+.PHONY: all build up down logs clean rebuild-api install start run-api web-install web-dev web-build web-check web-test stop stop-api check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1 infra-up infra-down infra-logs infra-restart infra-ps infra-clean help
 
 # Default target: show help
 all: help
@@ -9,15 +9,23 @@ help:
 	@echo "====================================="
 	@echo "Core Commands:"
 	@echo "  make install          - Install all dependencies (Python + Web)"
-	@echo "  make start            - Start the Svelte web frontend locally"
+	@echo "  make start            - Start the Svelte web frontend locally (alias for web-dev)"
 	@echo "  make run-api          - Start the FastAPI backend locally"
 	@echo "  make web-dev          - Start the Svelte web frontend locally"
 	@echo ""
-	@echo "Docker Operations:"
+	@echo "Infrastructure:"
+	@echo "  make infra-up [ENV=prod]  - Start infrastructure (redis,minio / all prod)"
+	@echo "  make infra-down [ENV=prod] - Stop infrastructure"
+	@echo "  make infra-logs [ENV=prod] - View infrastructure logs"
+	@echo "  make infra-restart [ENV=prod] - Restart infrastructure"
+	@echo "  make infra-ps         - Show running containers"
+	@echo "  make infra-clean [ALL=true] - Clean up all resources"
+	@echo ""
+	@echo "Docker Operations (Legacy Aliases):"
 	@echo "  make build            - Build Docker images"
-	@echo "  make up               - Start all services with Docker Compose"
-	@echo "  make down             - Stop and remove Docker services"
-	@echo "  make logs             - View service logs"
+	@echo "  make up               - Start all services with Docker Compose (dev only)"
+	@echo "  make down             - Stop and remove Docker services (dev only)"
+	@echo "  make logs             - View service logs (dev only)"
 	@echo "  make clean            - Clean up Docker resources and node_modules"
 	@echo ""
 	@echo "Web (Svelte) Commands:"
@@ -39,24 +47,83 @@ help:
 	@echo "Demos:"
 	@echo "  make demo-phase1      - Run Phase 1 architecture demo"
 
+# Infrastructure Management (Dev/Prod)
+# ====================================
+
+# Determine which compose file to use based on ENV variable
+ENV ?= dev
+COMPOSE_FILE := docker/docker-compose.yml
+ifeq ($(ENV),prod)
+	COMPOSE_FILE := docker/docker-compose.prod.yml
+endif
+
+# Start infrastructure services (dev or prod based on ENV var)
+# In dev mode: starts only redis and minio (without api/web)
+# In prod mode: starts all services from prod compose file
+infra-up:
+	@echo "Starting infrastructure services ($(ENV) environment)..."
+	@if [ "$(ENV)" = "prod" ]; then \
+		echo "Using production configuration (docker-compose.prod.yml)..."; \
+		docker-compose -f $(COMPOSE_FILE) pull; \
+		docker-compose -f $(COMPOSE_FILE) up -d; \
+	else \
+		echo "Using development configuration (infrastructure only: redis, minio, postgres)..."; \
+		docker-compose -f $(COMPOSE_FILE) up -d redis minio postgres; \
+	fi
+
+# Stop infrastructure services (dev or prod based on ENV var)
+infra-down:
+	@echo "Stopping infrastructure services ($(ENV) environment)..."
+	docker-compose -f $(COMPOSE_FILE) down || true
+
+# View infrastructure logs (dev or prod based on ENV var)
+infra-logs:
+	@echo "Following infrastructure logs ($(ENV) environment, Ctrl+C to exit)..."
+	docker-compose -f $(COMPOSE_FILE) logs -f
+
+# Restart infrastructure services (dev or prod based on ENV var)
+infra-restart: infra-down infra-up
+
+# Show running containers
+infra-ps:
+	@echo "Running containers:"
+	docker-compose -f $(COMPOSE_FILE) ps
+
+# Clean up infrastructure resources
+infra-clean:
+	@echo "Cleaning up infrastructure resources ($(ENV) environment)..."
+	docker-compose -f $(COMPOSE_FILE) down --volumes
+	@if [ "$(ALL)" = "true" ]; then \
+		echo "Removing all images..."; \
+		docker-compose -f $(COMPOSE_FILE) down --rmi all; \
+		docker image prune -a -f; \
+	else \
+		echo "Removing volumes only (use ALL=true to remove images too)..."; \
+	fi
+	docker volume prune -f
+	@echo "Cleanup complete."
+
+# Legacy Docker Operations (Aliases to infra commands)
+# ===================================================
+
 # Build Docker images
 build:
 	@echo "Building Docker images..."
 	docker-compose -f docker/docker-compose.yml build
 
-# Start services with Docker Compose
+# Start services with Docker Compose (legacy alias for infra-up, dev only)
 up:
-	@echo "Starting services with Docker Compose..."
+	@echo "Starting services with Docker Compose (dev environment)..."
 	docker-compose -f docker/docker-compose.yml up --build -d
 
-# Stop and remove Docker Compose services
+# Stop and remove Docker Compose services (legacy alias for infra-down, dev only)
 down:
-	@echo "Stopping and removing Docker Compose services..."
+	@echo "Stopping and removing Docker Compose services (dev environment)..."
 	docker-compose -f docker/docker-compose.yml down || true
 
-# Display logs for all services
+# Display logs for all services (legacy alias for infra-logs, dev only)
 logs:
-	@echo "Displaying logs for all services (Ctrl+C to exit)..."
+	@echo "Displaying logs for all services (dev environment, Ctrl+C to exit)..."
 	docker-compose -f docker/docker-compose.yml logs -f
 
 # Clean up Docker images and volumes, and local node_modules
@@ -79,8 +146,8 @@ install:
 	@echo "Installing Python dependencies with uv..."
 	uv pip show uv || uv pip install uv
 	uv sync
-	@echo "Installing Web dependencies with pnpm..."
-	cd web && pnpm install
+	@echo "Installing Web dependencies with bun..."
+	cd web && bun install
 
 # Start the Svelte web frontend locally
 start: web-dev
@@ -90,23 +157,23 @@ start: web-dev
 
 web-install:
 	@echo "📦 Installing web dependencies..."
-	cd web && pnpm install
+	cd web && bun install
 
 web-dev:
 	@echo "🚀 Starting web dev server..."
-	cd web && pnpm dev
+	cd web && bun dev
 
 web-build:
 	@echo "🏗️ Building web application..."
-	cd web && pnpm build
+	cd web && bun run build
 
 web-check:
 	@echo "🔍 Running web checks..."
-	cd web && pnpm check
+	cd web && bun run check
 
 web-test:
 	@echo "🧪 Running web tests..."
-	cd web && pnpm test
+	cd web && bun run test
 
 # Start the FastAPI application with Uvicorn locally
 run-api:

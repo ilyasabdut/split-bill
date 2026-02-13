@@ -29,6 +29,8 @@ export interface SplitState {
   tip: number;
   split_evenly: boolean;
   results: SplitResults | null;
+  currency: string;
+  payments: Record<string, 'unpaid' | 'pending' | 'paid'>;
   loading: boolean;
   error: string | null;
 }

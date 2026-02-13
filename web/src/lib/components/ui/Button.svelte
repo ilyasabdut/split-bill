@@ -1,10 +1,13 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
     size?: 'sm' | 'md' | 'lg';
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
     class?: string;
+    children?: Snippet;
     onclick?: (event: MouseEvent) => void;
   }
 
@@ -14,6 +17,7 @@
     disabled = false,
     type = 'button',
     class: className = '',
+    children,
     onclick
   }: Props = $props();
 
@@ -37,7 +41,9 @@
   {type}
   class="{baseClasses} {variantClasses[variant]} {sizeClasses[size]} {className}"
   {disabled}
-  on:click={onclick}
+  {onclick}
 >
-  <slot />
+  {#if children}
+    {@render children()}
+  {/if}
 </button>

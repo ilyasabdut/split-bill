@@ -10,14 +10,13 @@
 
   const { results, splitId }: Props = $props();
 
-  const shareUrl = splitId ? `${window.location.origin}/split/${splitId}` : window.location.href;
+  const shareUrl = $derived(splitId ? `${window.location.origin}/split/${splitId}` : (typeof window !== 'undefined' ? window.location.href : ''));
 
   async function copyShareLink() {
     await navigator.clipboard.writeText(shareUrl);
-    // TODO: Show toast notification
   }
 
-  const totalAmount = Object.values(results).reduce((sum, r) => sum + r.total, 0);
+  const totalAmount = $derived(Object.values(results).reduce((sum, r) => sum + r.total, 0));
 </script>
 
 <Card>

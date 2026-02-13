@@ -45,7 +45,7 @@
           type: 'receipt_upload',
           data: {
             file,
-            onProgress: (p) => { progress = p; }
+            onProgress: (p: number) => { progress = p; }
           }
         });
         error = 'Receipt will be uploaded when you reconnect.';
@@ -91,18 +91,21 @@
   }
 </script>
 
-<Card
+<div
   class="relative"
   ondragover={handleDragOver}
   ondragleave={handleDragLeave}
   ondrop={handleDrop}
+  role="button"
+  tabindex="0"
 >
-  <div class="space-y-4">
-    <!-- Upload Area -->
-    <div
-      class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
-      class:drag-active={dragActive}
-    >
+  <Card class="relative">
+    <div class="space-y-4">
+      <!-- Upload Area -->
+      <div
+        class="border-2 border-dashed rounded-lg p-8 text-center transition-colors"
+        class:drag-active={dragActive}
+      >
       <div class="text-5xl mb-4" aria-hidden="true">📸</div>
       <p class="font-medium mb-2">
         {#if uploading}
@@ -147,8 +150,9 @@
     >
       {uploading ? 'Uploading...' : 'Upload Receipt'}
     </Button>
-  </div>
-</Card>
+    </div>
+  </Card>
+</div>
 
 <style>
   div:has(.drag-active) {

@@ -50,7 +50,7 @@ This application features a modern SvelteKit PWA frontend and a robust FastAPI b
 *   **Caching:** Redis with intelligent cache strategies
 *   **Programming Languages:** Python, TypeScript
 *   **Containerization:** Docker, Docker Compose
-*   **Build/Automation:** Makefile, pnpm, uv
+*   **Build/Automation:** Makefile, bun, uv
 *   **Code Quality:** Black, Ruff, MyPy, pytest, Vitest, pre-commit
 
 ## 📁 Project Structure
@@ -130,7 +130,7 @@ bill-splitter/
 ### Prerequisites
 
 - Python 3.12+
-- Node.js & pnpm
+- Node.js & Bun
 - Docker & Docker Compose (optional, but recommended)
 - OpenRouter API key
 - MinIO server access
@@ -144,7 +144,7 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
     ```bash
     git clone <repository-url>
     cd <repository-name>
-    make install          # Installs both Python (uv) and Web (pnpm) dependencies
+    make install          # Installs both Python (uv) and Web (bun) dependencies
     make check_dotenv     # Verifies your environment setup
     ```
 

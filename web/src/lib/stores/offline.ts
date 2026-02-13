@@ -67,3 +67,7 @@ function createOfflineStore() {
 }
 
 export const offlineStore = createOfflineStore();
+
+// Derived stores
+export const isOffline = derived(offlineStore, ($store) => !$store.online);
+export const hasQueuedActions = derived(offlineStore, ($store) => $store.queuedActions > 0);

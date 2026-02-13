@@ -10,6 +10,8 @@ const initialState: SplitState = {
   tip: 0,
   split_evenly: false,
   results: null,
+  currency: 'IDR',
+  payments: {},
   loading: false,
   error: null
 };
@@ -28,8 +30,19 @@ function createSplitStore() {
     tip: derived({ subscribe }, ($state) => $state.tip),
     splitEvenly: derived({ subscribe }, ($state) => $state.split_evenly),
     results: derived({ subscribe }, ($state) => $state.results),
+    currency: derived({ subscribe }, ($state) => $state.currency),
+    payments: derived({ subscribe }, ($state) => $state.payments),
     isLoading: derived({ subscribe }, ($state) => $state.loading),
     error: derived({ subscribe }, ($state) => $state.error),
+
+    /** Set currency */
+    setCurrency: (currency: string) => update(state => ({ ...state, currency })),
+
+    /** Set payment status for a person */
+    setPaymentStatus: (person: string, status: 'unpaid' | 'pending' | 'paid') => update(state => ({
+      ...state,
+      payments: { ...state.payments, [person]: status }
+    })),
 
     /** Set people list */
     setPeople: (people: string[]) => update(state => ({ ...state, people })),

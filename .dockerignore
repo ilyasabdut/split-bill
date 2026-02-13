@@ -1,0 +1,104 @@
+# Python cache and compiled files
+__pycache__
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual environments
+venv
+.venv
+ENV
+env
+
+# Cache directories
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.uv-cache
+.python-version
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+
+# Testing and coverage
+.coverage
+.pytest_cache
+.tox
+.nox
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# Documentation build
+docs/_build
+documentation/_build
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs and temporary files
+*.log
+logs
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# CI/CD files
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Docker files (except needed ones)
+docker-compose.yml
+docker-compose.prod.yml
+Dockerfile*
+.dockerignore
+
+# Documentation files
+*.md
+docs/
+documentation/
+
+# Scripts and demos
+scripts/
+demos/
+
+# Makefile and project files
+Makefile
+.pre-commit-config.yaml
+
+# Web artifacts
+node_modules/
+web/node_modules/
+web/build/
+web/.svelte-kit/
+
+# Development tools
+.aider*
+aider.log

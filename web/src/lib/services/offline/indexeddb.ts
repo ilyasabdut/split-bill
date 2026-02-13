@@ -1,12 +1,15 @@
 /** IndexedDB database name and version */
 const DB_NAME = 'split-bill-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /** Store names */
 export const STORES = {
   RECEIPTS: 'receipts',
   SPLITS: 'splits',
   OFFLINE_QUEUE: 'offline_queue',
+  GROUPS: 'groups',
+  TEMPLATES: 'templates',
+  CURRENCY_RATES: 'currency_rates',
 } as const;
 
 /** IndexedDB wrapper with LRU eviction and error handling */
@@ -21,6 +24,31 @@ export class IndexedDBService {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => reject(request.error);
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+
+        // Create stores if they don't exist
+        if (!db.objectStoreNames.contains(STORES.RECEIPTS)) {
+          db.createObjectStore(STORES.RECEIPTS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.SPLITS)) {
+          db.createObjectStore(STORES.SPLITS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.OFFLINE_QUEUE)) {
+          db.createObjectStore(STORES.OFFLINE_QUEUE, { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains(STORES.GROUPS)) {
+          db.createObjectStore(STORES.GROUPS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.TEMPLATES)) {
+          db.createObjectStore(STORES.TEMPLATES, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.CURRENCY_RATES)) {
+          db.createObjectStore(STORES.CURRENCY_RATES, { keyPath: 'currency' });
+        }
+      };
+
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
@@ -45,22 +73,22 @@ export class IndexedDBService {
   }
 
   /** Add item to store */
-  async add<T>(storeName: string, value: T): Promise<string> {
+  async add<T>(storeName: string, value: T): Promise<IDBValidKey> {
     const store = this.getStore(storeName, 'readwrite');
     const request = store.add(value);
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<IDBValidKey>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
 
   /** Update item in store */
-  async put<T>(storeName: string, value: T): Promise<string> {
+  async put<T>(storeName: string, value: T): Promise<IDBValidKey> {
     const store = this.getStore(storeName, 'readwrite');
     const request = store.put(value);
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<IDBValidKey>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -135,7 +163,7 @@ export class IndexedDBService {
       const store = this.getStore(storeName, 'readwrite');
 
       for (const item of toRemove) {
-        store.delete(item.id);
+        store.delete((item as any).id);
       }
     }
   }

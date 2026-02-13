@@ -10,6 +10,9 @@ export interface OfflineAction {
   retryCount: number;
 }
 
+/** Action to enqueue (without id, createdAt, retryCount) */
+export type EnqueueAction = Omit<OfflineAction, 'id' | 'createdAt' | 'retryCount'>;
+
 /** Queued receipt upload action */
 export interface QueuedReceiptUpload extends OfflineAction {
   type: 'receipt_upload';
@@ -35,7 +38,7 @@ export class OfflineQueueService {
   private processing = false;
 
   /** Add action to queue */
-  async enqueue<T extends OfflineAction>(action: Omit<T, 'id'> & T): Promise<string> {
+  async enqueue(action: EnqueueAction): Promise<string> {
     const indexedDB = await getIndexedDB();
     const id = crypto.randomUUID();
 

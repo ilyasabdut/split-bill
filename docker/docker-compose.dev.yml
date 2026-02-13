@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    image: registry.ilyasabdut.loseyourip.com/split-bill-web:latest
+    container_name: split-bill-web-dev
+    ports:
+      - "25432:3000"
+    environment:
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:26518}
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
+    container_name: split-bill-api-dev
+    ports:
+      - "26518:18000"
+    environment:
+      - API_KEY=${API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL_NAME=${OPENROUTER_MODEL_NAME:-mistralai/mistral-small-3.2-24b-instruct:free}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:25432}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/splitbill}
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: valkey/valkey:alpine3.23
+    container_name: split-bill-redis-dev
+    ports:
+      - "27946:6379"
+    volumes:
+      - redis_data_dev:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: split-bill-minio-dev
+    ports:
+      - "28152:9000"
+      - "28153:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data_dev:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: split-bill-postgres-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-splitbill}
+    ports:
+      - "29387:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  redis_data_dev:
+  minio_data_dev:
+  postgres_data_dev:

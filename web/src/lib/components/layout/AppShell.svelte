@@ -1,10 +1,13 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     title?: string;
     class?: string;
+    children?: Snippet;
   }
 
-  const { title = 'Split Bill', class: className = '' }: Props = $props();
+  const { title = 'Split Bill', class: className = '', children }: Props = $props();
 </script>
 
 <div class="flex flex-col min-h-screen bg-surface pb-[60px]">
@@ -15,6 +18,8 @@
 
   <!-- Main Content -->
   <main class="flex-1 px-4 py-4 {className}">
-    <slot />
+    {#if children}
+      {@render children()}
+    {/if}
   </main>
 </div>

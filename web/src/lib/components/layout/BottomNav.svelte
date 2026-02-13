@@ -17,12 +17,12 @@
     { path: '/receipt', icon: '📸', label: 'Receipt' },
     { path: '/split', icon: '💰', label: 'Split' },
     { path: '/history', icon: '📋', label: 'History' },
+    { path: '/settings', icon: '⚙️', label: 'Settings' },
   ];
 </script>
 
 <nav
   class="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 z-40 bottom-nav-safe {className}"
-  role="navigation"
   aria-label="Main navigation"
 >
   <ul class="flex items-center justify-around">

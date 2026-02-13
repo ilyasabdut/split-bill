@@ -100,7 +100,6 @@ node_modules/
 web/node_modules/
 web/build/
 web/.svelte-kit/
-pnpm-lock.yaml
 
 # Development tools
 .aider*

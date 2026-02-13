@@ -776,9 +776,68 @@ async def log_requests_middleware(request: Request, call_next):
         correlation_id_ctx.reset(token)
 
 
+# Import new routers
+try:
+    currency_module = __import__("routers.currency", fromlist=["currency_router"])
+    currency_router = getattr(currency_module, "currency_router")
+    CURRENCY_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Currency router not available: {e}")
+    CURRENCY_ROUTER_AVAILABLE = False
+    currency_router = None
+
+try:
+    groups_module = __import__("routers.groups", fromlist=["groups_router"])
+    groups_router = getattr(groups_module, "groups_router")
+    GROUPS_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Groups router not available: {e}")
+    GROUPS_ROUTER_AVAILABLE = False
+    groups_router = None
+
+try:
+    templates_module = __import__("routers.templates", fromlist=["templates_router"])
+    templates_router = getattr(templates_module, "templates_router")
+    TEMPLATES_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Templates router not available: {e}")
+    TEMPLATES_ROUTER_AVAILABLE = False
+    templates_router = None
+
+try:
+    payments_module = __import__("routers.payments", fromlist=["payments_router"])
+    payments_router = getattr(payments_module, "payments_router")
+    PAYMENTS_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Payments router not available: {e}")
+    PAYMENTS_ROUTER_AVAILABLE = False
+    payments_router = None
+
+try:
+    analytics_module = __import__("routers.analytics", fromlist=["analytics_router"])
+    analytics_router = getattr(analytics_module, "analytics_router")
+    ANALYTICS_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Analytics router not available: {e}")
+    ANALYTICS_ROUTER_AVAILABLE = False
+    analytics_router = None
+
 # Register routers
+app.include_router(health_router)
+app.include_router(metrics_router)
 app.include_router(splits_router)
 app.include_router(receipts_router)
+
+if CURRENCY_ROUTER_AVAILABLE:
+    app.include_router(currency_router)
+if GROUPS_ROUTER_AVAILABLE:
+    app.include_router(groups_router)
+if TEMPLATES_ROUTER_AVAILABLE:
+    app.include_router(templates_router)
+if PAYMENTS_ROUTER_AVAILABLE:
+    app.include_router(payments_router)
+if ANALYTICS_ROUTER_AVAILABLE:
+    app.include_router(analytics_router)
 
 # =============================================================================
 # ROUTES

@@ -1,6 +1,6 @@
 import type {
   ApiResponse,
-  ApiError,
+  ApiError as ApiErrorType,
   UploadReceiptResponse,
   CalculateSplitRequest,
   CalculateSplitResponse,
@@ -8,7 +8,7 @@ import type {
   HealthResponse
 } from '$lib/types/api';
 
-interface ApiConfig {
+export interface ApiConfig {
   baseURL: string;
   apiKey: string;
   timeout: number;

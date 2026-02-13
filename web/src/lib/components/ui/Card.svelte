@@ -1,10 +1,13 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   interface Props {
     padding?: 'none' | 'sm' | 'md' | 'lg';
     class?: string;
+    children?: Snippet;
   }
 
-  const { padding = 'md', class: className = '' }: Props = $props();
+  const { padding = 'md', class: className = '', children }: Props = $props();
 
   const paddingClasses = {
     none: '',
@@ -15,5 +18,7 @@
 </script>
 
 <div class="bg-white rounded-xl shadow-sm border border-surface-200 {paddingClasses[padding]} {className}">
-  <slot />
+  {#if children}
+    {@render children()}
+  {/if}
 </div>

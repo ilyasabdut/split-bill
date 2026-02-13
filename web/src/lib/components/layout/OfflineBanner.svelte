@@ -1,8 +1,5 @@
 <script lang="ts">
-  import { offlineStore } from '$lib/stores/offline';
-
-  const isOffline = $derived(() => !$offlineStore.online);
-  const hasQueuedActions = $derived(() => $offlineStore.queuedActions > 0);
+  import { offlineStore, isOffline, hasQueuedActions } from '$lib/stores/offline';
 </script>
 
 {#if $isOffline}

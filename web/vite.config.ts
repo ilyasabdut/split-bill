@@ -3,6 +3,31 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+	test: {
+		globals: true,
+		environment: 'jsdom',
+		setupFiles: ['./src/lib/tests/setup.ts'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'json', 'html'],
+			include: ['src/lib/**/*.{js,ts,svelte}'],
+			exclude: [
+				'src/lib/tests/**',
+				'src/lib/**/*.test.{js,ts}',
+				'src/lib/**/*.spec.{js,ts}',
+				'**/*.d.ts',
+				'**/*.config.{js,ts}'
+			],
+			thresholds: {
+				global: {
+					branches: 90,
+					functions: 90,
+					lines: 90,
+					statements: 90
+				}
+			}
+		}
+	},
 	server: {
 		port: 15173,
 		strictPort: true,
@@ -61,6 +86,6 @@ export default defineConfig({
 				enabled: process.env.NODE_ENV !== 'development',
 				type: 'module',
 			}
-		}
+		})
 	]
 });

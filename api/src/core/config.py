@@ -32,6 +32,12 @@ class Settings:
         self.MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "split-bill")
         self.MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "False").lower() == "true"
 
+        # Database Configuration
+        self.DATABASE_URL = os.getenv(
+            "DATABASE_URL",
+            "postgresql+asyncpg://user:password@localhost:5432/splitbill",
+        )
+
         # Redis Configuration (for caching)
         self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
