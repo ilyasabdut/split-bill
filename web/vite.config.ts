@@ -12,7 +12,7 @@ export default defineConfig({
 				name: 'Split Bill',
 				short_name: 'SplitBill',
 				description: 'Split bills easily with friends',
-				theme_color: '#000000',
+				theme_color: '#0ea5e9',
 				background_color: '#ffffff',
 				display: 'standalone',
 				orientation: 'portrait',
@@ -51,7 +51,11 @@ export default defineConfig({
 					}
 				],
 				navigateFallback: '/offline'
+			},
+			devOptions: {
+				enabled: process.env.NODE_ENV !== 'development',
+				type: 'module',
 			}
-		})
+		}
 	]
 });
