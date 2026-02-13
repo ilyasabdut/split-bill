@@ -1,4 +1,5 @@
 import { getApiClient } from './client';
+import { compressImage } from '$lib/utils/image';
 import type { UploadReceiptResponse } from '$lib/types/api';
 
 export interface UploadReceiptOptions {
@@ -11,8 +12,21 @@ export class ReceiptsService {
   /** Upload receipt for OCR processing */
   async upload(options: UploadReceiptOptions): Promise<UploadReceiptResponse> {
     const apiClient = getApiClient();
+
+    // Compress image before upload
+    const compressed = await compressImage(options.file, 0.8);
+
+    // Create FormData
     const formData = new FormData();
-    formData.append('file', options.file);
+    const fileBlob = compressed.blob;
+
+    // Create new File with compressed blob
+    const compressedFile = new File([fileBlob], options.file.name, {
+      type: 'image/jpeg',
+      lastModified: options.file.lastModified,
+    });
+
+    formData.append('file', compressedFile);
 
     // For large files, use XMLHttpRequest for progress tracking
     if (options.onProgress && options.file.size > 1024 * 1024) {

@@ -12,14 +12,17 @@
   let tax = $state(0);
   let tip = $state(0);
   let calculating = $state(false);
+  let loading = $state(false);
 
   function handleCalculateSplit() {
     calculating = true;
+    loading = true;  // Add loading state
     const receiptData = receiptStore.data;
 
     if (!receiptData || !receiptData.items.length) {
       alert('Please upload a receipt first');
       calculating = false;
+      loading = false;  // Reset loading on early return
       return;
     }
 
@@ -50,6 +53,7 @@
         })
         .finally(() => {
           calculating = false;
+          loading = false;  // Reset loading after done
         });
     } else {
       // Offline: Use client-side calculation
@@ -64,6 +68,7 @@
         alert(`Failed to calculate split: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         calculating = false;
+        loading = false;  // Reset loading after done
       }
     }
   }
