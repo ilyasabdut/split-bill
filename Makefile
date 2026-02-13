@@ -1,7 +1,43 @@
-.PHONY: all build up down logs clean rebuild-api rebuild-app install start run-api run-streamlit stop stop-api check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1
+.PHONY: all build up down logs clean rebuild-api install start run-api web-install web-dev web-build web-check web-test stop stop-api check_dotenv lint lint-fix test format type-check pre-commit check-quality check-all demo-phase1 help
 
-# Default target: install dependencies and start the Streamlit app
-all: start
+# Default target: show help
+all: help
+
+# Help target
+help:
+	@echo "🧾 Split Bill - Development Commands"
+	@echo "====================================="
+	@echo "Core Commands:"
+	@echo "  make install          - Install all dependencies (Python + Web)"
+	@echo "  make start            - Start the Svelte web frontend locally"
+	@echo "  make run-api          - Start the FastAPI backend locally"
+	@echo "  make web-dev          - Start the Svelte web frontend locally"
+	@echo ""
+	@echo "Docker Operations:"
+	@echo "  make build            - Build Docker images"
+	@echo "  make up               - Start all services with Docker Compose"
+	@echo "  make down             - Stop and remove Docker services"
+	@echo "  make logs             - View service logs"
+	@echo "  make clean            - Clean up Docker resources and node_modules"
+	@echo ""
+	@echo "Web (Svelte) Commands:"
+	@echo "  make web-install      - Install Svelte web dependencies"
+	@echo "  make web-dev          - Run web dev server"
+	@echo "  make web-build        - Build the web application"
+	@echo "  make web-check        - Run Svelte check and type check"
+	@echo "  make web-test         - Run Vitest for the web frontend"
+	@echo ""
+	@echo "Code Quality & Testing:"
+	@echo "  make lint             - Run Python linting (Ruff)"
+	@echo "  make lint-fix         - Auto-fix Python lint issues"
+	@echo "  make format           - Format Python code (Black)"
+	@echo "  make test             - Run Python tests"
+	@echo "  make type-check       - Run MyPy type checking"
+	@echo "  make pre-commit       - Run pre-commit hooks on all files"
+	@echo "  make check-all        - Run all quality checks"
+	@echo ""
+	@echo "Demos:"
+	@echo "  make demo-phase1      - Run Phase 1 architecture demo"
 
 # Build Docker images
 build:
@@ -23,12 +59,14 @@ logs:
 	@echo "Displaying logs for all services (Ctrl+C to exit)..."
 	docker-compose -f docker/docker-compose.yml logs -f
 
-# Clean up Docker images and volumes
+# Clean up Docker images and volumes, and local node_modules
 clean:
 	@echo "Cleaning up Docker images and volumes..."
 	docker-compose -f docker/docker-compose.yml down --volumes --rmi all
 	docker volume prune -f
 	docker image prune -a -f
+	@echo "Cleaning up local build artifacts..."
+	rm -rf web/node_modules web/build web/.svelte-kit
 	@echo "Cleanup complete."
 
 # Helper for development: rebuild and restart a specific service
@@ -36,33 +74,48 @@ rebuild-api:
 	@echo "Rebuilding and restarting API service..."
 	docker-compose -f docker/docker-compose.yml up --build -d api
 
-rebuild-app:
-	@echo "Rebuilding and restarting App service..."
-	docker-compose -f docker/docker-compose.yml up --build -d app
-
-# Install dependencies using uv
+# Install dependencies using uv and pnpm
 install:
-	@echo "Installing dependencies with uv..."
+	@echo "Installing Python dependencies with uv..."
 	uv pip show uv || uv pip install uv
 	uv sync
+	@echo "Installing Web dependencies with pnpm..."
+	cd web && pnpm install
 
-# Start the Streamlit application locally
-start: run-streamlit
+# Start the Svelte web frontend locally
+start: web-dev
 
-run-streamlit:
-	@echo "Starting Streamlit app locally..."
-	cd app/src && uv pip show python-dotenv && \
-	uv run python -m dotenv -f ../../.env run streamlit run main.py || \
-	echo "python-dotenv not found; run 'make install'"
+# Web (Svelte) Frontend Targets
+# ============================
+
+web-install:
+	@echo "📦 Installing web dependencies..."
+	cd web && pnpm install
+
+web-dev:
+	@echo "🚀 Starting web dev server..."
+	cd web && pnpm dev
+
+web-build:
+	@echo "🏗️ Building web application..."
+	cd web && pnpm build
+
+web-check:
+	@echo "🔍 Running web checks..."
+	cd web && pnpm check
+
+web-test:
+	@echo "🧪 Running web tests..."
+	cd web && pnpm test
 
 # Start the FastAPI application with Uvicorn locally
 run-api:
 	@echo "🚀 Starting FastAPI app with Uvicorn locally..."
 	cd api && { \
 		uv pip show python-dotenv && \
-		(pkill -f "uvicorn.*8000" || true) && \
+		(pkill -f "uvicorn.*18000" || true) && \
 		sleep 2 && \
-		uv run python -m dotenv -f ../.env run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload; \
+		uv run python -m dotenv -f ../.env run uvicorn src.main:app --host 0.0.0.0 --port 18000 --reload; \
 	} || echo "python-dotenv not found; run 'make install'"
 
 # Check for python-dotenv in the environment
@@ -118,24 +171,28 @@ check-quality: lint
 	@echo "All quality checks passed!"
 
 # Complete development quality gate - runs everything (fast version without type checking)
-check-all: lint-fix format sort-imports test lint pre-commit
+check-all: lint-fix format sort-imports test lint pre-commit web-check web-test
 	@echo "🎉 ALL QUALITY CHECKS PASSED! 🎉"
 	@echo "✅ Code formatting completed"
 	@echo "✅ Import sorting completed"
-	@echo "✅ Tests passed"
+	@echo "✅ Python tests passed"
 	@echo "✅ Linting passed"
 	@echo "✅ Pre-commit hooks passed"
+	@echo "✅ Web checks passed"
+	@echo "✅ Web tests passed"
 	@echo "🚀 Ready for commit!"
 
 # Complete development quality gate - runs everything (with type checking - slower)
-check-all-with-types: lint-fix format sort-imports type-check test lint pre-commit
+check-all-with-types: lint-fix format sort-imports type-check test lint pre-commit web-check web-test
 	@echo "🎉 ALL QUALITY CHECKS PASSED! 🎉"
 	@echo "✅ Code formatting completed"
 	@echo "✅ Import sorting completed"
-	@echo "✅ Type checking completed"
-	@echo "✅ Tests passed"
+	@echo "✅ Python type checking completed"
+	@echo "✅ Python tests passed"
 	@echo "✅ Linting passed"
 	@echo "✅ Pre-commit hooks passed"
+	@echo "✅ Web checks passed"
+	@echo "✅ Web tests passed"
 	@echo "🚀 Ready for commit!"
 
 # Phase 1 Demo and Status

@@ -94,3 +94,10 @@ logs/
 # Docker
 .docker/
 .superdesign
+
+# Node / Web
+node_modules/
+web/build/
+web/.svelte-kit/
+.env.local
+.env.*.local

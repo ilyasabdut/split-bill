@@ -40,11 +40,11 @@ class Settings(BaseSettings):
 
     # Application URLs
     app_base_url: str = Field(
-        default="http://localhost:8501",
-        description="Base URL for the frontend Streamlit application",
+        default="http://localhost:15173",
+        description="Base URL for the frontend application",
     )
     fastapi_api_url: str = Field(
-        default="http://localhost:8000",
+        default="http://localhost:18000",
         description="Base URL for the FastAPI backend",
     )
 
@@ -86,7 +86,7 @@ class Settings(BaseSettings):
 
     # Redis Configuration
     redis_url: str = Field(
-        default="redis://localhost:6379",
+        default="redis://localhost:16379",
         description="Redis connection URL with optional credentials",
     )
 

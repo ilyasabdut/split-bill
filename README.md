@@ -1,12 +1,13 @@
 # 🧾 Bill Splitter with OCR & Shareable Links
 
-This application is now split into a Streamlit frontend and a FastAPI backend, allowing users to upload a receipt image, automatically extracts items and amounts using an OpenRouter-hosted model, and then facilitates splitting the bill among multiple people. Calculated splits can be saved and shared via a unique link.
+This application features a modern SvelteKit PWA frontend and a robust FastAPI backend. It allows users to upload receipt images, automatically extracts items and amounts using AI (via OpenRouter), and facilitates splitting the bill among multiple people. Calculated splits can be saved and shared via a unique link.
 
 ## ✨ Features
 
 *   **AI-Powered OCR:** Uses OpenRouter (Grok 4 Fast) to extract details from receipt images.
-*   **Decoupled Architecture:** Separate Streamlit frontend for UI and FastAPI backend for API logic.
-*   **Modular Backend:** Professional modular architecture with clear separation of concerns.
+*   **Modern PWA Frontend:** Mobile-first SvelteKit application with offline support and background sync.
+*   **Decoupled Architecture:** Separate SvelteKit frontend for UI and FastAPI backend for API logic.
+*   **Offline-First Capabilities:** IndexedDB integration for local data persistence and offline queue system.
 *   **Enterprise Security:** API Key authentication, rate limiting, security headers, and input validation.
 *   **High Performance:** Redis caching with intelligent cache strategies for optimal response times.
 *   **Integrated API:** Single endpoint API combining security, caching, and all business logic.
@@ -30,28 +31,27 @@ This application is now split into a Streamlit frontend and a FastAPI backend, a
 ## 🔄 Recent Updates
 
 ### **Latest Fixes & Improvements**
-- **✅ Async OCR Refactoring:** Replaced synchronous `requests` with async `httpx` in OpenRouter OCR service for better concurrency
-- **✅ Structured Logging:** Added correlation IDs to all requests with `X-Correlation-ID` header support for distributed tracing
-- **✅ Comprehensive Testing:** Added 29 unit and integration tests covering split logic, image processing, and API endpoints
+- **✅ Mobile-First Redesign:** Launched new SvelteKit PWA in `/web` directory with Tailwind CSS 4.x
+- **✅ Offline Support:** Added Service Worker, Background Sync, and IndexedDB for offline-first usage
+- **✅ Async OCR Refactoring:** Replaced synchronous `requests` with async `httpx` in OpenRouter OCR service
+- **✅ Structured Logging:** Added correlation IDs to all requests with `X-Correlation-ID` header support
+- **✅ Comprehensive Testing:** Added 29 unit and integration tests covering split logic and API endpoints
 - **✅ Code Quality:** All tests pass with Ruff linting, Black formatting, and isort import sorting
-- **✅ Fixed Streamlit Configuration:** Resolved page config order issues for proper Streamlit functionality
 - **✅ Fixed API Endpoint:** Resolved 404 error for receipt upload by implementing `/receipts/upload` endpoint
-- **✅ Streamlined UI:** Removed light mode toggle, now featuring clean dark theme only
 - **✅ Enhanced Architecture:** Improved API router structure with proper endpoint organization
 
 ## 🛠️ Tech Stack
 
-*   **Frontend:** Streamlit
+*   **Frontend:** SvelteKit, Tailwind CSS 4.0, Skeleton UI
 *   **Backend API:** FastAPI, Uvicorn
 *   **Backend AI:** OpenRouter API (for OCR and data extraction)
+*   **Database (Offline):** IndexedDB (Dexie.js)
 *   **Image Storage:** MinIO (or any S3-compatible object storage)
-*   **Metadata Storage:** JSON files stored in MinIO
 *   **Caching:** Redis with intelligent cache strategies
-*   **Programming Language:** Python
+*   **Programming Languages:** Python, TypeScript
 *   **Containerization:** Docker, Docker Compose
-*   **CI/CD:** GitHub Actions (example provided)
-*   **Build/Automation:** Makefile
-*   **Code Quality:** Black, isort, Ruff, MyPy, pytest, pre-commit hooks
+*   **Build/Automation:** Makefile, pnpm, uv
+*   **Code Quality:** Black, Ruff, MyPy, pytest, Vitest, pre-commit
 
 ## 📁 Project Structure
 
@@ -63,8 +63,13 @@ bill-splitter/
 │       └── ci-master.yml
 │
 ├── app/
-│   └── src/                # Frontend (Streamlit) source code
+│   └── src/                # Legacy Frontend (Streamlit) source code
 │       └── main.py
+│
+├── web/
+│   ├── src/                # Modern Frontend (SvelteKit) source code
+│   ├── static/             # Static assets (service worker, icons)
+│   └── package.json        # Web dependencies
 │
 ├── api/
 │   └── src/                # Backend (FastAPI) source code
@@ -120,12 +125,13 @@ bill-splitter/
 │       └── phase1_demo.py  # Phase 1 architecture demonstration
 └── README.md               # This file
 ```
-## 🚀 Setup and Installation
+### Setup and Installation
 
 ### Prerequisites
 
 - Python 3.12+
-- Docker & Docker Compose (optional, but recommended for full setup)
+- Node.js & pnpm
+- Docker & Docker Compose (optional, but recommended)
 - OpenRouter API key
 - MinIO server access
 - An API Key (a simple string secret for authenticating API requests)
@@ -138,8 +144,8 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
     ```bash
     git clone <repository-url>
     cd <repository-name>
-    make install
-    make check_dotenv
+    make install          # Installs both Python (uv) and Web (pnpm) dependencies
+    make check_dotenv     # Verifies your environment setup
     ```
 
 2.  **Configure Environment**
@@ -156,8 +162,8 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
 
     Example `.env` content:
     ```env
-    APP_BASE_URL=http://localhost:8501
-    FASTAPI_API_URL=http://localhost:8000
+    APP_BASE_URL=http://localhost:15173
+    FASTAPI_API_URL=http://localhost:18000
     API_KEY=your_secure_random_api_key_here  # IMPORTANT: Change this!
     OPENROUTER_API_KEY=your_openrouter_api_key
     OPENROUTER_MODEL_NAME=mistralai/mistral-small-3.2-24b-instruct:free
@@ -173,19 +179,19 @@ For convenience, this project utilizes `Makefile` commands to streamline common 
     - `OPENROUTER_X_TITLE`
 
 3.  **Run the Applications**
-    From the project root directory, open two separate terminal windows:
+    From the project root directory, open separate terminal windows:
 
     *   **Terminal 1 (Backend API):**
         ```bash
         make run-api
         ```
-        Starts FastAPI on `http://localhost:8000` (docs at `http://localhost:8000/docs`)
+        Starts FastAPI on `http://localhost:18000`
 
-    *   **Terminal 2 (Frontend App):**
+    *   **Terminal 2 (Web Frontend):**
         ```bash
-        make run-streamlit
+        make web-dev
         ```
-        Starts Streamlit on `http://localhost:8501`
+        Starts SvelteKit on `http://localhost:5173` (local dev) or `http://localhost:15173` (Docker)
 
 ### 🔧 Development Tools & Code Quality
 
@@ -230,30 +236,26 @@ make demo-phase1
 make help
 
 # Core development
-make install          # Install dependencies
+make install          # Install all dependencies (Python + Web)
 make run-api          # Start FastAPI backend
-make run-streamlit    # Start Streamlit frontend
+make web-dev          # Start Svelte web frontend
+
+# Web (Svelte) specific
+make web-install      # Install web dependencies only
+make web-build        # Build for production
+make web-test         # Run frontend tests (Vitest)
 
 # Docker operations
 make build            # Build Docker images
 make up               # Start services with Docker Compose
 make down             # Stop services
 make logs             # View logs
-make clean            # Clean up Docker resources
+make clean            # Clean up Docker resources and node_modules
 
 # Code quality and testing
-make lint             # Check code quality with Ruff
-make lint-fix         # Auto-fix code quality issues
-make pre-commit       # Run pre-commit hooks on all files
-make format           # Format code with Black
-make sort-imports     # Sort imports with isort
-make type-check       # Run type checking with MyPy
-make test             # Run tests with pytest
-make check-quality    # Comprehensive quality checks
-
-# Utilities
-make demo-phase1      # Show Phase 1 architecture demo
-make check_dotenv     # Check python-dotenv setup
+make lint             # Check Python code quality with Ruff
+make test             # Run Python tests with pytest
+make check-all        # Run all quality checks (Python + Web)
 ```
 
 ### Docker Deployment
@@ -268,7 +270,7 @@ make check_dotenv     # Check python-dotenv setup
     docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
-Access the Streamlit app at `http://localhost:8501` and the FastAPI API docs at `http://localhost:8000/docs` (if exposed).
+Access the web app at `http://localhost:15173` and the FastAPI API docs at `http://localhost:18000/docs` (if exposed).
 
 For detailed deployment guides and CI/CD setup, see our [Deployment Documentation](deployment.md).
 
@@ -381,7 +383,7 @@ Ensure your MinIO bucket (`split-bill`) has these permissions:
 ### Redis Caching Setup
 
 Redis is automatically configured via Docker Compose:
--   **Development:** `redis://localhost:6379`
+-   **Development:** `redis://localhost:16379`
 -   **Production:** `redis://redis:6379` (Docker service)
 -   **Data Persistence:** Automatic with append-only file (AOF)
 -   **Connection Pooling:** 20 concurrent connections with retry logic
@@ -389,10 +391,9 @@ Redis is automatically configured via Docker Compose:
 ### Docker Compose Services
 ```yaml
 services:
-  app:        # Streamlit frontend (port 8501)
-  api:        # FastAPI backend with security & caching (port 8000)
-  redis:      # Redis cache (port 6379)
-  # Optional: MinIO for production storage
+  web:        # SvelteKit frontend (port 15173)
+  api:        # FastAPI backend with security & caching (port 18000)
+  redis:      # Redis cache (port 16379)
 ```
 
 Environment variables for Redis:
@@ -555,6 +556,13 @@ For bugs or feature requests, open an Issue.
 - **Error Handling:** Improved error handling and user feedback for API interactions
 - **Production Testing:** Real-world usage scenarios validated and tested
 - **Outcome:** Full frontend-backend integration with enterprise security and high performance
+
+### **Phase 6: Mobile-First PWA Redesign** ✅
+- **SvelteKit Transition:** Replaced monolithic frontend with modern, mobile-first SvelteKit app
+- **PWA Features:** Implemented Service Worker for offline access and background sync
+- **Offline Storage:** Integrated IndexedDB (Dexie.js) for persistent local state
+- **Tailwind 4.x:** Leveraged the latest Tailwind CSS for advanced styling and performance
+- **Outcome:** High-performance, installable mobile application with offline capabilities
 
 ## 📚 Additional Documentation
 

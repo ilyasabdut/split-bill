@@ -1,18 +1,16 @@
 version: "3.8"
 
 services:
-  app:
+  web:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
-    image: registry.ilyasabdut.loseyourip.com/split-bill-app:latest
-    container_name: split-bill-app
+      dockerfile: docker/Dockerfile.web
+    image: registry.ilyasabdut.loseyourip.com/split-bill-web:latest
+    container_name: split-bill-web
     ports:
-      - "8501:8501"
+      - "15173:3000"
     environment:
-      - FASTAPI_API_URL=http://api:8000
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8501}
-      - API_KEY=${API_KEY}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:18000}
     restart: unless-stopped
     depends_on:
       - api
@@ -24,7 +22,7 @@ services:
     image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
     container_name: split-bill-api
     ports:
-      - "8000:8000"
+      - "18000:18000"
     environment:
       - API_KEY=${API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
@@ -34,7 +32,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8000}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:15173}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     restart: unless-stopped
     depends_on:
@@ -44,7 +42,7 @@ services:
     image: valkey/valkey:alpine3.23
     container_name: split-bill-redis
     ports:
-      - "6379:6379"
+      - "16379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes

@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { splitsService } from '$lib/services/api';
-  import { receiptStore } from '$lib/stores/receipt';
-  import { calculateSplit } from '$lib/services/offline';
-  import { offlineStore } from '$lib/stores/offline';
+import { splitsService } from '$lib/services/api';
+import { receiptStore, splitStore } from '$lib/stores';
+import { calculateSplit } from '$lib/services/offline';
+import { offlineStore } from '$lib/stores/offline';
+
   import PersonManager from '$lib/components/features/split/PersonManager.svelte';
   import SplitResults from '$lib/components/features/split/SplitResults.svelte';
   import Card from '$lib/components/ui/Card.svelte';
@@ -16,18 +17,18 @@
 
   function handleCalculateSplit() {
     calculating = true;
-    loading = true;  // Add loading state
-    const receiptData = receiptStore.data;
+    loading = true;
+    const receiptData = $receiptStore.data;
 
     if (!receiptData || !receiptData.items.length) {
       alert('Please upload a receipt first');
       calculating = false;
-      loading = false;  // Reset loading on early return
+      loading = false;
       return;
     }
 
     // Create assignments (each item assigned to all people by default)
-    const assignments = receiptData.items.map(item => ({
+    const assignments = receiptData.items.map((item: any) => ({
       item_id: item.name,
       assigned_to: people,
     }));
@@ -44,16 +45,16 @@
       // Online: Use API
       splitsService.calculate(request)
         .then(response => {
-          receiptStore.setResults?.(response.split_results);
-          receiptStore.setPeople?.(people);
-          receiptStore.setItems?.(receiptData.items);
+          splitStore.setResults(response.split_results);
+          splitStore.setPeople(people);
+          splitStore.setItems(receiptData.items);
         })
         .catch(error => {
           alert(`Failed to calculate split: ${error.message}`);
         })
         .finally(() => {
           calculating = false;
-          loading = false;  // Reset loading after done
+          loading = false;
         });
     } else {
       // Offline: Use client-side calculation
@@ -61,14 +62,14 @@
         const result = calculateSplit(people, receiptData.items, assignments, tax, tip, false);
 
         // Store result
-        receiptStore.setResults?.(result);
-        receiptStore.setPeople?.(people);
-        receiptStore.setItems?.(receiptData.items);
+        splitStore.setResults(result);
+        splitStore.setPeople(people);
+        splitStore.setItems(receiptData.items);
       } catch (error) {
         alert(`Failed to calculate split: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         calculating = false;
-        loading = false;  // Reset loading after done
+        loading = false;
       }
     }
   }
@@ -77,7 +78,7 @@
     people = ['Person 1', 'Person 2'];
     tax = 0;
     tip = 0;
-    receiptStore.reset?.();
+    splitStore.reset();
   }
 </script>
 
@@ -142,7 +143,7 @@
   </div>
 
   <!-- Results -->
-  {#if receiptStore.results}
-    <SplitResults results={receiptStore.results} />
+  {#if $splitStore.results}
+    <SplitResults results={$splitStore.results} />
   {/if}
 </div>

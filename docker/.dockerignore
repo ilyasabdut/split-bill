@@ -95,6 +95,13 @@ pyproject.toml
 uv.lock
 .pre-commit-config.yaml
 
+# Web artifacts
+node_modules/
+web/node_modules/
+web/build/
+web/.svelte-kit/
+pnpm-lock.yaml
+
 # Development tools
 .aider*
 aider.log

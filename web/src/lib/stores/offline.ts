@@ -19,8 +19,11 @@ function createOfflineStore() {
     set({ ...initialState, online: navigator.onLine });
 
     // Listen for online/offline events
-    window.addEventListener('online', () => {
+    window.addEventListener('online', async () => {
       update(state => ({ ...state, online: true }));
+      const { getOfflineQueue } = await import('$lib/services/offline/queue');
+      const queue = await getOfflineQueue();
+      await queue.processQueue();
     });
 
     window.addEventListener('offline', () => {

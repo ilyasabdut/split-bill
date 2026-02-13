@@ -3,9 +3,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+	server: {
+		port: 15173,
+		strictPort: true,
+	},
 	plugins: [
 		sveltekit(),
 		VitePWA({
+
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
 			manifest: {

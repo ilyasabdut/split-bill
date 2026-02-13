@@ -91,8 +91,8 @@ export class OfflineQueueService {
   /** Process queued receipt upload */
   private async processReceiptUpload(action: QueuedReceiptUpload): Promise<void> {
     // Import receiptsService dynamically to avoid circular dependency
-    const { receiptsService } = await import('$lib/services/api');
-    const result = await receiptsService.receiptsService.upload({
+    const { receiptsService } = await import('$lib/services/api/receipts');
+    const result = await receiptsService.upload({
       file: action.data.file,
       onProgress: action.data.onProgress,
     });
@@ -103,13 +103,14 @@ export class OfflineQueueService {
 
   /** Process queued split calculation */
   private async processSplitCalculate(action: QueuedSplitCalculate): Promise<void> {
-    // Client-side calculation (will be implemented in next task)
     const { calculateSplit } = await import('$lib/services/offline/calc');
     const result = calculateSplit(
       action.data.people,
       action.data.items,
+      (action.data as any).assignments || [],
       action.data.tax,
-      action.data.tip
+      action.data.tip,
+      (action.data as any).split_evenly || false
     );
     // Store result in IndexedDB
     const indexedDB = await getIndexedDB();
