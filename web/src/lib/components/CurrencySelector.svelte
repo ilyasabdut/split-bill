@@ -15,13 +15,15 @@
   }
 
   const {
-    selected = $derived(currencyStore.selected),
+    selected: propSelected,
     onChange,
     disabled = false,
     class: className = '',
     showSymbol = false,
     children
   }: Props = $props();
+
+  const selected = $derived(propSelected ?? currencyStore.selected);
 
   let loading = $state(false);
   let error = $state('');

@@ -2,8 +2,8 @@ FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
-COPY web/package.json web/bun.lock ./
-RUN bun install --frozen-lockfile
+COPY web/package.json bun.lock ./
+RUN bun install
 
 COPY web/ ./
 RUN bun run build
@@ -21,5 +21,5 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 
-# Serve the static build on port 3000
+# Serve static build on port 3000
 CMD ["serve", "-s", "build", "-p", "3000"]

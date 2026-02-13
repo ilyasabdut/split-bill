@@ -85,6 +85,19 @@
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
+
+  function handleSelect(settlement: Settlement) {
+    if (interactive && onSelectSettlement) {
+      onSelectSettlement(settlement);
+    }
+  }
+
+  function handleKeydown(event: KeyboardEvent, settlement: Settlement) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSelect(settlement);
+    }
+  }
 </script>
 
 <div class="space-y-4 {className}">
@@ -98,8 +111,11 @@
   {:else}
     {#each groupedSettlements() as settlement}
       <div
+        role={interactive ? 'button' : undefined}
+        tabindex={interactive ? 0 : -1}
         class="flex items-center justify-between p-4 bg-surface-50 rounded-lg {interactive ? 'hover:bg-surface-100 cursor-pointer transition-colors' : ''}"
-        onclick={() => interactive && onSelectSettlement?.(settlement)}
+        onclick={() => handleSelect(settlement)}
+        onkeydown={(e) => handleKeydown(e, settlement)}
       >
         <!-- Payer -->
         <div class="flex items-center gap-3 flex-1">

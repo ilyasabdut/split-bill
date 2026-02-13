@@ -83,7 +83,7 @@ export default defineConfig({
 				navigateFallback: '/offline'
 			},
 			devOptions: {
-				enabled: process.env.NODE_ENV !== 'development',
+				enabled: false,
 				type: 'module',
 			}
 		})

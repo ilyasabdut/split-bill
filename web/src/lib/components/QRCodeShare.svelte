@@ -20,7 +20,7 @@
     title = 'Share via QR Code'
   }: Props = $props();
 
-  let qrCodeUrl: string = '';
+  let qrCodeUrl = $state<string>('');
   let loading = $state(true);
   let error = $state('');
 

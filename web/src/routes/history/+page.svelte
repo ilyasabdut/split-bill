@@ -18,7 +18,6 @@
   }
 
   let history = $state<HistoryItem[]>([]);
-  let filteredHistory = $state<HistoryItem[]>([]);
   let loading = $state(true);
   let searchTerm = $state('');
   let dateFilter = $state<'all' | 'week' | 'month' | 'year'>('all');
@@ -26,9 +25,9 @@
   let monthlySpending = $state<any>(null);
   let settlementSummary = $state<any>(null);
 
-  $: {
+  const filteredHistory = $derived(() => {
     // Filter history based on search and date filter
-    filteredHistory = history.filter(item => {
+    return history.filter(item => {
       const matchesSearch = searchTerm === '' ||
         item.people.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -47,7 +46,7 @@
         default: return true;
       }
     });
-  }
+  });
 
   onMount(async () => {
     try {
