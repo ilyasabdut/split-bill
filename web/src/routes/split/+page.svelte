@@ -1,12 +1,12 @@
 <script lang="ts">
   import { splitsService } from '$lib/services/api';
   import { receiptStore } from '$lib/stores/receipt';
+  import { calculateSplit } from '$lib/services/offline';
+  import { offlineStore } from '$lib/stores/offline';
   import PersonManager from '$lib/components/features/split/PersonManager.svelte';
   import SplitResults from '$lib/components/features/split/SplitResults.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import Progress from '$lib/components/ui/Progress.svelte';
-  import type { ReceiptData } from '$lib/types/receipt';
 
   let people = $state<string[]>(['Person 1', 'Person 2']);
   let tax = $state(0);
@@ -37,16 +37,35 @@
       split_evenly: false,
     };
 
-    splitsService.calculate(request)
-      .then(response => {
-        receiptStore.setResults?.(response.split_results);
-      })
-      .catch(error => {
-        alert(`Failed to calculate split: ${error.message}`);
-      })
-      .finally(() => {
+    if ($offlineStore.online) {
+      // Online: Use API
+      splitsService.calculate(request)
+        .then(response => {
+          receiptStore.setResults?.(response.split_results);
+          receiptStore.setPeople?.(people);
+          receiptStore.setItems?.(receiptData.items);
+        })
+        .catch(error => {
+          alert(`Failed to calculate split: ${error.message}`);
+        })
+        .finally(() => {
+          calculating = false;
+        });
+    } else {
+      // Offline: Use client-side calculation
+      try {
+        const result = calculateSplit(people, receiptData.items, assignments, tax, tip, false);
+
+        // Store result
+        receiptStore.setResults?.(result);
+        receiptStore.setPeople?.(people);
+        receiptStore.setItems?.(receiptData.items);
+      } catch (error) {
+        alert(`Failed to calculate split: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
         calculating = false;
-      });
+      }
+    }
   }
 
   function resetSplit() {
