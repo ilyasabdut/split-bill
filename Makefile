@@ -23,7 +23,7 @@ help:
 	@echo ""
 	@echo "Docker Operations (Legacy Aliases):"
 	@echo "  make build            - Build Docker images"
-	@echo "  make up               - Start all services with Docker Compose (dev only)"
+	@echo "  make up               - Start all services with Docker Compose (dev only, no cache)"
 	@echo "  make down             - Stop and remove Docker services (dev only)"
 	@echo "  make logs             - View service logs (dev only)"
 	@echo "  make clean            - Clean up Docker resources and node_modules"
@@ -113,8 +113,9 @@ build:
 
 # Start services with Docker Compose (legacy alias for infra-up, dev only)
 up:
-	@echo "Starting services with Docker Compose (dev environment)..."
-	docker-compose -f docker/docker-compose.yml up --build -d
+	@echo "Starting services with Docker Compose (dev environment, no cache)..."
+	docker-compose -f docker/docker-compose.yml build --no-cache
+	docker-compose -f docker/docker-compose.yml up -d
 
 # Stop and remove Docker Compose services (legacy alias for infra-down, dev only)
 down:
