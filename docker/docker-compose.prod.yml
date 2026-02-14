@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
 
   garage:
-    image: dxflrs/garage:latest
+    image: dxflrs/garage:v2.2.0
     container_name: split-bill-garage
     ports:
       - "3900:3900"
