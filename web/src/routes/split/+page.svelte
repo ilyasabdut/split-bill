@@ -257,7 +257,7 @@ import { offlineStore } from '$lib/stores/offline';
       <div>
         <label for="tip-input" class="block text-sm font-medium mb-1">Tip</label>
         <div class="space-y-3">
-          <input
+           <input
             id="tip-input"
             type="number"
             bind:value={tip}
@@ -265,9 +265,7 @@ import { offlineStore } from '$lib/stores/offline';
             min="0"
             class="w-full px-4 py-3 text-base bg-white border border-surface-300 rounded-lg min-h-[44px]"
             placeholder="0.00"
-            {#if splitMethod === 'percentage'}
-              disabled={quickTip !== null}
-            {/if}
+            disabled={splitMethod === 'percentage' && quickTip !== null}
           />
 
           <!-- Smart Rounding (only when not percentage split) -->
