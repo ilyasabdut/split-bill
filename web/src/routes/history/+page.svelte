@@ -21,7 +21,7 @@
   let loading = $state(true);
   let searchTerm = $state('');
   let dateFilter = $state<'all' | 'week' | 'month' | 'year'>('all');
-  let activeTab = $state<'history' | 'analytics'>('history');
+  let activeTab = $state<'all' | 'unpaid' | 'completed' | 'groups' | 'templates' | 'analytics'>('all');
   let monthlySpending = $state<any>(null);
   let settlementSummary = $state<any>(null);
 
@@ -48,7 +48,7 @@
     });
   });
 
-  onMount(async () => {
+   onMount(async () => {
     try {
       await Promise.all([
         currencyStore.init(),
@@ -63,14 +63,14 @@
         .filter(item => item.createdAt)
         .sort((a, b) => b.createdAt - a.createdAt)
         .map(item => ({
-          id: item.id,
-          createdAt: item.createdAt,
+          id: String(item.id),
+          createdAt: Number(item.createdAt),
           people: Object.keys(item.results || {}),
-          total: Object.values(item.results || {}).reduce((sum: number, person: any) => sum + person.total, 0),
+          total: Number(Object.values(item.results || {}).reduce((sum: number, person: any) => sum + person.total, 0)),
           results: item.results,
-          currency: item.currency || 'USD',
-          group: item.group
-        }));
+          currency: String(item.currency || 'USD'),
+          group: String(item.group || '')
+        })) as HistoryItem[];
 
       // Load analytics data
       monthlySpending = analyticsStore.getMonthlySpending();
@@ -97,78 +97,114 @@
 </svelte:head>
 
 <div class="space-y-4">
-  <!-- Header with Tabs -->
-  <div class="flex justify-between items-center">
-    <h2 class="text-xl font-semibold">Split History</h2>
-    <div class="flex bg-surface-100 rounded-lg p-1">
-      <button
-        class="px-3 py-1 rounded text-sm font-medium transition-colors"
-        class:bg-white={activeTab === 'history'}
-        class:text-text-primary={activeTab === 'history'}
-        class:text-text-secondary={activeTab !== 'history'}
-        onclick={() => activeTab = 'history'}
-      >
-        History
-      </button>
-      <button
-        class="px-3 py-1 rounded text-sm font-medium transition-colors"
-        class:bg-white={activeTab === 'analytics'}
-        class:text-text-primary={activeTab === 'analytics'}
-        class:text-text-secondary={activeTab !== 'analytics'}
-        onclick={() => activeTab = 'analytics'}
-      >
-        Analytics
-      </button>
-    </div>
-  </div>
+   <!-- Header with Tabs -->
+   <div class="flex justify-between items-center">
+     <h2 class="text-xl font-semibold">Split History</h2>
+     <div class="flex bg-surface-100 rounded-lg p-1 overflow-x-auto">
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'all'}
+         class:text-text-primary={activeTab === 'all'}
+         class:text-text-secondary={activeTab !== 'all'}
+         onclick={() => activeTab = 'all'}
+       >
+         All
+       </button>
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'unpaid'}
+         class:text-text-primary={activeTab === 'unpaid'}
+         class:text-text-secondary={activeTab !== 'unpaid'}
+         onclick={() => activeTab = 'unpaid'}
+       >
+         Unpaid
+       </button>
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'completed'}
+         class:text-text-primary={activeTab === 'completed'}
+         class:text-text-secondary={activeTab !== 'completed'}
+         onclick={() => activeTab = 'completed'}
+       >
+         Completed
+       </button>
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'groups'}
+         class:text-text-primary={activeTab === 'groups'}
+         class:text-text-secondary={activeTab !== 'groups'}
+         onclick={() => activeTab = 'groups'}
+       >
+         Groups
+       </button>
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'templates'}
+         class:text-text-primary={activeTab === 'templates'}
+         class:text-text-secondary={activeTab !== 'templates'}
+         onclick={() => activeTab = 'templates'}
+       >
+         Templates
+       </button>
+       <button
+         class="px-3 py-1 rounded text-sm font-medium transition-colors"
+         class:bg-white={activeTab === 'analytics'}
+         class:text-text-primary={activeTab === 'analytics'}
+         class:text-text-secondary={activeTab !== 'analytics'}
+         onclick={() => activeTab = 'analytics'}
+       >
+         Analytics
+       </button>
+     </div>
+   </div>
 
-  {#if loading}
-    <Card>
-      <div class="text-center py-8">
-        <p class="text-text-secondary">Loading history...</p>
-      </div>
-    </Card>
-  {:else if activeTab === 'history'}
-    <!-- Filters -->
-    <Card>
-      <div class="space-y-3">
-        <Input
-          type="search"
-          placeholder="Search by name..."
-          bind:value={searchTerm}
-        />
-        <div class="flex gap-2">
-          <Button
-            variant={dateFilter === 'all' ? 'primary' : 'outline'}
-            size="sm"
-            onclick={() => dateFilter = 'all'}
-          >
-            All Time
-          </Button>
-          <Button
-            variant={dateFilter === 'week' ? 'primary' : 'outline'}
-            size="sm"
-            onclick={() => dateFilter = 'week'}
-          >
-            This Week
-          </Button>
-          <Button
-            variant={dateFilter === 'month' ? 'primary' : 'outline'}
-            size="sm"
-            onclick={() => dateFilter = 'month'}
-          >
-            This Month
-          </Button>
-          <Button
-            variant={dateFilter === 'year' ? 'primary' : 'outline'}
-            size="sm"
-            onclick={() => dateFilter = 'year'}
-          >
-            This Year
-          </Button>
-        </div>
-      </div>
-    </Card>
+   {#if loading}
+     <Card>
+       <div class="text-center py-8">
+         <p class="text-text-secondary">Loading history...</p>
+       </div>
+     </Card>
+   {:else if activeTab === 'all' || activeTab === 'unpaid' || activeTab === 'completed'}
+   <!-- Filters -->
+     <Card>
+       <div class="space-y-3">
+         <Input
+           type="text"
+           placeholder="Search by name..."
+           bind:value={searchTerm}
+         />
+         <div class="flex gap-2">
+           <Button
+             variant={dateFilter === 'all' ? 'primary' : 'outline'}
+             size="sm"
+             onclick={() => dateFilter = 'all'}
+           >
+             All Time
+           </Button>
+           <Button
+             variant={dateFilter === 'week' ? 'primary' : 'outline'}
+             size="sm"
+             onclick={() => dateFilter = 'week'}
+           >
+             This Week
+           </Button>
+           <Button
+             variant={dateFilter === 'month' ? 'primary' : 'outline'}
+             size="sm"
+             onclick={() => dateFilter = 'month'}
+           >
+             This Month
+           </Button>
+           <Button
+             variant={dateFilter === 'year' ? 'primary' : 'outline'}
+             size="sm"
+             onclick={() => dateFilter = 'year'}
+           >
+             This Year
+           </Button>
+         </div>
+       </div>
+     </Card>
 
     {#if filteredHistory.length === 0}
       <Card>

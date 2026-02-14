@@ -46,7 +46,7 @@ This application features a modern SvelteKit PWA frontend and a robust FastAPI b
 *   **Backend API:** FastAPI, Uvicorn
 *   **Backend AI:** OpenRouter API (for OCR and data extraction)
 *   **Database (Offline):** IndexedDB (Dexie.js)
-*   **Image Storage:** MinIO (or any S3-compatible object storage)
+*   **Image Storage:** Garage (S3-compatible object storage)
 *   **Caching:** Redis with intelligent cache strategies
 *   **Programming Languages:** Python, TypeScript
 *   **Containerization:** Docker, Docker Compose
@@ -93,7 +93,7 @@ bill-splitter/
 │       ├── services/       # Business logic and external services
 │       │   ├── __init__.py
 │       │   ├── image_service.py    # Shared image processing utilities
-│       │   ├── minio_utils.py      # MinIO storage operations
+│       │   ├── storage_utils.py      # Garage S3 storage operations
 │       │   ├── openrouter_ocr.py   # OpenRouter OCR integration
 │       │   └── split_logic.py      # Bill splitting calculations
 │       ├── utils/          # Utility functions

@@ -50,8 +50,43 @@ function createCurrencyStore() {
       // or we expose a helper that subscribes briefly.
       // For now, let's keep it simple and assume components handle conversion using $rates
       return 0;
-    }
-  };
+    },
+
+     /** Initialize currency store - load rates from API */
+    async init() {
+      update(s => ({ ...s, loading: true }));
+      try {
+        const response = await fetch('/api/currency/rates');
+        if (!response.ok) throw new Error('Failed to load currency rates');
+
+        const data = await response.json();
+        update(s => ({
+          ...s,
+          rates: data.rates || {},
+          loading: false
+        }));
+      } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        update(s => ({ ...s, error, loading: false }));
+      }
+    },
+
+    /** Format currency amount with proper symbol */
+    formatCurrency(amount: number): string {
+      const symbols: Record<CurrencyCode, string> = {
+        'IDR': 'Rp',
+        'USD': '$',
+        'NZD': '$',
+        'JPY': '¥'
+      };
+
+      const symbol = symbols[$selected] || '';
+      return `${symbol}${new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(amount)}`;
+    },
+  }
 }
 
 export const currencyStore = createCurrencyStore();

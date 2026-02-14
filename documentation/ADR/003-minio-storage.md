@@ -1,4 +1,4 @@
-# ADR-003: MinIO for Object Storage
+# ADR-003: Garage for Object Storage
 
 ## Status
 
@@ -17,10 +17,11 @@ Requirements:
 - Self-hosted option (privacy, cost)
 - Docker-friendly
 - Easy to backup and migrate
+- Low resource requirements
 
 ## Decision
 
-We chose **MinIO** as our object storage solution.
+We chose **Garage** as our object storage solution.
 
 ## Alternatives Considered
 
@@ -73,8 +74,28 @@ We chose **MinIO** as our object storage solution.
 - Self-managed (ops overhead)
 - Single-node deployment not highly available
 - Requires persistent storage
+- Higher resource requirements than Garage
 
-**Verdict**: **Accepted** - Best balance of features and control
+**Verdict**: Rejected - Garage offers better efficiency for our needs
+
+### 4. Garage
+
+**Pros**:
+- S3-compatible API (drop-in replacement)
+- Self-hosted (data privacy, no egress costs)
+- Docker-native
+- Very lightweight (single binary)
+- Low resource requirements (1GB RAM)
+- Distributed by design (data replicated in 3 zones)
+- Highly resilient to network failures
+- Open source
+
+**Cons**:
+- Self-managed (ops overhead)
+- Smaller community than MinIO
+- Newer project
+
+**Verdict**: **Accepted** - Best balance of features, efficiency, and control
 
 ## Consequences
 
@@ -83,16 +104,17 @@ We chose **MinIO** as our object storage solution.
 1. **S3 Compatibility**: Works with existing S3 libraries and tools
 2. **Cost**: No per-request or egress fees
 3. **Privacy**: Data stays in our infrastructure
-4. **Flexibility**: Can migrate to AWS S3 later if needed
-5. **Development**: Same code works locally and in production
-6. **Backup**: Simple file-based backups
+4. **Efficiency**: Very low resource requirements (1GB RAM)
+5. **Resilience**: Data automatically replicated across zones
+6. **Development**: Same code works locally and in production
+7. **Backup**: Simple file-based backups
+8. **Deployment**: Single dependency-free binary
 
 ### Negative
 
-1. **Operations**: Need to monitor and maintain MinIO instance
+1. **Operations**: Need to monitor and maintain Garage instance
 2. **Storage**: Requires persistent disk space
-3. **Single Point of Failure**: Single-node deployment
-4. **Learning Curve**: S3 API concepts for team
+3. **Learning Curve**: S3 API concepts for team
 
 ## Implementation Details
 
@@ -109,26 +131,26 @@ bucket: split-bill
 ### Storage Structure
 
 ```python
-# MinIO client configuration
-minio_client = Minio(
-    "minio:9000",
+# Garage S3 client configuration (using minio library)
+storage_client = Minio(
+    "garage:3900",
     access_key=os.getenv("MINIO_ACCESS_KEY"),
     secret_key=os.getenv("MINIO_SECRET_KEY"),
     secure=False  # True in production with SSL
 )
 
 # Ensure bucket exists
-if not minio_client.bucket_exists("split-bill"):
-    minio_client.make_bucket("split-bill")
+if not storage_client.bucket_exists("split-bill"):
+    storage_client.make_bucket("split-bill")
 ```
 
 ### Image Storage Flow
 
 1. User uploads receipt image
 2. Image is compressed (reduce size for OCR)
-3. Image is stored in MinIO: `receipts/{split_id}.jpg`
+3. Image is stored in Garage: `receipts/{split_id}.jpg`
 4. Metadata stored: `metadata/{split_id}.json`
-5. Share link generated pointing to MinIO data
+5. Share link generated pointing to Garage data
 
 ### Metadata Format
 
@@ -153,20 +175,26 @@ if not minio_client.bucket_exists("split-bill"):
 ```yaml
 # docker-compose.yml
 services:
-  minio:
-    image: minio/minio:latest
+  garage:
+    image: dxflrs/garage:latest
     ports:
-      - "9000:9000"   # API port
-      - "9001:9001"   # Console port
+      - "3900:3900"   # S3 API port
+      - "3902:3902"   # Admin web UI
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      GARAGE_RPC_SECRET: changeme
+      GARAGE_ADMIN_TOKEN: admin_token_change_me
+      GARAGE_S3_API_REGION: garage
     volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
+      - garage_data:/data
+      - garage_meta:/meta
+    command: >
+      /garage
+      --config /etc/garage/config.toml
+      server
 
 volumes:
-  minio_data:
+  garage_data:
+  garage_meta:
 ```
 
 ### Security Considerations
@@ -175,13 +203,14 @@ volumes:
 2. **Bucket Policies**: Restrict public access
 3. **Presigned URLs**: Use for temporary access (viewing receipts)
 4. **SSL/TLS**: Enable in production
-5. **Backup**: Regular snapshots of MinIO data volume
+5. **Backup**: Regular snapshots of Garage data volumes
+6. **RPC Secret**: Use strong secret for cluster communication
 
 ## Migration Path
 
 If we need to migrate to AWS S3 later:
 
-1. MinIO and S3 use same API (boto3/minio libraries)
+1. Garage and S3 use same API (boto3/minio libraries)
 2. Only endpoint and credentials change
 3. Data migration via `mc mirror` or `rclone`
 4. Zero code changes required
@@ -192,12 +221,19 @@ If we need to migrate to AWS S3 later:
 - **Download**: ~50ms for 1MB image (cached)
 - **Storage**: ~2MB per receipt (compressed)
 
+## Resource Requirements
+
+- **CPU**: Any x86_64 from last 10 years, ARMv7/v8
+- **RAM**: 1 GB minimum
+- **Disk**: At least 16 GB
+- **Network**: 200ms latency or less, 50 Mbps or more
+
 ## Future Considerations
 
-- **Erasure Coding**: Enable for data protection (minio server with erasure sets)
-- **Distributed Mode**: Run MinIO in distributed mode for HA
+- **Multi-zone deployment**: Deploy Garage across multiple datacenters
 - **Lifecycle Policies**: Auto-delete old receipts after X days
 - **Versioning**: Enable for data protection
+- **Monitoring**: Implement health checks for Garage cluster
 
 ## Related Decisions
 
@@ -206,6 +242,7 @@ If we need to migrate to AWS S3 later:
 
 ## References
 
-- [MinIO Documentation](https://docs.min.io/)
-- [S3 API Compatibility](https://docs.min.io/docs/minio-client-complete-guide)
-- [MinIO Docker Hub](https://hub.docker.com/r/minio/minio/)
+- [Garage Documentation](https://garagehq.deuxfleurs.fr/documentation/)
+- [S3 API Compatibility](https://garagehq.deuxfleurs.fr/documentation/connect/s3/)
+- [Garage Docker Hub](https://hub.docker.com/r/dxflrs/garage)
+- [Garage Source Code](https://git.deuxfleurs.fr/Deuxfleurs/garage)

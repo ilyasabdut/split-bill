@@ -111,12 +111,12 @@ function createSplitStore() {
     /** Reset to initial state */
     reset: () => set(initialState),
 
-    /** Get total from results */
-    totalForPerson: (personName: string) => derived({ subscribe }, ($state) => {
-      if (!$state.results || !$state.results[personName]) return 0;
-      return $state.results[personName].total;
-    })
-  };
+    /** Get recent splits (mock implementation) */
+    async getRecentSplits(count: number = 5) {
+      // This would fetch from API - for now returns empty array
+      return [];
+    },
+  }
 }
 
 export const splitStore = createSplitStore();

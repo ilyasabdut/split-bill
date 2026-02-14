@@ -21,6 +21,8 @@ import { offlineStore } from '$lib/stores/offline';
   let selectedGroup = $state<any>(null);
   let quickTip = $state<number | null>(null);
   let autoDetectTax = $state(true);
+  let roundingMode = $state<'exact' | 'up' | 'down'>('exact');
+  let splitMethod = $state<'equal' | 'percentage'>('equal');
 
   // Quick tip percentages
   const quickTipOptions = [
@@ -209,15 +211,33 @@ import { offlineStore } from '$lib/stores/offline';
     </Card>
   {/if}
 
-  <!-- Tax & Tip -->
+   <!-- Tax & Tip -->
   <Card>
     <div class="space-y-4">
-      <div class="flex justify-between items-center">
-        <h2 class="font-semibold">Tax & Tip</h2>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" bind:checked={autoDetectTax} />
-          Auto-detect tax
-        </label>
+      <!-- Tax & Split Method -->
+      <div class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-semibold">Tax</h2>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" bind:checked={autoDetectTax} />
+            Auto-detect tax
+          </label>
+        </div>
+        <!-- Split Method Tabs -->
+        <div class="flex items-center gap-2">
+          <button
+            class={splitMethod === 'equal' ? 'px-4 py-2 bg-brand-50 border border-brand-500 rounded-lg text-brand-700 font-semibold' : 'px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg'}
+            onclick={() => splitMethod = 'equal'}
+          >
+            Equal Split
+          </button>
+          <button
+            class={splitMethod === 'percentage' ? 'px-4 py-2 bg-brand-50 border border-brand-500 rounded-lg text-brand-700 font-semibold' : 'px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg'}
+            onclick={() => splitMethod = 'percentage'}
+          >
+            % Split
+          </button>
+        </div>
       </div>
 
       <div>
@@ -230,6 +250,7 @@ import { offlineStore } from '$lib/stores/offline';
           min="0"
           class="w-full px-4 py-3 text-base bg-white border border-surface-300 rounded-lg min-h-[44px]"
           placeholder="0.00"
+          disabled={autoDetectTax}
         />
       </div>
 
@@ -244,20 +265,37 @@ import { offlineStore } from '$lib/stores/offline';
             min="0"
             class="w-full px-4 py-3 text-base bg-white border border-surface-300 rounded-lg min-h-[44px]"
             placeholder="0.00"
+            {#if splitMethod === 'percentage'}
+              disabled={quickTip !== null}
+            {/if}
           />
 
-          <!-- Quick Tip Buttons -->
-          <div class="grid grid-cols-5 gap-2">
-            {#each quickTipOptions as option}
-              <Button
-                variant={quickTip === option.value ? 'primary' : 'outline'}
-                size="sm"
-                onclick={() => handleQuickTip(option.value)}
-              >
-                {option.label}
-              </Button>
-            {/each}
-          </div>
+          <!-- Smart Rounding (only when not percentage split) -->
+          {#if splitMethod === 'equal'}
+            <div class="mt-3">
+              <p class="text-sm text-text-secondary mb-2">Smart Rounding</p>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  class={roundingMode === 'down' ? 'px-3 py-2 bg-brand-50 border border-brand-500 rounded-lg text-brand-700 font-semibold' : 'px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg'}
+                  onclick={() => roundingMode = 'down'}
+                >
+                  Down
+                </button>
+                <button
+                  class={roundingMode === 'exact' ? 'px-3 py-2 bg-brand-50 border border-brand-500 rounded-lg text-brand-700 font-semibold' : 'px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg'}
+                  onclick={() => roundingMode = 'exact'}
+                >
+                  Exact
+                </button>
+                <button
+                  class={roundingMode === 'up' ? 'px-3 py-2 bg-brand-50 border border-brand-500 rounded-lg text-brand-700 font-semibold' : 'px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg'}
+                  onclick={() => roundingMode = 'up'}
+                >
+                  Up
+                </button>
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
     </div>

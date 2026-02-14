@@ -130,7 +130,7 @@ cpu_usage_percent = Gauge("cpu_usage_percent", "CPU usage percentage")
 service_health_status = Gauge(
     "service_health_status",
     "Service health status (1=healthy, 0=unhealthy)",
-    ["service"],  # 'redis', 'minio', 'openrouter', 'api'
+    ["service"],  # 'redis', 'garage', 'openrouter', 'api'
 )
 
 

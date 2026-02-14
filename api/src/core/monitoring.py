@@ -78,11 +78,11 @@ class HealthMonitor:
                         "last_check": datetime.now().isoformat(),
                         "error": "Redis check not implemented yet",
                     },
-                    "minio": {
+                    "garage": {
                         "status": "unknown",
                         "response_time_ms": 0,
                         "last_check": datetime.now().isoformat(),
-                        "error": "MinIO check not implemented yet",
+                        "error": "Garage check not implemented yet",
                     },
                     "openrouter": {
                         "status": "unknown",

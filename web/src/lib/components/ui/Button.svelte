@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   interface Props {
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
     size?: 'sm' | 'md' | 'lg';
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
@@ -28,6 +28,7 @@
     secondary: 'bg-surface-200 text-text hover:bg-surface-300',
     ghost: 'bg-transparent text-text hover:bg-surface-100',
     danger: 'bg-red-600 text-white hover:bg-red-700',
+    outline: 'bg-transparent border-2 border-surface-300 text-text hover:bg-surface-50 hover:border-surface-400',
   };
 
   const sizeClasses = {

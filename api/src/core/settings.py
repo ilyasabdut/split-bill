@@ -25,11 +25,11 @@ class Settings(BaseSettings):
         openrouter_api_key: API key for OpenRouter OCR service
         openrouter_model_name: Model name for OCR processing
         openrouter_api_base_url: Base URL for OpenRouter API
-        minio_endpoint: MinIO/S3 endpoint address
-        minio_access_key: MinIO access key
-        minio_secret_key: MinIO secret key
-        minio_bucket_name: MinIO bucket name for storing receipts
-        minio_use_ssl: Whether to use SSL for MinIO connections
+        minio_endpoint: Garage/S3 endpoint address
+        minio_access_key: Garage access key
+        minio_secret_key: Garage secret key
+        minio_bucket_name: Garage bucket name for storing receipts
+        minio_use_ssl: Whether to use SSL for Garage connections
         redis_url: Redis connection URL
         debug: Enable debug mode
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -62,26 +62,26 @@ class Settings(BaseSettings):
         description="Base URL for OpenRouter API",
     )
 
-    # MinIO/S3 Configuration
+    # Garage/S3 Configuration
     minio_endpoint: str = Field(
         ...,
-        description="MinIO/S3 endpoint address (host:port)",
+        description="Garage/S3 endpoint address (host:port)",
     )
     minio_access_key: str = Field(
         ...,
-        description="MinIO access key",
+        description="Garage access key",
     )
     minio_secret_key: str = Field(
         ...,
-        description="MinIO secret key",
+        description="Garage secret key",
     )
     minio_bucket_name: str = Field(
         default="split-bill",
-        description="MinIO bucket name for storing receipts and metadata",
+        description="Garage bucket name for storing receipts and metadata",
     )
     minio_use_ssl: bool = Field(
         default=False,
-        description="Whether to use SSL for MinIO connections",
+        description="Whether to use SSL for Garage connections",
     )
 
     # Redis Configuration
@@ -181,20 +181,20 @@ class Settings(BaseSettings):
     def validate_minio_endpoint(cls, v: str) -> str:
         if ":" not in v:
             raise ValueError(
-                f"Invalid MinIO endpoint: {v}. Must be in format 'host:port'"
+                f"Invalid Garage endpoint: {v}. Must be in format 'host:port'"
             )
         return v
 
     @property
     def minio_host(self) -> str:
-        """Extract host from MinIO endpoint."""
+        """Extract host from Garage endpoint."""
         return self.minio_endpoint.split(":")[0]
 
     @property
     def minio_port(self) -> int:
-        """Extract port from MinIO endpoint."""
+        """Extract port from Garage endpoint."""
         parts = self.minio_endpoint.split(":")
-        return int(parts[1]) if len(parts) > 1 else 9000
+        return int(parts[1]) if len(parts) > 1 else 3900
 
     def get_cache_ttl_hours(self, key: str) -> int:
         """Get cache TTL in hours for a specific key type.

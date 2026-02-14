@@ -21,9 +21,10 @@ services:
       - API_KEY=${API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENROUTER_MODEL_NAME=${OPENROUTER_MODEL_NAME:-mistralai/mistral-small-3.2-24b-instruct:free}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-garage:3900}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-garage}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-garage_key}
+      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:-admin_token_change_me}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:15173}
@@ -42,20 +43,26 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:latest
-    container_name: split-bill-minio
+  garage:
+    image: dxflrs/garage:latest
+    container_name: split-bill-garage
     ports:
-      - "19000:9000"
-      - "19001:9001"
+      - "3900:3900"
+      - "3902:3902"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-changeme}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-admin_token_change_me}
+      GARAGE_S3_API_REGION: garage
     volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
+      - garage_data:/data
+      - garage_meta:/meta
+    command: >
+      /garage
+      --config /etc/garage/config.toml
+      server
     restart: unless-stopped
 
 volumes:
   redis_data:
-  minio_data:
+  garage_data:
+  garage_meta:

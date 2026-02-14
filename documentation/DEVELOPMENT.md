@@ -178,7 +178,7 @@ split-bill/
 │   │   │   └── monitoring.py   # Health/metrics endpoints
 │   │   ├── services/            # Business logic
 │   │   │   ├── image_service.py
-│   │   │   ├── minio_utils.py
+│   │   │   ├── storage_utils.py
 │   │   │   ├── openrouter_ocr.py
 │   │   │   └── split_logic.py
 │   │   └── utils/               # Utilities

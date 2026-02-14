@@ -2,7 +2,7 @@
 
 ## Overview
 
-Split Bill is a production-ready receipt splitting application with OCR capabilities, built using a modern microservices-inspired architecture. The system separates concerns between a Streamlit frontend for user interaction and a FastAPI backend for business logic, with Redis for caching and MinIO for object storage.
+Split Bill is a production-ready receipt splitting application with OCR capabilities, built using a modern microservices-inspired architecture. The system separates concerns between a Streamlit frontend for user interaction and a FastAPI backend for business logic, with Redis for caching and Garage for object storage.
 
 **Version**: 2.0.0
 **Last Updated**: February 2026
@@ -150,7 +150,7 @@ api/src/
 - Async/await support
 - Retry logic with exponential backoff
 
-### 4. Storage Layer (MinIO/S3)
+### 4. Storage Layer (Garage S3)
 
 **Purpose**: Object storage for receipt images and metadata
 
@@ -163,7 +163,7 @@ bucket: split-bill
     └── {split_id}.json       # Split calculation data
 ```
 
-**Implementation**: Located in `api/src/services/minio_utils.py`
+**Implementation**: Located in `api/src/services/storage_utils.py`
 
 **Features**:
 - Automatic bucket creation

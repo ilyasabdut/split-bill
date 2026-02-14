@@ -1,7 +1,7 @@
 """Service layer modules."""
 
 from .image_service import compress_image, get_image_info, validate_image_format
-from .minio_utils import (
+from .storage_utils import (
     get_image_from_minio,
     get_metadata_from_minio,
     upload_image_to_minio,

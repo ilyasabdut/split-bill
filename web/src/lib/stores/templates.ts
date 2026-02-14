@@ -45,8 +45,27 @@ function createTemplatesStore() {
 
     setError: (error: string | null) => update(s => ({ ...s, error, loading: false })),
 
-    reset: () => set(initialState)
-  };
+    reset: () => set(initialState),
+
+    /** Load templates from API */
+    async loadTemplates() {
+      update(s => ({ ...s, loading: true }));
+      try {
+        const response = await fetch('/api/templates');
+        if (!response.ok) throw new Error('Failed to load templates');
+
+        const data = await response.json();
+        update(s => ({
+          ...s,
+          templates: data || [],
+          loading: false
+        }));
+      } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        update(s => ({ ...s, error, loading: false }));
+      }
+    },
+  }
 }
 
 export const templatesStore = createTemplatesStore();

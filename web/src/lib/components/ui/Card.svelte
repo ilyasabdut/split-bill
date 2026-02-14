@@ -5,9 +5,10 @@
     padding?: 'none' | 'sm' | 'md' | 'lg';
     class?: string;
     children?: Snippet;
+    onclick?: (event: MouseEvent) => void;
   }
 
-  const { padding = 'md', class: className = '', children }: Props = $props();
+  const { padding = 'md', class: className = '', children, onclick }: Props = $props();
 
   const paddingClasses = {
     none: '',
@@ -17,7 +18,10 @@
   };
 </script>
 
-<div class="bg-white rounded-xl shadow-sm border border-surface-200 {paddingClasses[padding]} {className}">
+<div
+  class="bg-white rounded-xl shadow-sm border border-surface-200 {paddingClasses[padding]} {className}"
+  {onclick}
+>
   {#if children}
     {@render children()}
   {/if}

@@ -62,8 +62,27 @@ function createGroupsStore() {
 
     setError: (error: string | null) => update(s => ({ ...s, error, loading: false })),
 
-    reset: () => set(initialState)
-  };
+    reset: () => set(initialState),
+
+    /** Load groups from API */
+    async loadGroups() {
+      update(s => ({ ...s, loading: true }));
+      try {
+        const response = await fetch('/api/groups');
+        if (!response.ok) throw new Error('Failed to load groups');
+
+        const data = await response.json();
+        update(s => ({
+          ...s,
+          groups: data || [],
+          loading: false
+        }));
+      } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        update(s => ({ ...s, error, loading: false }));
+      }
+    },
+  }
 }
 
 export const groupsStore = createGroupsStore();
