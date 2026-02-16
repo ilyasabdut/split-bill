@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest_asyncio
 from sqlalchemy import select
+
 from src.db.models import CurrencyRate
 from src.services.currency_service import CurrencyService
 

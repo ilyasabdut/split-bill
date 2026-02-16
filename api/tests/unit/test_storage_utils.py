@@ -2,10 +2,8 @@
 
 import json
 import os
-from io import BytesIO
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
-import pytest
 from minio.error import S3Error
 
 from src.services import storage_utils

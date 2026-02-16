@@ -1,7 +1,6 @@
 """Tests for schemas module."""
 
 from datetime import datetime
-from typing import Any, Dict, List
 
 import pytest
 from pydantic import ValidationError

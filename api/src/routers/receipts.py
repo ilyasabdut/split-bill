@@ -8,8 +8,8 @@ import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
-from .dependencies import get_api_key, rate_limit
-from .models.schemas import ReceiptUploadResponse
+from src.dependencies import get_api_key, rate_limit
+from src.models.schemas import ReceiptUploadResponse
 
 logger = logging.getLogger(__name__)
 

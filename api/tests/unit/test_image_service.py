@@ -1,7 +1,7 @@
 """Tests for image_service module."""
 
 import io
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from PIL import Image as PILImage
@@ -112,7 +112,7 @@ class TestCompressImage:
         # Target is small enough to trigger compression
         target_size = len(image_bytes) // 2
 
-        with patch('src.services.image_service.logger') as mock_logger:
+        with patch('src.services.image_service.logger'):
             result = compress_image(image_bytes, target_size_bytes=target_size)
 
         assert result is not None

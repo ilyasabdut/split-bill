@@ -8,7 +8,7 @@ async def test_connection(host="localhost"):
     print(f"Testing connection to {url}...")
     engine = create_async_engine(url)
     try:
-        async with engine.connect() as conn:
+        async with engine.connect():
             print(f"Successfully connected to {host}!")
     except Exception as e:
         print(f"Connection to {host} failed: {e}")

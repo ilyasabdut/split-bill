@@ -11,8 +11,8 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from .dependencies import get_api_key, rate_limit
-from .models.schemas import (
+from src.dependencies import get_api_key, rate_limit
+from src.models.schemas import (
     CalculateSplitRequest,
     CalculateSplitResponse,
     SharedSplitDataResponse,
