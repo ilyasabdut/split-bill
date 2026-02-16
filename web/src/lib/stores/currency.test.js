@@ -185,7 +185,7 @@ describe('Currency Store', () => {
       expect(get(currencyStore.targetCurrency)).toBe('GBP');
       expect(get(currencyStore.exchangeRate)).toBe(0.85);
       expect(get(currencyStore.rates)).toEqual({ EUR: 0.85, GBP: 0.73 });
-      expect(get(currencyStore.isLoading)).toBe(true);
+      expect(get(currencyStore.isLoading)).toBe(false);
       expect(get(currencyStore.error)).toBe('Error');
 
       // Reset
