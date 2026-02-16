@@ -4,6 +4,7 @@
   import { currencyStore } from '$lib/stores/currency';
   import { currencyService } from '$lib/services/api/currency';
   import { onMount } from 'svelte';
+  import { cn } from '$lib/utils';
 
   interface Props {
     selected?: CurrencyCode;
@@ -12,6 +13,7 @@
     class?: string;
     showSymbol?: boolean;
     children?: Snippet;
+    ariaLabel?: string;
   }
 
   const {
@@ -20,7 +22,8 @@
     disabled = false,
     class: className = '',
     showSymbol = false,
-    children
+    children,
+    ariaLabel
   }: Props = $props();
 
   const selected = $derived(propSelected ?? currencyStore.selected);
@@ -54,24 +57,31 @@
   }
 </script>
 
-<div class="relative {className}">
+<div class={cn('relative', className)}>
   {#if loading}
-    <div class="animate-pulse bg-surface-200 rounded-lg h-10"></div>
+    <!-- Structural skeleton loading state -->
+    <div class="flex items-center gap-3 p-4 bg-surface-100 rounded-lg">
+      <div class="w-16 h-6 bg-surface-200 rounded animate-pulse"></div>
+      <div class="flex-1 h-6 bg-surface-200 rounded animate-pulse"></div>
+    </div>
   {:else if error}
-    <div class="text-sm text-red-600">{error}</div>
+    <div class="text-sm text-red-600 text-balance">{error}</div>
   {:else}
     <select
       value={$selected}
       onchange={handleChange}
       {disabled}
-      class="block w-full appearance-none bg-surface-100 border border-surface-300 rounded-lg px-4 py-2 pr-8 text-text focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+      class={cn(
+        'block w-full appearance-none bg-surface-100 border border-surface-300 rounded-lg px-4 py-2 pr-8 text-text focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 min-h-[44px]'
+      )}
+      aria-label={ariaLabel || 'Select currency'}
     >
       {#if children}
         {@render children()}
       {/if}
       {#each currencies as currency}
         <option value={currency.code}>
-          {currency.code}
+          <span class="tabular-nums">{currency.code}</span>
           {#if showSymbol}
             - {currency.symbol}
           {/if}
@@ -82,7 +92,7 @@
 
     <!-- Dropdown arrow -->
     <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-      <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="size-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
       </svg>
     </div>

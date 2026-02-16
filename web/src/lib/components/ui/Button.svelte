@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { cn } from '$lib/utils';
 
   interface Props {
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
@@ -9,6 +10,11 @@
     class?: string;
     children?: Snippet;
     onclick?: (event: MouseEvent) => void;
+    ariaLabel?: string;
+    ariaLabelledby?: string;
+    ariaControls?: string;
+    ariaExpanded?: boolean;
+    ariaCurrent?: string;
   }
 
   const {
@@ -18,7 +24,12 @@
     type = 'button',
     class: className = '',
     children,
-    onclick
+    onclick,
+    ariaLabel,
+    ariaLabelledby,
+    ariaControls,
+    ariaExpanded,
+    ariaCurrent
   }: Props = $props();
 
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
@@ -40,9 +51,14 @@
 
 <button
   {type}
-  class="{baseClasses} {variantClasses[variant]} {sizeClasses[size]} {className}"
+  class={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
   {disabled}
   {onclick}
+  {ariaLabel}
+  {ariaLabelledby}
+  {ariaControls}
+  {ariaExpanded}
+  {ariaCurrent}
 >
   {#if children}
     {@render children()}

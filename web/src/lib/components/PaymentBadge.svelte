@@ -1,16 +1,20 @@
 <script lang="ts">
+  import { cn } from '$lib/utils';
+
   interface Props {
     status: 'pending' | 'paid' | 'failed' | 'processing';
     size?: 'sm' | 'md' | 'lg';
     showText?: boolean;
     class?: string;
+    ariaLabel?: string;
   }
 
   const {
     status,
     size = 'md',
     showText = true,
-    class: className = ''
+    class: className = '',
+    ariaLabel
   }: Props = $props();
 
   const statusConfig = {
@@ -49,17 +53,17 @@
   const sizeClasses = {
     sm: {
       container: 'px-2 py-1',
-      icon: 'w-3 h-3',
+      icon: 'size-3',
       text: 'text-xs'
     },
     md: {
       container: 'px-2.5 py-1.5',
-      icon: 'w-4 h-4',
+      icon: 'size-4',
       text: 'text-sm'
     },
     lg: {
       container: 'px-3 py-2',
-      icon: 'w-5 h-5',
+      icon: 'size-5',
       text: 'text-base'
     }
   };
@@ -67,13 +71,22 @@
   const sizeConfig = $derived(() => sizeClasses[size]);
 </script>
 
-<div class="inline-flex items-center gap-1.5 rounded-full {$config.bgColor} {$config.borderColor} border {$sizeConfig.container} {className}">
-  <svg class="{$config.color} {$sizeConfig.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={$config.icon} />
+<div
+  class={cn(
+    'inline-flex items-center gap-1.5 rounded-full border min-h-[44px]',
+    config.bgColor,
+    config.borderColor,
+    sizeConfig.container,
+    className
+  )}
+  aria-label={ariaLabel || `${config.text} payment status`}
+>
+  <svg class={cn(config.color, sizeConfig.icon)} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={config.icon} />
   </svg>
   {#if showText}
-    <span class="{$config.color} {$sizeConfig.text} font-medium">
-      {$config.text}
+    <span class={cn(config.color, sizeConfig.text, 'font-medium text-balance')}>
+      {config.text}
     </span>
   {/if}
 </div>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cn } from '$lib/utils';
+
   interface Settlement {
     from: string;
     to: string;
@@ -100,41 +102,45 @@
   }
 </script>
 
-<div class="space-y-4 {className}">
+<div class={cn('space-y-4', className)}>
   {#if groupedSettlements().length === 0}
     <div class="text-center py-8 text-text-secondary">
       <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <p class="text-sm">All settlements are complete!</p>
+      <p class="text-sm text-balance">All settlements are complete!</p>
     </div>
   {:else}
     {#each groupedSettlements() as settlement}
       <div
         role={interactive ? 'button' : undefined}
-        tabindex={interactive ? 0 : -1}
-        class="flex items-center justify-between p-4 bg-surface-50 rounded-lg {interactive ? 'hover:bg-surface-100 cursor-pointer transition-colors' : ''}"
+        tabindex={interactive ? 0 : undefined}
+        class={cn(
+          'flex items-center justify-between p-4 bg-surface-50 rounded-lg min-h-[44px]',
+          interactive && 'hover:bg-surface-100 cursor-pointer transition-colors'
+        )}
         onclick={() => handleSelect(settlement)}
         onkeydown={(e) => handleKeydown(e, settlement)}
+        aria-label={`${settlement.from} owes ${settlement.to} ${formatCurrency(settlement.amount, settlement.currency)}`}
       >
         <!-- Payer -->
         <div class="flex items-center gap-3 flex-1">
-          <div class="w-10 h-10 rounded-full {getAvatarColor(settlement.from)} flex items-center justify-center font-semibold text-sm">
+          <div class={cn('size-10 rounded-full', getAvatarColor(settlement.from), 'flex items-center justify-center font-semibold text-sm')}>
             {getInitials(settlement.from)}
           </div>
           <div class="min-w-0">
-            <p class="font-medium text-text truncate">{settlement.from}</p>
+            <p class="font-medium text-text truncate text-balance">{settlement.from}</p>
             <p class="text-xs text-text-secondary">owes</p>
           </div>
         </div>
 
         <!-- Arrow and Amount -->
         <div class="flex flex-col items-center gap-1 px-4">
-          <svg class="w-6 h-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="size-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
           {#if showAmounts}
-            <p class="font-semibold text-primary-600 text-sm">
+            <p class="font-semibold text-primary-600 text-sm tabular-nums">
               {formatCurrency(settlement.amount, settlement.currency)}
             </p>
           {/if}
@@ -143,10 +149,10 @@
         <!-- Payee -->
         <div class="flex items-center gap-3 flex-1 justify-end">
           <div class="min-w-0 text-right">
-            <p class="font-medium text-text truncate">{settlement.to}</p>
+            <p class="font-medium text-text truncate text-balance">{settlement.to}</p>
             <p class="text-xs text-text-secondary">receives</p>
           </div>
-          <div class="w-10 h-10 rounded-full {getAvatarColor(settlement.to)} flex items-center justify-center font-semibold text-sm">
+          <div class={cn('size-10 rounded-full', getAvatarColor(settlement.to), 'flex items-center justify-center font-semibold text-sm')}>
             {getInitials(settlement.to)}
           </div>
         </div>
@@ -158,7 +164,7 @@
 <!-- Legend -->
 {#if showAmounts && settlements.length > 0}
   <div class="mt-6 p-3 bg-surface-100 rounded-lg">
-    <p class="text-xs text-text-secondary text-center">
+    <p class="text-xs text-text-secondary text-center tabular-nums">
       Total to settle: {formatCurrency(
         settlements.reduce((sum, s) => sum + s.amount, 0),
         settlements[0]?.currency || 'USD'

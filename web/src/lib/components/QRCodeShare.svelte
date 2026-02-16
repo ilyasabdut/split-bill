@@ -72,7 +72,7 @@
     <div class="flex items-center justify-center py-8">
       <div class="text-center">
         <div class="w-12 h-12 mx-auto mb-3">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div class="rounded-full h-12 w-12 border-b-2 border-primary-600 motion-safe:animate-spin"></div>
         </div>
         <p class="text-text-secondary">Generating QR code...</p>
       </div>

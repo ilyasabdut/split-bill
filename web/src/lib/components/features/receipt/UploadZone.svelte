@@ -107,7 +107,7 @@
         class:drag-active={dragActive}
       >
       <div class="text-5xl mb-4" aria-hidden="true">📸</div>
-      <p class="font-medium mb-2">
+      <p class="font-medium mb-2 text-balance">
         {#if uploading}
           Uploading receipt...
         {:else}
@@ -129,7 +129,7 @@
       <div class="space-y-2">
         <div class="flex justify-between text-sm">
           <span>Uploading...</span>
-          <span>{progress}%</span>
+          <span class="tabular-nums">{progress}%</span>
         </div>
         <Progress value={progress} />
       </div>
@@ -147,6 +147,7 @@
       variant="primary"
       disabled={uploading || !files || files.length === 0}
       onclick={handleUpload}
+      ariaLabel="Upload receipt"
     >
       {uploading ? 'Uploading...' : 'Upload Receipt'}
     </Button>

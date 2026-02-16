@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cn } from '$lib/utils';
+
   interface NavItem {
     path: string;
     icon: string;
@@ -22,7 +24,7 @@
 </script>
 
 <nav
-  class="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 z-40 bottom-nav-safe {className}"
+  class={cn('fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 z-bottom-nav bottom-nav-safe', className)}
   aria-label="Main navigation"
 >
   <ul class="flex items-center justify-around">
@@ -30,7 +32,8 @@
       <li>
         <a
           href={item.path}
-          class="flex flex-col items-center justify-center flex-1 min-h-[60px] text-center transition-colors {currentPath === item.path ? 'text-primary-600' : 'text-text-secondary hover:text-primary-600'}"
+          class={cn('flex flex-col items-center justify-center flex-1 min-h-[60px] text-center transition-colors',
+            currentPath === item.path ? 'text-primary-600' : 'text-text-secondary hover:text-primary-600')}
           aria-current={currentPath === item.path ? 'page' : undefined}
         >
           <span class="text-2xl mb-1" aria-hidden="true">{item.icon}</span>

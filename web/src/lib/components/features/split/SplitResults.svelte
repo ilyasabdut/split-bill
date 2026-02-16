@@ -2,6 +2,7 @@
   import type { SplitResults } from '$lib/types/split';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import { cn } from '$lib/utils';
 
   interface Props {
     results: SplitResults;
@@ -21,11 +22,11 @@
 
 <Card>
   <div class="space-y-4">
-    <h2 class="text-lg font-semibold">Split Results</h2>
+    <h2 class="text-lg font-semibold text-balance">Split Results</h2>
 
     <div class="text-center p-4 bg-primary-50 rounded-lg">
       <p class="text-sm text-primary-700">Total</p>
-      <p class="text-3xl font-bold text-primary-700">${totalAmount.toFixed(2)}</p>
+      <p class="text-3xl font-bold text-primary-700 tabular-nums">${totalAmount.toFixed(2)}</p>
     </div>
 
     <!-- Per-Person Breakdown -->
@@ -33,10 +34,10 @@
       {#each Object.entries(results) as [name, data]}
         <div class="p-3 bg-surface-50 rounded-lg">
           <div class="flex justify-between items-center mb-2">
-            <h3 class="font-semibold">{name}</h3>
-            <span class="text-lg font-bold">${data.total.toFixed(2)}</span>
+            <h3 class="font-semibold text-balance">{name}</h3>
+            <span class="text-lg font-bold tabular-nums">${data.total.toFixed(2)}</span>
           </div>
-          <p class="text-sm text-text-secondary">
+          <p class="text-sm text-text-secondary tabular-nums">
             {data.items.length} items · Tax: ${data.tax_share.toFixed(2)} · Tip: ${data.tip_share.toFixed(2)}
           </p>
         </div>
@@ -45,7 +46,7 @@
 
     <!-- Share Actions -->
     <div class="flex gap-2">
-      <Button variant="primary" onclick={copyShareLink} class="flex-1">
+      <Button variant="primary" onclick={copyShareLink} class="flex-1" ariaLabel="Copy share link">
         📋 Copy Link
       </Button>
     </div>

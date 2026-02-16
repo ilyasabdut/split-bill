@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { cn } from '$lib/utils';
 
   interface Props {
     padding?: 'none' | 'sm' | 'md' | 'lg';
@@ -19,7 +20,7 @@
 </script>
 
 <div
-  class="bg-white rounded-xl shadow-sm border border-surface-200 {paddingClasses[padding]} {className}"
+  class={cn('bg-white rounded-xl shadow-sm border border-surface-200', paddingClasses[padding], className)}
   {onclick}
 >
   {#if children}

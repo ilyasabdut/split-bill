@@ -88,10 +88,10 @@
   };
 </script>
 
-<div class="flex items-start gap-3 p-3 hover:bg-surface-50 rounded-lg transition-colors {className}">
+<div class={cn('flex items-start gap-3 p-3 hover:bg-surface-50 rounded-lg transition-colors', className)}>
   <!-- Icon -->
-  <div class="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="flex-shrink-0 size-10 rounded-full bg-primary-100 flex items-center justify-center">
+    <svg class="size-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={getActivityIcon(activity.type)} />
     </svg>
   </div>
@@ -99,17 +99,17 @@
   <!-- Content -->
   <div class="flex-1 min-w-0">
     <div class="flex items-start justify-between gap-2">
-      <p class="text-sm text-text">
+      <p class="text-sm text-text text-balance">
         {getActivityMessage(activity)}
       </p>
-      <span class="text-xs text-text-secondary whitespace-nowrap">
+      <span class="text-xs text-text-secondary whitespace-nowrap tabular-nums">
         {getActivityTime(activity.created_at)}
       </span>
     </div>
 
     <!-- Additional details if available -->
     {#if activity.data.description}
-      <p class="text-xs text-text-secondary mt-1">
+      <p class="text-xs text-text-secondary mt-1 text-balance">
         {activity.data.description}
       </p>
     {/if}
