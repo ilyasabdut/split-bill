@@ -93,7 +93,7 @@ logs/
 
 # Docker
 .docker/
-.superdesign
+# .superdesign
 
 # Node / Web
 node_modules/
