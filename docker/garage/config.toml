@@ -1,0 +1,9 @@
+metadata_dir = "/meta"
+data_dir = "/data"
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "[::]:3901"
+s3_api_bind_addr = "[::]:3900"
+s3_web_bind_addr = "[::]:3902"
+
+replication_mode = "1"
