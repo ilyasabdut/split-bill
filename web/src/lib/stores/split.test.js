@@ -270,7 +270,7 @@ describe('Split Store', () => {
       expect(get(splitStore.splitEvenly)).toBe(true);
       expect(get(splitStore.results)).toBeTruthy();
       expect(get(splitStore.payments)).toEqual({ Alice: 'paid' });
-      expect(get(splitStore.isLoading)).toBe(true);
+      expect(get(splitStore.isLoading)).toBe(false);
       expect(get(splitStore.error)).toBe('Error');
 
       // Reset

@@ -84,7 +84,7 @@
 </script>
 
 <div
-	class={\`rounded-full flex items-center justify-center font-bold shrink-0 \${sizeClasses[size]} \${colorClasses[color][variant]} \${className}\`}
+	class={`rounded-full flex items-center justify-center font-bold shrink-0 ${sizeClasses[size]} ${colorClasses[color][variant]} ${className}`}
 	{...restProps}
 >
 	{#if src}

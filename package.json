@@ -1,6 +1,8 @@
 {
   "dependencies": {
-    "@superdesign/cli": "^0.2.1"
+    "@superdesign/cli": "^0.2.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

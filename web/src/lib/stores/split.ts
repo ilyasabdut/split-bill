@@ -116,6 +116,14 @@ function createSplitStore() {
       // This would fetch from API - for now returns empty array
       return [];
     },
+
+    /** Get total for a specific person */
+    totalForPerson: (person: string) => derived({ subscribe }, ($state) => {
+      if (!$state.results || !$state.results[person]) {
+        return 0;
+      }
+      return $state.results[person].total;
+    }),
   }
 }
 

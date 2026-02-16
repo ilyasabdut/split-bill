@@ -46,6 +46,7 @@ describe('receiptStore', () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
+  });
 
   describe('setError', () => {
     it('should set error message and clear data', () => {
@@ -138,3 +139,4 @@ describe('receiptStore', () => {
     });
   });
 });
+
