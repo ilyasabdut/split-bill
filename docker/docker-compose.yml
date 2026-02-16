@@ -34,9 +34,11 @@ services:
       - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:15173}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/splitbill}
     restart: unless-stopped
     depends_on:
       - redis
+      - postgres
 
   redis:
     image: valkey/valkey:alpine3.23
@@ -55,10 +57,11 @@ services:
       - "3900:3900"
       - "3902:3902"
     environment:
-      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-changeme}
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-c0d584e45dff2e64535da511ce5ee2755e602093a7cf59fc8206fd1a7aff5d44}
       GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-admin_token_change_me}
       GARAGE_S3_API_REGION: garage
     volumes:
+      - ./garage/config.toml:/etc/garage/config.toml:ro
       - garage_data:/data
       - garage_meta:/meta
     command: >

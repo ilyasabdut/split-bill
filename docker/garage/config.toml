@@ -1,9 +1,16 @@
 metadata_dir = "/meta"
 data_dir = "/data"
 
+replication_factor = 1
+
 rpc_bind_addr = "[::]:3901"
 rpc_public_addr = "[::]:3901"
-s3_api_bind_addr = "[::]:3900"
-s3_web_bind_addr = "[::]:3902"
 
-replication_mode = "1"
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage"
+
+[s3_web]
+bind_addr = "[::]:3902"
+root_domain = ".web.garage"
