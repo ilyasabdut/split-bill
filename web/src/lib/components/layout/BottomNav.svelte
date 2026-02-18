@@ -24,7 +24,7 @@
 </script>
 
 <nav
-  class={cn('fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 z-bottom-nav bottom-nav-safe', className)}
+  class={cn('fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 z-bottom-nav bottom-nav-safe w-full max-w-full', className)}
   aria-label="Main navigation"
 >
   <ul class="flex items-center justify-around">

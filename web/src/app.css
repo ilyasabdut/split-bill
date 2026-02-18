@@ -35,6 +35,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -42,6 +44,8 @@ body {
   color: #0f172a;
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Touch-friendly tap targets */
@@ -126,4 +130,125 @@ a,
 /* Bottom navigation safe area */
 .bottom-nav-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+
+/* Responsive text utilities - minimum 14px on mobile */
+@media (max-width: 767px) {
+  .text-\[10px\] {
+    font-size: 11px !important;
+  }
+  .text-\[11px\] {
+    font-size: 12px !important;
+  }
+  .text-xs {
+    font-size: 0.75rem !important;
+  }
+  .text-sm {
+    font-size: 0.875rem !important;
+  }
+
+  /* Ensure proper viewport sizing */
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Improve tap targets on mobile */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent horizontal overflow on all containers */
+.overflow-hidden-all {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Responsive container utilities */
+.container-responsive {
+  width: 100%;
+  max-width: 100vw;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+/* Mobile-safe padding utilities */
+.px-safe {
+  padding-left: max(env(safe-area-inset-left), 1rem);
+  padding-right: max(env(safe-area-inset-right), 1rem);
+}
+
+/* Word break utilities for long text */
+.word-break {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Flex wrap utilities */
+.flex-wrap-safe {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Ensure all main containers are responsive */
+main, section, div {
+  max-width: 100%;
+}
+
+/* Prevent horizontal scroll on all elements */
+* {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* Special handling for decorative elements */
+.decorative-blur {
+  max-width: none !important;
+  width: auto !important;
+}
+
+/* Fix negative margins that cause overflow */
+.overflow-x-safe {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-x-safe::-webkit-scrollbar {
+  display: none;
+}
+
+/* Container queries for better responsive design */
+@container (max-width: 375px) {
+  .text-responsive {
+    font-size: clamp(0.875rem, 4vw, 1rem);
+  }
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { receiptStore, currencyStore } from '$lib/stores';
 
 	let items = $state([
@@ -14,8 +15,8 @@
 	let taxAmount = $derived(subtotal * (taxDetected / 100));
 	let totalAmount = $derived(subtotal + taxAmount);
 
-	onMount(async () => {
-		await currencyStore.init();
+	onMount(() => {
+		currencyStore.init().catch(() => {});
 	});
 
 	function handleFileUpload() {
@@ -30,6 +31,23 @@
 		items = [...items, { id: Date.now(), name: '', price: 0 }];
 	}
 
+	function handleItemNameChange(id: number, name: string) {
+		items = items.map(item =>
+			item.id === id ? { ...item, name } : item
+		);
+	}
+
+	function handleItemPriceChange(id: number, price: string) {
+		const parsedPrice = parseFloat(price) || 0;
+		// Ensure price is not negative
+		if (parsedPrice < 0) {
+			return;
+		}
+		items = items.map(item =>
+			item.id === id ? { ...item, price: parsedPrice } : item
+		);
+	}
+
 	function handleRemoveItem(id: number) {
 		items = items.filter(item => item.id !== id);
 	}
@@ -39,7 +57,25 @@
 	}
 
 	function handleConfirm() {
-		// Save receipt and proceed to split creation
+		// Validate that we have items
+		if (items.length === 0 || items.every(item => !item.name || !item.price)) {
+			alert('Please add at least one item with name and price');
+			return;
+		}
+
+		// Save receipt data and proceed to split creation
+		const receiptData = {
+			items: items,
+			tax: taxEnabled ? taxAmount : 0,
+			taxRate: taxDetected,
+			total: totalAmount
+		};
+
+		// Store in receipt store for the split page to use
+		receiptStore.setReceipt(receiptData);
+
+		// Navigate to split creation with the receipt data
+		goto('/split');
 	}
 </script>
 
@@ -107,24 +143,29 @@
 						<div class="flex items-center gap-3">
 							<button
 								type="button"
-								class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center"
+								class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
 								onclick={() => handleRemoveItem(item.id)}
+								aria-label="Remove item"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 							</button>
 							<input
 								type="text"
-								bind:value={item.name}
-								class="flex-1 border-none bg-transparent p-0 text-sm font-semibold text-slate-900 focus:ring-0"
+								value={item.name}
+								oninput={(e) => handleItemNameChange(item.id, e.currentTarget.value)}
+								class="flex-1 border-none bg-transparent p-0 text-sm font-semibold text-slate-900 focus:ring-0 focus:outline-none"
 								placeholder="Item name"
 							/>
 							<div class="flex items-center gap-1">
 								<span class="text-xs text-slate-400">$</span>
 								<input
-									type="text"
-									bind:value={item.price}
-									class="w-12 border-none bg-transparent p-0 text-right text-sm font-bold text-slate-900 focus:ring-0 tabular-nums"
-									placeholder="0"
+									type="number"
+									value={item.price}
+									oninput={(e) => handleItemPriceChange(item.id, e.currentTarget.value)}
+									class="w-16 border-none bg-transparent p-0 text-right text-sm font-bold text-slate-900 focus:ring-0 focus:outline-none tabular-nums {item.price < 0 ? 'text-red-600' : ''}"
+									placeholder="0.00"
+									step="0.01"
+									min="0"
 								/>
 							</div>
 						</div>
@@ -152,7 +193,7 @@
 							</div>
 							<div class="leading-none">
 								<p class="text-xs font-bold text-slate-700">Tax Detected: {taxDetected}%</p>
-								<button class="text-[10px] font-medium text-primary-600 underline decoration-primary-200 underline-offset-2 mt-0.5">Edit Rate</button>
+								<button class="text-xs font-medium text-primary-600 underline decoration-primary-200 underline-offset-2 mt-0.5">Edit Rate</button>
 							</div>
 						</div>
 						<button type="button" class="relative h-6 w-10 rounded-full bg-primary-500">

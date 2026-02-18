@@ -25,6 +25,7 @@
 	let roundingMode = $state<'down' | 'exact' | 'up'>('exact');
 	let splitMethod = $state<'equal' | 'percentage' | 'item'>('equal');
 	let selectedCurrency = $state('IDR');
+	let errors = $state<Record<string, string>>({});
 
 	const currencies = [
 		{ value: 'USD', label: 'USD ($)', icon: '🇺🇸' },
@@ -41,6 +42,18 @@
 			templatesStore.loadTemplates(),
 			groupsStore.loadGroups()
 		]);
+
+		// Check if there's receipt data from the receipt page
+		const receiptData = receiptStore.getReceipt();
+		if (receiptData && receiptData.items && receiptData.items.length > 0) {
+			// Pre-populate the bill amount with the receipt total
+			billAmount = receiptData.total * 1000; // Convert to IDR if needed
+
+			// If tax was detected, add it
+			if (receiptData.tax > 0) {
+				tax = receiptData.tax * 1000;
+			}
+		}
 	});
 
 	function handleQuickTip(percentage: number) {
@@ -63,18 +76,92 @@
 	}
 
 	function updatePersonName(index: number, name: string) {
+		// Validate name length
+		if (name.length > 50) {
+			errors[`person-${index}`] = 'Name must be 50 characters or less';
+			return;
+		}
+		errors[`person-${index}`] = '';
 		people = people.map((p, i) => i === index ? { ...p, name } : p);
 	}
 
 	const estimatedTotal = $derived(billAmount + tax + tip);
 	const personShare = $derived(Math.round(estimatedTotal / people.length));
 
+	function validateForm(): boolean {
+		errors = {};
+		let isValid = true;
+
+		// Validate bill amount
+		if (billAmount <= 0) {
+			errors.billAmount = 'Bill amount must be greater than 0';
+			isValid = false;
+		}
+
+		// Validate tax
+		if (tax < 0) {
+			errors.tax = 'Tax cannot be negative';
+			isValid = false;
+		}
+
+		// Validate tip
+		if (tip < 0) {
+			errors.tip = 'Tip cannot be negative';
+			isValid = false;
+		}
+
+		// Validate people
+		if (people.length < 2) {
+			errors.people = 'At least 2 people are required';
+			isValid = false;
+		}
+
+		// Validate person names
+		people.forEach((person, index) => {
+			if (!person.name.trim()) {
+				errors[`person-${index}`] = 'Name is required';
+				isValid = false;
+			}
+		});
+
+		return isValid;
+	}
+
 	async function handleCalculateSplit() {
+		// Validate form first
+		if (!validateForm()) {
+			alert('Please fix the errors before proceeding');
+			return;
+		}
+
 		calculating = true;
-		// Implementation here
-		setTimeout(() => {
+
+		try {
+			// Prepare the split data
+			const splitData = {
+				person_names: people.map(p => p.name),
+				item_assignments: [], // Will be populated when item splitting is implemented
+				tax_amount_input: tax,
+				tip_amount_input: tip,
+				split_evenly: splitMethod === 'equal',
+				total_amount: billAmount
+			};
+
+			// Call the API to calculate the split
+			const response = await splitsService.calculate(splitData);
+
+			// Store the split ID for sharing
+			const splitId = response.split_id;
+
+			// Navigate to the split detail page
+			await goto(`/split/${splitId}`);
+
+		} catch (error) {
+			console.error('Failed to calculate split:', error);
+			alert('Failed to calculate split. Please try again.');
+		} finally {
 			calculating = false;
-		}, 1000);
+		}
 	}
 
 	function formatCurrency(amount: number): string {
@@ -96,7 +183,7 @@
 	<!-- Header (safe area) -->
 	<header class="shrink-0 pt-12 px-4 pb-2 z-10">
 		<div class="flex items-center justify-between">
-			<a href="/" class="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform">
+			<a href="/" class="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</a>
 			<div class="text-center">
@@ -134,8 +221,12 @@
 							name="bill-amount"
 							inputmode="numeric"
 							bind:value={billAmount}
-							class="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-xl font-bold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder:text-slate-300 tabular-nums"
+							min="0"
+							class="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-xl font-bold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder:text-slate-300 tabular-nums {errors.billAmount ? 'border-red-500' : ''}"
 						/>
+						{#if errors.billAmount}
+							<p class="mt-1 text-xs text-red-600">{errors.billAmount}</p>
+						{/if}
 					</div>
 				</div>
 
@@ -166,7 +257,7 @@
 				<div>
 					<div class="flex items-center justify-between mb-2">
 						<label for="tip-amount" class="block text-sm font-bold text-slate-700">Tip</label>
-						<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">OPTIONAL</span>
+						<span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">OPTIONAL</span>
 					</div>
 					<div class="relative mb-3">
 						<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span>
@@ -223,7 +314,7 @@
 		<section class="rounded-3xl bg-white shadow-md border border-slate-200 p-5">
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-sm font-bold text-slate-900">Smart Rounding</h2>
-				<span class="text-[10px] font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg">ACTIVE</span>
+				<span class="text-xs font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg">ACTIVE</span>
 			</div>
 			<div class="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-2xl mb-3">
 				<button
@@ -343,9 +434,15 @@
 									id="p{index}-name"
 									type="text"
 									bind:value={person.name}
-									class="bg-transparent border-none p-0 text-sm font-bold text-slate-900 focus:ring-0 w-full"
+									maxlength="50"
+									oninput={(e) => updatePersonName(index, e.currentTarget.value)}
+									class="bg-transparent border-none p-0 text-sm font-bold text-slate-900 focus:ring-0 w-full {errors[`person-${index}`] ? 'text-red-600' : ''}"
 								/>
-								<div class="text-xs text-slate-500">{(100 / people.length).toFixed(1)}% share</div>
+								{#if errors[`person-${index}`]}
+									<p class="text-xs text-red-600">{errors[`person-${index}`]}</p>
+								{:else}
+									<div class="text-xs text-slate-500">{(100 / people.length).toFixed(1)}% share</div>
+								{/if}
 							</div>
 							<button
 								type="button"

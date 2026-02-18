@@ -3,6 +3,8 @@
 	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 	import { currencyStore, analyticsStore } from '$lib/stores';
 	import type { SplitResults } from '$lib/types/split';
+	import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte';
+	import SkeletonLoader from '$lib/components/ui/SkeletonLoader.svelte';
 
 	interface HistoryItem {
 		id: string;
@@ -125,9 +127,8 @@
 	<!-- Main content (scrollable) -->
 	<main class="flex-1 overflow-y-auto px-4 pb-[120px] pt-2">
 		{#if loading}
-			<div class="flex items-center justify-center py-12">
-				<div class="text-slate-500">Loading history...</div>
-			</div>
+			<LoadingSpinner text="Loading history..." />
+			<SkeletonLoader count={5} />
 		{:else}
 			<!-- Currency Selector -->
 			<div class="flex justify-center mb-4">

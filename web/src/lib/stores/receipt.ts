@@ -50,6 +50,34 @@ function createReceiptStore() {
       error: null
     })),
 
+    /** Set receipt data from manual input (for receipt page) */
+    setReceipt: (receiptData: any) => update(state => ({
+      ...state,
+      data: {
+        merchant_name: 'Manual Entry',
+        items: receiptData.items.map((item: any) => ({
+          name: item.name,
+          price: item.price,
+          quantity: 1
+        })),
+        total: receiptData.total,
+        tax: receiptData.tax,
+        currency: 'USD',
+        date: new Date().toISOString()
+      },
+      loading: false,
+      error: null
+    })),
+
+    /** Get current receipt data directly */
+    getReceipt: () => {
+      let currentData: ReceiptData | null = null;
+      const unsubscribe = subscribe(state => {
+        currentData = state.data;
+      })();
+      return currentData;
+    },
+
     /** Set error state */
     setError: (error: string) => update(state => ({
       ...state,

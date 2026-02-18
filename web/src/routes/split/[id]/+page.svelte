@@ -167,6 +167,14 @@
     alert('Link copied to clipboard!');
   }
 
+  function goHome() {
+    goto('/');
+  }
+
+  function createNewSplit() {
+    goto('/split');
+  }
+
   function shareSplit() {
     if (navigator.share) {
       navigator.share({
@@ -427,13 +435,13 @@
                 <div class="mt-1 flex items-center justify-between">
                    <span class="text-xs text-slate-500">25% share</span>
                    {#if paymentStatus[name] === 'paid'}
-                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-bold border border-emerald-100 uppercase tracking-wide">
+                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-bold border border-emerald-100 uppercase tracking-wide">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg> Paid
                     </span>
                    {:else}
-                     <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-bold border border-amber-100 uppercase tracking-wide">
+                     <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-xs font-bold border border-amber-100 uppercase tracking-wide">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg> Unpaid
@@ -507,6 +515,23 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
           Edit Split
+        </Button>
+      </div>
+
+      <!-- Navigation Actions -->
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <Button variant="secondary" onclick={goHome} class="h-12 text-sm font-semibold">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Go Home
+        </Button>
+
+        <Button variant="secondary" onclick={createNewSplit} class="h-12 text-sm font-semibold">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Split
         </Button>
       </div>
 

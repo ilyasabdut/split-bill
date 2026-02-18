@@ -20,7 +20,7 @@
 		localStorage.setItem('soundEffects', String(soundEffects));
 	});
 
-	onMount(async () => {
+	onMount(() => {
 		const savedDarkMode = localStorage.getItem('darkMode');
 		const savedNotifications = localStorage.getItem('notifications');
 		const savedSoundEffects = localStorage.getItem('soundEffects');
@@ -29,7 +29,7 @@
 		if (savedNotifications) notifications = savedNotifications === 'true';
 		if (savedSoundEffects) soundEffects = savedSoundEffects === 'true';
 
-		await currencyStore.init();
+		currencyStore.init().catch(() => {});
 	});
 
 	function copyAPIKey() {

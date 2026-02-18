@@ -2,6 +2,8 @@
   "dependencies": {
     "@superdesign/cli": "^0.2.1",
     "clsx": "^2.1.1",
+    "playwright": "^1.58.2",
+    "playwright-core": "^1.58.2",
     "tailwind-merge": "^3.4.1"
   },
   "devDependencies": {
