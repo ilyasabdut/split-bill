@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { splitsService } from '$lib/services/api';
 	import { receiptStore, splitStore, currencyStore, templatesStore, groupsStore } from '$lib/stores';
@@ -179,25 +180,26 @@
 	<meta name="color-scheme" content="light" />
 </svelte:head>
 
-<div class="w-full h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-	<!-- Header (safe area) -->
-	<header class="shrink-0 pt-12 px-4 pb-2 z-10">
-		<div class="flex items-center justify-between">
-			<a href="/" class="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
+<div class="w-full min-h-dvh flex flex-col bg-slate-50 text-slate-900 font-sans">
+	<header
+		class="shrink-0 px-4 pb-2 z-10"
+		style="padding-top: max(env(safe-area-inset-top), 3rem);"
+	>
+		<div class="flex items-center justify-between max-w-lg mx-auto">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</a>
 			<div class="text-center">
 				<div class="text-xs font-bold text-slate-500 uppercase tracking-wider">New Split</div>
 				<h1 class="text-lg font-black tracking-tight text-slate-900">Bill Details</h1>
 			</div>
-			<button type="button" class="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform" aria-label="More options">
+			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 active:scale-95 transition-transform" aria-label="More options">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 			</button>
 		</div>
 	</header>
 
-	<!-- Main Scrollable Area -->
-	<main class="flex-1 overflow-y-auto px-4 py-4 pb-[120px] space-y-5">
+	<main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
 		<!-- Amounts Card -->
 		<section class="rounded-3xl bg-white shadow-md border border-slate-200 overflow-hidden">
 			<!-- Currency Selector Header -->
@@ -446,7 +448,7 @@
 							</div>
 							<button
 								type="button"
-								class="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+								class="h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
 								aria-label="Remove {person.name}"
 								onclick={() => removePerson(index)}
 							>

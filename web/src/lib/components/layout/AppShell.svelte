@@ -6,21 +6,32 @@
     title?: string;
     class?: string;
     children?: Snippet;
+    showHeader?: boolean;
   }
 
-  const { title = 'Split Bill', class: className = '', children }: Props = $props();
+  const { title = 'Split Bill', class: className = '', children, showHeader = true }: Props = $props();
 </script>
 
-<div class="flex flex-col min-h-dvh bg-surface pb-[60px] overflow-x-hidden">
-  <!-- Header -->
-  <header class="sticky top-0 z-header bg-white border-b border-surface-200 px-4 py-3 w-full">
-    <h1 class="text-xl font-semibold text-text text-balance">{title}</h1>
-  </header>
+<div class="flex flex-col min-h-dvh bg-surface overflow-x-hidden">
+  {#if showHeader}
+    <header
+      class="sticky top-0 z-header bg-white border-b border-surface-200 w-full px-safe py-3"
+      style="padding-top: max(env(safe-area-inset-top), 0.75rem);"
+    >
+      <div class="max-w-lg mx-auto">
+        <h1 class="text-xl font-semibold text-text text-balance">{title}</h1>
+      </div>
+    </header>
+  {/if}
 
-  <!-- Main Content -->
-  <main class={cn('flex-1 px-4 py-4 w-full', className)}>
-    {#if children}
-      {@render children()}
-    {/if}
+  <main
+    class={cn('flex-1 w-full px-safe', className)}
+    style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);"
+  >
+    <div class="max-w-lg mx-auto py-4">
+      {#if children}
+        {@render children()}
+      {/if}
+    </div>
   </main>
 </div>

@@ -20,9 +20,17 @@
   --border-radius-xl: 0.75rem;
   --border-radius-2xl: 1rem;
   --border-radius-3xl: 1.5rem;
+
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
 }
 
-/* Mobile-first base styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -42,13 +50,19 @@ html {
 body {
   background-color: #f8fafc;
   color: #0f172a;
-  min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   max-width: 100vw;
 }
 
-/* Touch-friendly tap targets */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
 button,
 a,
 [role="button"] {
@@ -56,17 +70,10 @@ a,
   min-width: 44px;
 }
 
-/* Tabular nums for financial data */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Text balance for headings */
-.text-balance {
-  text-wrap: balance;
-}
-
-/* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -76,28 +83,11 @@ a,
   scrollbar-width: none;
 }
 
-/* Scroll smooth utility */
-.scroll-smooth {
-  scroll-behavior: smooth;
-}
-
-/* Safe area insets for mobile */
-.padding-safe {
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
-.padding-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Focus styles for accessibility */
 :focus-visible {
   outline: 2px solid var(--color-primary-600);
   outline-offset: 2px;
 }
 
-/* Skip link for accessibility */
 .skip-link {
   position: absolute;
   width: 1px;
@@ -122,133 +112,53 @@ a,
   background-color: var(--color-primary-600);
   color: white;
   border-radius: 0.5rem;
-  z-index: 50;
+  z-index: var(--z-tooltip);
   top: 1rem;
   left: 1rem;
 }
 
-/* Bottom navigation safe area */
-.bottom-nav-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0px);
 }
 
-/* Responsive text utilities - minimum 14px on mobile */
-@media (max-width: 767px) {
-  .text-\[10px\] {
-    font-size: 11px !important;
-  }
-  .text-\[11px\] {
-    font-size: 12px !important;
-  }
-  .text-xs {
-    font-size: 0.75rem !important;
-  }
-  .text-sm {
-    font-size: 0.875rem !important;
-  }
-
-  /* Ensure proper viewport sizing */
-  body {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-
-  /* Improve tap targets on mobile */
-  button, a, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
 }
 
-/* Prevent horizontal overflow on all containers */
-.overflow-hidden-all {
-  overflow-x: hidden;
-  max-width: 100vw;
-}
-
-/* Responsive container utilities */
-.container-responsive {
-  width: 100%;
-  max-width: 100vw;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: 640px) {
-  .container-responsive {
-    max-width: 640px;
-  }
-}
-
-@media (min-width: 768px) {
-  .container-responsive {
-    max-width: 768px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container-responsive {
-    max-width: 1024px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .container-responsive {
-    max-width: 1280px;
-  }
-}
-
-/* Mobile-safe padding utilities */
 .px-safe {
   padding-left: max(env(safe-area-inset-left), 1rem);
   padding-right: max(env(safe-area-inset-right), 1rem);
 }
 
-/* Word break utilities for long text */
-.word-break {
-  word-break: break-word;
-  overflow-wrap: break-word;
+.pb-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
 }
 
-/* Flex wrap utilities */
-.flex-wrap-safe {
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.card {
+  padding: 1rem;
 }
 
-/* Ensure all main containers are responsive */
+.section-header {
+  padding: 0.75rem 1.25rem;
+}
+
+.section-body {
+  padding: 1.25rem;
+}
+
+.section-compact {
+  padding: 0.75rem;
+}
+
+.gap-section {
+  gap: 1.5rem;
+}
+
 main, section, div {
   max-width: 100%;
 }
 
-/* Prevent horizontal scroll on all elements */
 * {
   max-width: 100vw;
   box-sizing: border-box;
-}
-
-/* Special handling for decorative elements */
-.decorative-blur {
-  max-width: none !important;
-  width: auto !important;
-}
-
-/* Fix negative margins that cause overflow */
-.overflow-x-safe {
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.overflow-x-safe::-webkit-scrollbar {
-  display: none;
-}
-
-/* Container queries for better responsive design */
-@container (max-width: 375px) {
-  .text-responsive {
-    font-size: clamp(0.875rem, 4vw, 1rem);
-  }
 }

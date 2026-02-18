@@ -85,10 +85,12 @@
 </svelte:head>
 
 <div class="w-full min-h-dvh flex flex-col bg-slate-50 text-slate-900 font-sans">
-	<!-- Header (safe area) - EXACT: pt-14 px-4, h-11 w-11 rounded-xl bg-white shadow-md shadow-slate-200 -->
-	<header class="shrink-0 pt-14 px-4">
-		<div class="flex items-center justify-between">
-			<a href="/" class="h-11 w-11 inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
+	<header
+		class="shrink-0 px-4"
+		style="padding-top: max(env(safe-area-inset-top), 3.5rem);"
+	>
+		<div class="flex items-center justify-between max-w-lg mx-auto">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6"/><path d="m18 15-6-6"/></svg>
 			</a>
 
@@ -96,14 +98,13 @@
 				<p class="text-base font-semibold">Scan Receipt</p>
 			</div>
 
-			<a href="#help" class="h-11 w-11 inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
+			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 12h.01"/></svg>
 			</a>
 		</div>
 	</header>
 
-	<!-- Main -->
-	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-6">
+	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-6 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
 		<!-- Upload zone - EXACT: rounded-3xl border-2 border-dashed border-primary-400 bg-primary-50 -->
 		<section class="mt-5">
 			<button type="button" class="w-full rounded-3xl border-2 border-dashed border-primary-400 bg-primary-50">
@@ -143,11 +144,11 @@
 						<div class="flex items-center gap-3">
 							<button
 								type="button"
-								class="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
+								class="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-slate-100 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
 								onclick={() => handleRemoveItem(item.id)}
 								aria-label="Remove item"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 							</button>
 							<input
 								type="text"
@@ -268,40 +269,5 @@
 				</div>
 			</div>
 		</section>
-
-		<!-- Extra spacing -->
-		<div class="h-24"></div>
 	</main>
-
-	<!-- Bottom nav - EXACT: grid grid-cols-4 gap-2, h-14 with active state bg-primary-50 -->
-	<footer class="shrink-0 pb-[34px]">
-		<nav class="w-full bg-white border-t border-slate-200">
-			<div class="px-3 pt-2">
-				<div class="grid grid-cols-4 gap-2">
-					<a href="/" class="h-14 rounded-2xl inline-flex flex-col items-center justify-center gap-1 text-slate-600">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 7"/><path d="M9 21V9"/></svg>
-						<span class="text-xs font-semibold">Home</span>
-					</a>
-
-					<a href="/history" class="h-14 rounded-2xl inline-flex flex-col items-center justify-center gap-1 text-slate-600">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9 9 9 0 0 1-9-9 9 9 0 0 1-6-2.3L3 8"/><path d="m3 3 9 9"/><path d="m12 15V3"/></svg>
-						<span class="text-xs font-semibold">History</span>
-					</a>
-
-					<!-- Active: Scan -->
-					<a href="/receipt" class="h-14 rounded-2xl inline-flex flex-col items-center justify-center gap-1 bg-primary-50 text-primary-700 ring-1 ring-primary-200">
-						<span class="h-9 w-9 rounded-2xl bg-primary-500 shadow-md shadow-primary-200 inline-flex items-center justify-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-						</span>
-						<span class="text-xs font-extrabold">Scan</span>
-					</a>
-
-					<a href="/settings" class="h-14 rounded-2xl inline-flex flex-col items-center justify-center gap-1 text-slate-600">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0-.73 2.73l.08.15a2 2 0 0 1 0 2l-.08.15a2 2 0 0 0 .73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 0 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.08-.14a2 2 0 0 1 0-2l.08-.15a2 2 0 0 0-.73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-						<span class="text-xs font-semibold">Settings</span>
-					</a>
-				</div>
-			</div>
-		</nav>
-	</footer>
 </div>
