@@ -17,29 +17,23 @@ Welcome to the Split Bill documentation. This directory contains comprehensive d
 
 ## 🚀 Overview
 
-Production-ready receipt splitting application with OCR, FastAPI backend, and Streamlit frontend.
+Production-ready receipt splitting application with OCR, FastAPI backend, and SvelteKit PWA frontend.
 
-**Status**: Production-ready with enterprise-grade UX (Phases 1-9 completed)
+**Status**: Production-ready with SuperDesign UI (All 6 pages implemented and verified)
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Nginx         │────│  Streamlit App   │────│   FastAPI API   │
-│   (Reverse      │    │  (Port 8501)     │    │  (Port 8000)    │
-│    Proxy)       │    │                  │    │                 │
+│   SvelteKit     │────│  FastAPI API     │────│   PostgreSQL    │
+│   PWA Frontend  │    │  (Port 18000)    │    │   (Database)    │
+│   (Port 15173)  │    │                  │    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                                               │
-         │                                               │
-    ┌────▼─────────┐                              ┌─────▼──────┐
-    │  SSL/TLS     │                              │   Redis    │
-    │  Termination │                              │  (Cache)   │
-    └──────────────┘                              └────────────┘
-                                                          │
-                                                  ┌───────▼────────┐
-                                                  │ MinIO/S3       │
-                                                  │ (File Storage) │
-                                                  └────────────────┘
+                               │                        │
+                        ┌──────▼──────┐          ┌──────▼──────┐
+                        │   Redis     │          │   MinIO/S3  │
+                        │  (Cache)    │          │(File Store) │
+                        └─────────────┘          └─────────────┘
 ```
 
 ## 🛠️ Quick Start
@@ -50,7 +44,7 @@ make install
 
 # Run development
 make run-api    # Terminal 1: API server
-streamlit run app/src/main.py  # Terminal 2: Frontend
+cd web && npm run dev  # Terminal 2: Frontend (port 15173)
 
 # Production deployment
 docker-compose -f docker/docker-compose.yml up -d
@@ -228,8 +222,8 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Last Updated**: February 11, 2026
-**Version**: 1.0.0 (Production Ready)
+**Last Updated**: February 18, 2026
+**Version**: 2.0.0 (SuperDesign UI Complete)
 
 ---
 
@@ -265,13 +259,23 @@ To understand roadmap and priorities:
 # Quick start
 make install
 make run-api      # Terminal 1: Backend
-make run-streamlit # Terminal 2: Frontend
+cd web && npm run dev  # Terminal 2: Frontend (http://localhost:15173)
 
 # Or use Docker
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
 See [Development Guide](DEVELOPMENT.md) for detailed setup instructions.
+
+---
+
+## Frontend Stack
+
+- **Framework**: SvelteKit with Svelte 5 runes
+- **Styling**: Tailwind CSS 4.x
+- **Design System**: SuperDesign (all 6 pages implemented)
+- **PWA**: Service worker with Workbox
+- **Offline**: IndexedDB for local storage
 
 ---
 
