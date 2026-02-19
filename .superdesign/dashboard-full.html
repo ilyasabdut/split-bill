@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Split Bill — Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#0ea5e9',
+              600: '#0284c7',
+              50: '#f0f9ff'
+            }
+          },
+          borderRadius: {
+            'xl2': '1.25rem'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="w-full h-screen flex flex-col bg-brand-50 text-slate-900">
+    <!-- Decorative background -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -top-24 -right-20 h-72 w-72 rounded-full bg-brand-500/15 blur-2xl"></div>
+      <div class="absolute top-28 -left-24 h-72 w-72 rounded-full bg-emerald-400/10 blur-2xl"></div>
+      <div class="absolute bottom-40 -right-24 h-72 w-72 rounded-full bg-amber-400/10 blur-2xl"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="shrink-0 pt-14 px-4 relative z-10">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-11 w-11 rounded-2xl bg-brand-500 shadow-md flex items-center justify-center">
+            <iconify-icon icon="lucide:receipt" class="text-white text-xl"></iconify-icon>
+          </div>
+          <div class="leading-tight">
+            <p class="text-sm font-semibold text-slate-900">Split Bill</p>
+            <p class="text-xs text-slate-600">Make it fair in seconds</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="header-notifs-btn" type="button" class="h-11 w-11 rounded-2xl bg-white shadow-md border border-slate-200 flex items-center justify-center active:scale-[0.99]">
+            <iconify-icon icon="lucide:bell" class="text-slate-700 text-xl"></iconify-icon>
+          </button>
+          <button id="header-profile-btn" type="button" class="h-11 w-11 rounded-2xl bg-white shadow-md border border-slate-200 flex items-center justify-center active:scale-[0.99]">
+            <iconify-icon icon="lucide:user" class="text-slate-700 text-xl"></iconify-icon>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto px-4 pt-5 pb-[120px] relative z-0 scrollbar-hide">
+
+      <!-- Hero Card Section -->
+      <section class="rounded-3xl bg-white shadow-md border border-slate-200 p-5 relative overflow-hidden">
+        <!-- Currency & Title -->
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <!-- New Currency Pill -->
+            <button id="currency-selector" class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-3 pr-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform">
+              <span class="w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm text-[10px]">Rp</span>
+              IDR
+              <iconify-icon icon="lucide:chevron-down" class="text-slate-400 text-xs"></iconify-icon>
+            </button>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">Split bills easily<br>with friends</h1>
+          </div>
+          <div class="shrink-0">
+            <div class="h-14 w-14 rounded-3xl bg-brand-50 border border-brand-500/20 flex items-center justify-center">
+              <iconify-icon icon="lucide:users" class="text-brand-600 text-2xl"></iconify-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <a id="home-new-split-link" href="#" class="h-12 min-h-[44px] rounded-2xl bg-brand-500 shadow-md flex items-center justify-center gap-2 text-white font-semibold active:scale-[0.99] transition-transform">
+            <iconify-icon icon="lucide:plus" class="text-white text-xl"></iconify-icon>
+            <span class="text-sm">New Split</span>
+          </a>
+          <a id="home-scan-receipt-link" href="#" class="h-12 min-h-[44px] rounded-2xl bg-white border border-slate-200 shadow-md flex items-center justify-center gap-2 text-slate-900 font-semibold active:scale-[0.99] transition-transform">
+            <iconify-icon icon="lucide:scan-line" class="text-brand-600 text-xl"></iconify-icon>
+            <span class="text-sm">Scan Receipt</span>
+          </a>
+        </div>
+
+        <!-- Saved Templates (New) -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Saved Templates</h3>
+            <button id="templates-edit-btn" class="text-brand-600 text-[11px] font-semibold active:opacity-70">Edit</button>
+          </div>
+          <div class="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+            <!-- Template 1 -->
+            <button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
+              <div class="h-[52px] w-[52px] rounded-2xl bg-orange-50 border border-orange-100 text-orange-500 flex items-center justify-center group-active:scale-95 transition-transform">
+                <iconify-icon icon="lucide:utensils" class="text-2xl"></iconify-icon>
+              </div>
+              <span class="text-[11px] font-medium text-slate-600 text-center leading-tight">Lunch (3)</span>
+            </button>
+            <!-- Template 2 -->
+            <button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
+              <div class="h-[52px] w-[52px] rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-500 flex items-center justify-center group-active:scale-95 transition-transform">
+                <iconify-icon icon="lucide:home" class="text-2xl"></iconify-icon>
+              </div>
+              <span class="text-[11px] font-medium text-slate-600 text-center leading-tight">Rent</span>
+            </button>
+            <!-- Template 3 -->
+            <button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
+              <div class="h-[52px] w-[52px] rounded-2xl bg-sky-50 border border-sky-100 text-sky-500 flex items-center justify-center group-active:scale-95 transition-transform">
+                <iconify-icon icon="lucide:plane" class="text-2xl"></iconify-icon>
+              </div>
+              <span class="text-[11px] font-medium text-slate-600 text-center leading-tight">Trip</span>
+            </button>
+            <!-- Add Template -->
+            <button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
+              <div class="h-[52px] w-[52px] rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center group-active:scale-95 transition-transform">
+                <iconify-icon icon="lucide:plus" class="text-2xl"></iconify-icon>
+              </div>
+              <span class="text-[11px] font-medium text-slate-600 text-center leading-tight">Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Stats (Currency Updated) -->
+        <div class="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
+          <div class="shrink-0 rounded-2xl bg-brand-50 border border-brand-500/15 px-3 py-2 min-w-[120px]">
+            <p class="text-[11px] text-slate-600">This month</p>
+            <p class="text-sm font-bold text-slate-900">Rp 3.850k</p>
+          </div>
+          <div class="shrink-0 rounded-2xl bg-emerald-50 border border-emerald-500/15 px-3 py-2 min-w-[100px]">
+            <p class="text-[11px] text-slate-600">Settled</p>
+            <p class="text-sm font-bold text-slate-900">5 of 7</p>
+          </div>
+          <div class="shrink-0 rounded-2xl bg-amber-50 border border-amber-500/15 px-3 py-2 min-w-[100px]">
+            <p class="text-[11px] text-slate-600">Pending</p>
+            <p class="text-sm font-bold text-slate-900">2 splits</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Your Groups (New) -->
+      <section class="mt-6">
+        <div class="flex items-center justify-between px-1 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">Your Groups</h3>
+          <a id="groups-see-all-link" href="#" class="text-sm font-semibold text-brand-600">See all</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+          <!-- Group 1 -->
+          <a id="group-roommates-link" href="#" class="shrink-0 w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
+            <div class="flex items-center gap-3 mb-3">
+               <div class="h-10 w-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+                 <iconify-icon icon="lucide:sofa" class="text-xl"></iconify-icon>
+               </div>
+               <div>
+                 <p class="text-sm font-bold text-slate-900">Roomies</p>
+                 <p class="text-[10px] text-slate-500">4 members</p>
+               </div>
+            </div>
+            <p class="text-[10px] text-slate-400 font-medium">Last split 2d ago</p>
+          </a>
+          <!-- Group 2 -->
+          <a id="group-gamecrew-link" href="#" class="shrink-0 w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
+            <div class="flex items-center gap-3 mb-3">
+               <div class="h-10 w-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center">
+                 <iconify-icon icon="lucide:gamepad-2" class="text-xl"></iconify-icon>
+               </div>
+               <div>
+                 <p class="text-sm font-bold text-slate-900">Game Crew</p>
+                 <p class="text-[10px] text-slate-500">6 members</p>
+               </div>
+            </div>
+            <p class="text-[10px] text-slate-400 font-medium">Yesterday</p>
+          </a>
+          <!-- Group 3 -->
+          <a id="group-hiking-link" href="#" class="shrink-0 w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
+            <div class="flex items-center gap-3 mb-3">
+               <div class="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                 <iconify-icon icon="lucide:mountain" class="text-xl"></iconify-icon>
+               </div>
+               <div>
+                 <p class="text-sm font-bold text-slate-900">Hikers</p>
+                 <p class="text-[10px] text-slate-500">12 members</p>
+               </div>
+            </div>
+            <p class="text-[10px] text-slate-400 font-medium">1w ago</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Activity Feed (New) -->
+      <section class="mt-2 mb-6">
+        <h3 class="px-1 mb-3 text-sm font-bold text-slate-900">Activity</h3>
+        <div class="space-y-2">
+           <!-- Activity 1 -->
+           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/60 border border-white/50 backdrop-blur-sm">
+             <div class="h-8 w-8 rounded-full bg-sky-200 border border-white flex items-center justify-center shrink-0">
+                <span class="text-xs font-bold text-sky-800">M</span>
+             </div>
+             <p class="text-xs text-slate-700 leading-snug flex-1"><span class="font-bold text-slate-900">Maya</span> marked <span class="font-semibold">Sushi Night</span> as paid.</p>
+             <span class="text-[10px] text-slate-400">2h</span>
+           </div>
+           <!-- Activity 2 -->
+           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/60 border border-white/50 backdrop-blur-sm">
+             <div class="h-8 w-8 rounded-full bg-emerald-200 border border-white flex items-center justify-center shrink-0">
+                <span class="text-xs font-bold text-emerald-800">J</span>
+             </div>
+             <p class="text-xs text-slate-700 leading-snug flex-1"><span class="font-bold text-slate-900">Jordan</span> joined <span class="font-semibold">Road Trip</span> split.</p>
+             <span class="text-[10px] text-slate-400">5h</span>
+           </div>
+        </div>
+      </section>
+
+      <!-- Spending Insights (New) -->
+      <section class="mt-4 mb-8">
+        <div class="rounded-3xl bg-slate-900 text-white p-5 shadow-lg relative overflow-hidden">
+          <div class="relative z-10 flex items-start justify-between">
+             <div>
+                <p class="text-xs font-medium text-slate-400 mb-1">Total Spent (Feb)</p>
+                <h2 class="text-2xl font-bold">Rp 3.850k</h2>
+             </div>
+             <a id="insights-view-link" href="#" class="px-3 py-1.5 rounded-xl bg-slate-800 text-xs font-medium text-slate-300 hover:bg-slate-700 transition-colors inline-block">
+                Insights
+             </a>
+          </div>
+
+          <!-- Simple Bar Chart -->
+          <div class="mt-6 flex items-end justify-between gap-2 h-24 px-1">
+             <div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
+                <div class="w-full bg-slate-800 rounded-t-lg h-[40%] group-hover:bg-brand-500 transition-colors"></div>
+                <span class="text-[10px] text-slate-500 text-center">Dec</span>
+             </div>
+             <div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
+                <div class="w-full bg-slate-800 rounded-t-lg h-[65%] group-hover:bg-brand-500 transition-colors"></div>
+                <span class="text-[10px] text-slate-500 text-center">Jan</span>
+             </div>
+             <div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
+                <div class="w-full bg-brand-500 rounded-t-lg h-[85%] relative shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>
+                <span class="text-[10px] text-white font-bold text-center">Feb</span>
+             </div>
+             <div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
+                <div class="w-full bg-slate-800/50 border border-slate-700 border-dashed rounded-t-lg h-[60%]" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.05) 5px, rgba(255,255,255,0.05) 10px);"></div>
+                <span class="text-[10px] text-slate-500 text-center">Mar</span>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Splits (Updated) -->
+      <section class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <p class="text-lg font-bold text-slate-900">Recent Splits</p>
+          <a id="home-view-all-splits-link" href="#" class="text-sm font-semibold text-brand-600 active:scale-[0.99]">
+            View all
+          </a>
+        </div>
+
+        <!-- Item 1 -->
+        <article class="rounded-3xl bg-white shadow-md border border-slate-200 p-4">
+          <div class="flex items-start gap-3">
+            <div class="h-12 w-12 rounded-2xl bg-brand-50 border border-brand-500/15 flex items-center justify-center">
+              <iconify-icon icon="lucide:utensils" class="text-brand-600 text-xl"></iconify-icon>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-900 truncate">Sushi Night</p>
+                  <p class="mt-0.5 text-xs text-slate-600">Feb 9 • 4 people</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-extrabold text-slate-900">Rp 1.350k</p>
+                  <span class="mt-1 inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Unpaid</span>
+                </div>
+              </div>
+            </div>
+          </div>
+           <div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
+             <div class="flex -space-x-2">
+                <div class="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">A</div>
+                <div class="h-7 w-7 rounded-full bg-sky-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">M</div>
+                <div class="h-7 w-7 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">J</div>
+             </div>
+             <a id="recent-split-sushi-open-link" href="#" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold shadow-sm active:scale-95 transition-transform">
+               Details
+             </a>
+           </div>
+        </article>
+
+        <!-- Item 2 -->
+        <article class="rounded-3xl bg-white shadow-md border border-slate-200 p-4">
+          <div class="flex items-start gap-3">
+            <div class="h-12 w-12 rounded-2xl bg-emerald-50 border border-emerald-500/15 flex items-center justify-center">
+              <iconify-icon icon="lucide:car" class="text-emerald-600 text-xl"></iconify-icon>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-900 truncate">Road Trip Gas</p>
+                  <p class="mt-0.5 text-xs text-slate-600">Feb 6 • 3 people</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-extrabold text-slate-900">Rp 815k</p>
+                  <span class="mt-1 inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Paid</span>
+                </div>
+              </div>
+            </div>
+          </div>
+           <div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
+             <div class="flex -space-x-2">
+                <div class="h-7 w-7 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">S</div>
+                <div class="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">L</div>
+             </div>
+             <a id="recent-split-roadtrip-open-link" href="#" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold shadow-sm active:scale-95 transition-transform">
+               Details
+             </a>
+           </div>
+        </article>
+
+        <!-- Item 3 -->
+        <article class="rounded-3xl bg-white shadow-md border border-slate-200 p-4">
+          <div class="flex items-start gap-3">
+            <div class="h-12 w-12 rounded-2xl bg-amber-50 border border-amber-500/15 flex items-center justify-center">
+              <iconify-icon icon="lucide:popcorn" class="text-amber-700 text-xl"></iconify-icon>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-900 truncate">Movie Snacks</p>
+                  <p class="mt-0.5 text-xs text-slate-600">Feb 2 • 2 people</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-extrabold text-slate-900">Rp 295k</p>
+                  <span class="mt-1 inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Unpaid</span>
+                </div>
+              </div>
+            </div>
+          </div>
+           <div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
+             <div class="flex -space-x-2">
+                <div class="h-7 w-7 rounded-full bg-amber-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">T</div>
+                <div class="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">N</div>
+             </div>
+             <a id="recent-split-movie-open-link" href="#" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold shadow-sm active:scale-95 transition-transform">
+               Details
+             </a>
+           </div>
+        </article>
+      </section>
+
+      <!-- Friendly helper card -->
+      <section class="mt-6 rounded-3xl bg-indigo-600 shadow-md p-4 text-white relative overflow-hidden">
+        <div class="absolute right-0 top-0 h-32 w-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+        <div class="relative z-10 flex items-start gap-3">
+          <div class="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">
+            <iconify-icon icon="lucide:sparkles" class="text-white text-lg"></iconify-icon>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold">Scanning Tips</p>
+            <p class="mt-1 text-xs text-indigo-100">Ensure good lighting for best results. We'll handle the math!</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom navigation -->
+    <footer class="fixed bottom-0 left-0 right-0 p-4 z-40">
+      <nav class="bg-white border border-slate-200 shadow-xl rounded-[28px] px-3 py-2 mx-auto max-w-2xl">
+        <ul class="grid grid-cols-4 gap-2">
+          <li>
+            <a id="bottomnav-home-link" href="#" class="min-h-[44px] rounded-2xl bg-brand-50 text-brand-600 flex flex-col items-center justify-center gap-1 py-2 active:scale-[0.99]">
+              <iconify-icon icon="lucide:home" class="text-xl"></iconify-icon>
+              <span class="text-[12px] font-semibold">Home</span>
+            </a>
+          </li>
+          <li>
+            <a id="bottomnav-history-link" href="#" class="min-h-[44px] rounded-2xl text-slate-600 flex flex-col items-center justify-center gap-1 py-2 active:scale-[0.99]">
+              <iconify-icon icon="lucide:history" class="text-xl"></iconify-icon>
+              <span class="text-[12px] font-semibold">History</span>
+            </a>
+          </li>
+          <li>
+            <a id="bottomnav-scan-link" href="#" class="min-h-[44px] rounded-2xl flex flex-col items-center justify-center gap-1 py-2 active:scale-[0.99]">
+              <span class="h-11 w-11 rounded-2xl bg-brand-500 shadow-md flex items-center justify-center">
+                <iconify-icon icon="lucide:plus" class="text-white text-2xl"></iconify-icon>
+              </span>
+              <span class="text-[12px] font-semibold text-slate-700">Scan</span>
+            </a>
+          </li>
+          <li>
+            <a id="bottomnav-settings-link" href="#" class="min-h-[44px] rounded-2xl text-slate-600 flex flex-col items-center justify-center gap-1 py-2 active:scale-[0.99]">
+              <iconify-icon icon="lucide:settings" class="text-xl"></iconify-icon>
+              <span class="text-[12px] font-semibold">Settings</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  </div>
+</body>
+</html>

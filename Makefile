@@ -142,6 +142,10 @@ rebuild-api:
 	@echo "Rebuilding and restarting API service..."
 	docker-compose -f docker/docker-compose.yml up --build -d api
 
+rebuild-web:
+	@echo "Rebuilding and restarting Web service..."
+	docker-compose -f docker/docker-compose.yml up --build -d web
+
 # Install dependencies using uv and pnpm
 install:
 	@echo "Installing Python dependencies with uv..."

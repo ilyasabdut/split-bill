@@ -18,7 +18,7 @@
       class="sticky top-0 z-header bg-white border-b border-surface-200 w-full px-safe py-3"
       style="padding-top: max(env(safe-area-inset-top), 0.75rem);"
     >
-      <div class="max-w-lg mx-auto">
+      <div class="max-w-[430px] mx-auto">
         <h1 class="text-xl font-semibold text-text text-balance">{title}</h1>
       </div>
     </header>
@@ -28,7 +28,7 @@
     class={cn('flex-1 w-full px-safe', className)}
     style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);"
   >
-    <div class="max-w-lg mx-auto py-4">
+    <div class="max-w-[430px] mx-auto py-4">
       {#if children}
         {@render children()}
       {/if}

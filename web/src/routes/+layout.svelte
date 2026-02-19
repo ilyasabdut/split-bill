@@ -14,8 +14,10 @@
   const hideNavPaths = ['/split/'];
 </script>
 
-<div class="flex flex-col min-h-dvh bg-slate-50 text-slate-900 font-sans overflow-x-hidden">
-  {@render children?.()}
+<div class="min-h-screen flex justify-center bg-slate-50 text-slate-900 font-sans">
+  <div class="w-full max-w-[430px] min-h-screen flex flex-col relative">
+    {@render children?.()}
+  </div>
 </div>
 
 {#if !hideNavPaths.some(p => currentPath.startsWith(p) && currentPath !== '/split')}
