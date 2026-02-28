@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(claude-code:*)",
+      "Bash(claude plugin --help:*)",
+      "Bash(claude plugin marketplace list)",
+      "Bash(claude plugin install --help:*)",
+      "Bash(claude plugin marketplace --help:*)",
+      "Bash(claude plugin marketplace add:*)",
+      "Bash(claude plugin list)",
+      "Bash(ln:*)"
+    ]
+  }
+}

@@ -2,11 +2,13 @@
 	import { onMount } from 'svelte';
 	import { currencyStore, analyticsStore } from '$lib/stores';
 	import { goto } from '$app/navigation';
+	import CurrencyConverter from '$lib/components/ui/CurrencyConverter.svelte';
 
 	let monthlySpending = $state(3850000);
 	let settledCount = $state(5);
 	let totalCount = $state(7);
 	let pendingCount = $state(2);
+	let showCurrencyConverter = $state(false);
 
 	const groups = [
 		{ id: 'roomies', name: 'Roomies', icon: 'sofa', color: 'violet', members: 4, lastActivity: '2d ago' },
@@ -120,7 +122,7 @@
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div>
 					<!-- Currency Pill -->
-					<button class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-3 pr-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform">
+					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-3 pr-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform">
 						<span class="w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm text-[10px]">Rp</span>
 						IDR
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
@@ -191,11 +193,11 @@
 		<section>
 			<div class="flex items-center justify-between px-1 mb-3">
 				<h3 class="text-lg font-bold text-slate-900">Your Groups</h3>
-				<a href="#groups" class="text-sm font-semibold text-primary-600">See all</a>
+				<a href="/groups/new" class="text-sm font-semibold text-primary-600">+ Create Group</a>
 			</div>
 			<div class="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
 				{#each groups as group}
-					<a href="#group-{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
+					<a href="/groups/{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
 						<div class="flex items-center gap-3 mb-3">
 							<div class="{getColorClasses(group.color, 'bg')} {getColorClasses(group.color, 'text')} h-10 w-10 rounded-xl flex items-center justify-center">
 								{@html getIcon(group.icon)}
@@ -321,3 +323,7 @@
 		</div>
 	</main>
 </div>
+
+{#if showCurrencyConverter}
+	<CurrencyConverter onClose={() => showCurrencyConverter = false} />
+{/if}
