@@ -41,7 +41,7 @@
 
 <nav
   class={cn(
-    'fixed bottom-0 bg-white border-t border-surface-200 z-bottom-nav w-[430px] max-w-full left-1/2 -translate-x-1/2',
+    'fixed bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-bottom-nav w-[430px] max-w-full left-1/2 -translate-x-1/2',
     className
   )}
   style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);"
@@ -55,8 +55,8 @@
           class={cn(
             'flex flex-col items-center justify-center min-h-[60px] min-w-[44px] px-2 text-center transition-colors',
             isActive(item.path, currentPath)
-              ? 'text-primary-600'
-              : 'text-text-secondary hover:text-primary-600 active:scale-95'
+              ? 'text-primary-600 dark:text-primary-400'
+              : 'text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 active:scale-95'
           )}
           aria-current={isActive(item.path, currentPath) ? 'page' : undefined}
         >
