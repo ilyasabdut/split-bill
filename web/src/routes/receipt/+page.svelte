@@ -84,22 +84,22 @@
 	<meta name="color-scheme" content="light" />
 </svelte:head>
 
-<div class="w-full min-h-dvh flex flex-col bg-slate-50 text-slate-900 font-sans">
+<div class="w-full min-h-dvh flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
 	<header
 		class="shrink-0 px-4"
 		style="padding-top: max(env(safe-area-inset-top), 3.5rem);"
 	>
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6"/><path d="m18 15-6-6"/></svg>
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-md shadow-slate-200 dark:shadow-slate-800">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700 dark:text-slate-300"><path d="m15 18-6-6 6"/><path d="m18 15-6-6"/></svg>
 			</a>
 
 			<div class="text-center">
 				<p class="text-base font-semibold">Scan Receipt</p>
 			</div>
 
-			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 12h.01"/></svg>
+			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-md shadow-slate-200 dark:shadow-slate-800">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700 dark:text-slate-300"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 12h.01"/></svg>
 			</a>
 		</div>
 	</header>
@@ -107,33 +107,33 @@
 	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-6 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
 		<!-- Upload zone - EXACT: rounded-3xl border-2 border-dashed border-primary-400 bg-primary-50 -->
 		<section class="mt-5">
-			<button type="button" class="w-full rounded-3xl border-2 border-dashed border-primary-400 bg-primary-50">
+			<button type="button" class="w-full rounded-3xl border-2 border-dashed border-primary-400 bg-primary-50 dark:bg-slate-800">
 				<div class="px-5 py-10">
 					<div class="mx-auto flex flex-col items-center">
 						<!-- Camera icon - EXACT: h-20 w-20 rounded-3xl bg-white ring-1 ring-primary-200, width="32" height="32" -->
-						<div class="h-20 w-20 rounded-3xl bg-white ring-1 ring-primary-200 flex items-center justify-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600"><path d="m23 19-7-16 2v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"/><path d="M16 3h5"/><path d="M21 14V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M21 14v7"/></svg>
+						<div class="h-20 w-20 rounded-3xl bg-white dark:bg-slate-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center">
+							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><path d="m23 19-7-16 2v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"/><path d="M16 3h5"/><path d="M21 14V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M21 14v7"/></svg>
 						</div>
 
 						<p class="mt-4 text-base font-semibold">Tap to scan</p>
-						<p class="mt-1 text-sm text-slate-600 text-center">Or upload a photo/PDF of your receipt</p>
+						<p class="mt-1 text-sm text-slate-600 dark:text-slate-400 text-center">Or upload a photo/PDF of your receipt</p>
 					</div>
 				</div>
 			</button>
 		</section>
 
 		<!-- Confidence section - EXACT: px-4 py-3 bg-slate-50, h-5 w-5 rounded-full bg-green-500 -->
-		<section class="mt-5 rounded-3xl bg-white shadow-md shadow-slate-200 ring-1 ring-slate-200">
-			<div class="px-4 py-3 bg-slate-50 flex items-center justify-between">
+		<section class="mt-5 rounded-3xl bg-white dark:bg-slate-800 shadow-md shadow-slate-200 dark:shadow-slate-800 ring-1 ring-slate-200 dark:ring-slate-700">
+			<div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 flex items-center justify-between">
 				<div class="flex items-center gap-2">
 					<div class="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M20 6 9 17 4 18"/><path d="m4 18 9-17"/></svg>
 					</div>
-					<span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Scan Complete</span>
+					<span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Scan Complete</span>
 				</div>
-				<div class="flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-1 ring-1 ring-green-200">
-					<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3l-5.8 1.9 5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3l5.8-1.9-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>
-					<span class="text-xs font-bold text-green-700">98% Confidence</span>
+				<div class="flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-900/30 px-2 py-1 ring-1 ring-green-200 dark:ring-green-800">
+					<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 dark:text-green-400"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3l-5.8 1.9 5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3l5.8-1.9-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>
+					<span class="text-xs font-bold text-green-700 dark:text-green-400">98% Confidence</span>
 				</div>
 			</div>
 
@@ -144,26 +144,26 @@
 						<div class="flex items-center gap-3">
 							<button
 								type="button"
-								class="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-slate-100 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-colors"
+								class="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
 								onclick={() => handleRemoveItem(item.id)}
 								aria-label="Remove item"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600 dark:text-slate-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 							</button>
 							<input
 								type="text"
 								value={item.name}
 								oninput={(e) => handleItemNameChange(item.id, e.currentTarget.value)}
-								class="flex-1 border-none bg-transparent p-0 text-sm font-semibold text-slate-900 focus:ring-0 focus:outline-none"
+								class="flex-1 border-none bg-transparent p-0 text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 focus:outline-none"
 								placeholder="Item name"
 							/>
 							<div class="flex items-center gap-1">
-								<span class="text-xs text-slate-400">$</span>
+								<span class="text-xs text-slate-400 dark:text-slate-500">$</span>
 								<input
 									type="number"
 									value={item.price}
 									oninput={(e) => handleItemPriceChange(item.id, e.currentTarget.value)}
-									class="w-16 border-none bg-transparent p-0 text-right text-sm font-bold text-slate-900 focus:ring-0 focus:outline-none tabular-nums {item.price < 0 ? 'text-red-600' : ''}"
+									class="w-16 border-none bg-transparent p-0 text-right text-sm font-bold text-slate-900 dark:text-white focus:ring-0 focus:outline-none tabular-nums {item.price < 0 ? 'text-red-600 dark:text-red-400' : ''}"
 									placeholder="0.00"
 									step="0.01"
 									min="0"
@@ -176,38 +176,38 @@
 						<button
 							type="button"
 							onclick={handleAddItem}
-							class="flex items-center gap-1.5 text-xs font-bold text-primary-600"
+							class="flex items-center gap-1.5 text-xs font-bold text-primary-600 dark:text-primary-400"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
 							Add Item
 						</button>
-						<span class="text-xs font-medium text-slate-400">Subtotal: ${subtotal.toFixed(2)}</span>
+						<span class="text-xs font-medium text-slate-400 dark:text-slate-500">Subtotal: ${subtotal.toFixed(2)}</span>
 					</div>
 				</div>
 
 				<!-- Tax section - EXACT: h-7 w-7 rounded-lg bg-orange-50, toggle h-6 w-10 bg-primary-500 -->
-				<div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+				<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-2">
-							<div class="h-7 w-7 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+							<div class="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-500 dark:text-orange-400">
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 1 0 7h5a3.5 3.5 0 0 1 0 7H17"/></svg>
 							</div>
 							<div class="leading-none">
-								<p class="text-xs font-bold text-slate-700">Tax Detected: {taxDetected}%</p>
-								<button class="text-xs font-medium text-primary-600 underline decoration-primary-200 underline-offset-2 mt-0.5">Edit Rate</button>
+								<p class="text-xs font-bold text-slate-700 dark:text-slate-300">Tax Detected: {taxDetected}%</p>
+								<button class="text-xs font-medium text-primary-600 dark:text-primary-400 underline decoration-primary-200 dark:decoration-primary-800 underline-offset-2 mt-0.5">Edit Rate</button>
 							</div>
 						</div>
-						<button type="button" class="relative h-6 w-10 rounded-full bg-primary-500">
+						<button type="button" class="relative h-6 w-10 rounded-full bg-primary-500 dark:bg-primary-600">
 							<span class="absolute right-1 top-1 h-4 w-4 rounded-full bg-white"></span>
 						</button>
 					</div>
 
 					<!-- Total Card -->
-					<div class="flex items-center justify-between rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-						<span class="text-sm font-semibold text-slate-600">Total Amount</span>
+					<div class="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-700/50 p-3 ring-1 ring-slate-100 dark:ring-slate-600">
+						<span class="text-sm font-semibold text-slate-600 dark:text-slate-400">Total Amount</span>
 						<div class="flex items-baseline gap-1">
-							<span class="text-xs font-bold text-slate-400">USD</span>
-							<span class="text-xl font-bold text-slate-900 tabular-nums">${totalAmount.toFixed(2)}</span>
+							<span class="text-xs font-bold text-slate-400 dark:text-slate-500">USD</span>
+							<span class="text-xl font-bold text-slate-900 dark:text-white tabular-nums">${totalAmount.toFixed(2)}</span>
 						</div>
 					</div>
 				</div>
@@ -217,15 +217,15 @@
 					<button
 						type="button"
 						onclick={handleShare}
-						class="flex h-10 items-center justify-center gap-2 rounded-xl bg-white text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200"
+						class="flex h-10 items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600"
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 dark:text-slate-400"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
 						Share
 					</button>
 					<button
 						type="button"
 						onclick={handleConfirm}
-						class="flex h-10 items-center justify-center gap-2 rounded-xl bg-primary-500 text-xs font-bold text-white shadow-md shadow-primary-200"
+						class="flex h-10 items-center justify-center gap-2 rounded-xl bg-primary-500 dark:bg-primary-600 text-xs font-bold text-white shadow-md shadow-primary-200 dark:shadow-primary-900/50"
 					>
 						<span>Confirm</span>
 						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -235,15 +235,15 @@
 		</section>
 
 		<!-- Help section - EXACT: rounded-3xl bg-primary-50 ring-1 ring-primary-200 -->
-		<section class="mt-5 rounded-3xl bg-primary-50 ring-1 ring-primary-200">
+		<section class="mt-5 rounded-3xl bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800">
 			<div class="p-4">
 				<div class="flex items-start gap-3">
-					<div class="h-11 w-11 rounded-2xl bg-white ring-1 ring-primary-200 flex items-center justify-center">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+					<div class="h-11 w-11 rounded-2xl bg-white dark:bg-slate-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
 					</div>
 					<div class="flex-1">
-						<p class="text-sm font-semibold">Tips for best results</p>
-						<ul class="mt-2 space-y-2 text-sm text-slate-700">
+						<p class="text-sm font-semibold dark:text-white">Tips for best results</p>
+						<ul class="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-300">
 							<li class="flex gap-2">
 								<span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary-500 shrink-0"></span>
 								<span>Place receipt on a flat surface with good lighting.</span>
@@ -258,10 +258,10 @@
 							</li>
 						</ul>
 						<div class="mt-4 flex gap-3">
-							<a href="#learn-more" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-white ring-1 ring-primary-200 text-sm font-semibold text-primary-700 shadow-md shadow-primary-100">
+							<a href="#learn-more" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-white dark:bg-slate-700 ring-1 ring-primary-200 dark:ring-primary-800 text-sm font-semibold text-primary-700 dark:text-primary-300 shadow-md shadow-primary-100 dark:shadow-primary-900/50">
 								Learn more
 							</a>
-							<a href="#troubleshoot" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-primary-500 text-sm font-semibold text-white shadow-md shadow-primary-200">
+							<a href="#troubleshoot" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-primary-500 dark:bg-primary-600 text-sm font-semibold text-white shadow-md shadow-primary-200 dark:shadow-primary-900/50">
 								Troubleshoot
 							</a>
 						</div>

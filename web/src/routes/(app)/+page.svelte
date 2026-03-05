@@ -81,10 +81,10 @@
 	<title>Split Bill - Home</title>
 </svelte:head>
 
-<div class="w-full min-h-screen flex flex-col bg-primary-50 text-slate-900">
+<div class="w-full min-h-screen flex flex-col bg-primary-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 	<!-- Decorative background -->
 	<div class="pointer-events-none absolute inset-0 overflow-hidden -z-10">
-		<div class="absolute -top-24 -right-20 h-72 w-72 rounded-full bg-primary-500/15 blur-2xl"></div>
+		<div class="absolute -top-24 -right-20 h-72 w-72 rounded-full bg-primary-500/15 dark:bg-primary-500/10 blur-2xl"></div>
 		<div class="absolute top-28 -left-24 h-72 w-72 rounded-full bg-emerald-400/10 blur-2xl"></div>
 		<div class="absolute bottom-40 -right-24 h-72 w-72 rounded-full bg-amber-400/10 blur-2xl"></div>
 	</div>
@@ -97,16 +97,16 @@
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
 				</div>
 				<div class="leading-tight">
-					<p class="text-sm font-semibold text-slate-900">Split Bill</p>
-					<p class="text-xs text-slate-600">Make it fair in seconds</p>
+					<p class="text-sm font-semibold text-slate-900 dark:text-white">Split Bill</p>
+					<p class="text-xs text-slate-600 dark:text-slate-400">Make it fair in seconds</p>
 				</div>
 			</div>
 			<div class="flex items-center gap-2">
-				<button type="button" class="h-11 w-11 rounded-2xl bg-white shadow-md border border-slate-200 flex items-center justify-center active:scale-[0.99]">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+				<button type="button" class="h-11 w-11 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-[0.99]">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700 dark:text-slate-300"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
 				</button>
-				<button type="button" class="h-11 w-11 rounded-2xl bg-white shadow-md border border-slate-200 flex items-center justify-center active:scale-[0.99]">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+				<button type="button" class="h-11 w-11 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-[0.99]">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700 dark:text-slate-300"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 				</button>
 			</div>
 		</div>
@@ -117,21 +117,21 @@
 
 		<div class="space-y-6">
 		<!-- Hero Card Section -->
-		<section class="rounded-3xl bg-white shadow-md border border-slate-200 p-5 relative overflow-hidden">
+		<section class="rounded-3xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 p-5 relative overflow-hidden">
 			<!-- Currency & Title -->
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div>
 					<!-- Currency Pill -->
-					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-3 pr-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform">
-						<span class="w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm text-[10px]">Rp</span>
+					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-700 pl-3 pr-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 active:scale-95 transition-transform">
+						<span class="w-4 h-4 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm text-[10px]">Rp</span>
 						IDR
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
 					</button>
-					<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">Split bills easily<br>with friends</h1>
+					<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Split bills easily<br>with friends</h1>
 				</div>
 				<div class="shrink-0">
-					<div class="h-14 w-14 rounded-3xl bg-primary-50 border border-primary-500/20 flex items-center justify-center">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+					<div class="h-14 w-14 rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/20 flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 					</div>
 				</div>
 			</div>
@@ -142,8 +142,8 @@
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 					<span class="text-sm">New Split</span>
 				</a>
-				<a href="/receipt" class="h-12 min-h-[44px] rounded-2xl bg-white border border-slate-200 shadow-md flex items-center justify-center gap-2 text-slate-900 font-semibold active:scale-[0.99] transition-transform">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+				<a href="/receipt" class="h-12 min-h-[44px] rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-md flex items-center justify-center gap-2 text-slate-900 dark:text-white font-semibold active:scale-[0.99] transition-transform">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
 					<span class="text-sm">Scan Receipt</span>
 				</a>
 			</div>
@@ -160,31 +160,31 @@
 							<div class="{getColorClasses(template.color, 'bg')} border {getColorClasses(template.color, 'border')} {getColorClasses(template.color, 'text')} h-[52px] w-[52px] rounded-2xl flex items-center justify-center group-active:scale-95 transition-transform">
 								{@html getIcon(template.icon)}
 							</div>
-							<span class="text-[11px] font-medium text-slate-600 text-center leading-tight">{template.name}{template.count > 0 ? ` (${template.count})` : ''}</span>
+							<span class="text-[11px] font-medium text-slate-600 dark:text-slate-400 text-center leading-tight">{template.name}{template.count > 0 ? ` (${template.count})` : ''}</span>
 						</button>
 					{/each}
 					<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
-						<div class="h-[52px] w-[52px] rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center group-active:scale-95 transition-transform">
+						<div class="h-[52px] w-[52px] rounded-2xl bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 text-slate-400 flex items-center justify-center group-active:scale-95 transition-transform">
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 						</div>
-						<span class="text-[11px] font-medium text-slate-600 text-center leading-tight">Add</span>
+						<span class="text-[11px] font-medium text-slate-600 dark:text-slate-400 text-center leading-tight">Add</span>
 					</button>
 				</div>
 			</div>
 
 			<!-- Quick Stats -->
 			<div class="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
-				<div class="flex-1 min-w-[100px] shrink-0 rounded-2xl bg-primary-50 border border-primary-500/15 px-3 py-2">
-					<p class="text-[11px] text-slate-600">This month</p>
-					<p class="text-sm font-bold text-slate-900">Rp 3.850k</p>
+				<div class="flex-1 min-w-[100px] shrink-0 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/15 px-3 py-2">
+					<p class="text-[11px] text-slate-600 dark:text-slate-400">This month</p>
+					<p class="text-sm font-bold text-slate-900 dark:text-white">Rp 3.850k</p>
 				</div>
-				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-emerald-50 border border-emerald-500/15 px-3 py-2">
-					<p class="text-[11px] text-slate-600">Settled</p>
-					<p class="text-sm font-bold text-slate-900">{settledCount} of {totalCount}</p>
+				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-500/15 px-3 py-2">
+					<p class="text-[11px] text-slate-600 dark:text-slate-400">Settled</p>
+					<p class="text-sm font-bold text-slate-900 dark:text-white">{settledCount} of {totalCount}</p>
 				</div>
-				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-amber-50 border border-amber-500/15 px-3 py-2">
-					<p class="text-[11px] text-slate-600">Pending</p>
-					<p class="text-sm font-bold text-slate-900">{pendingCount} splits</p>
+				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-amber-50 dark:bg-amber-900/30 border border-amber-500/15 px-3 py-2">
+					<p class="text-[11px] text-slate-600 dark:text-slate-400">Pending</p>
+					<p class="text-sm font-bold text-slate-900 dark:text-white">{pendingCount} splits</p>
 				</div>
 			</div>
 		</section>
@@ -192,22 +192,22 @@
 		<!-- Your Groups -->
 		<section>
 			<div class="flex items-center justify-between px-1 mb-3">
-				<h3 class="text-lg font-bold text-slate-900">Your Groups</h3>
-				<a href="/groups/new" class="text-sm font-semibold text-primary-600">+ Create Group</a>
+				<h3 class="text-lg font-bold text-slate-900 dark:text-white">Your Groups</h3>
+				<a href="/groups/new" class="text-sm font-semibold text-primary-600 dark:text-primary-400">+ Create Group</a>
 			</div>
 			<div class="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
 				{#each groups as group}
-					<a href="/groups/{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-white shadow-sm border border-slate-200 active:scale-[0.98] transition-transform block">
+					<a href="/groups/{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 active:scale-[0.98] transition-transform block">
 						<div class="flex items-center gap-3 mb-3">
 							<div class="{getColorClasses(group.color, 'bg')} {getColorClasses(group.color, 'text')} h-10 w-10 rounded-xl flex items-center justify-center">
 								{@html getIcon(group.icon)}
 							</div>
 							<div>
-								<p class="text-sm font-bold text-slate-900 truncate">{group.name}</p>
-								<p class="text-[10px] text-slate-500">{group.members} members</p>
+								<p class="text-sm font-bold text-slate-900 dark:text-white truncate">{group.name}</p>
+								<p class="text-[10px] text-slate-500 dark:text-slate-400">{group.members} members</p>
 							</div>
 						</div>
-						<p class="text-[10px] text-slate-400 font-medium">Last split {group.lastActivity}</p>
+						<p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Last split {group.lastActivity}</p>
 					</a>
 				{/each}
 			</div>
@@ -215,14 +215,14 @@
 
 		<!-- Activity Feed -->
 		<section>
-			<h3 class="px-1 mb-3 text-sm font-bold text-slate-900">Activity</h3>
+			<h3 class="px-1 mb-3 text-sm font-bold text-slate-900 dark:text-white">Activity</h3>
 			<div class="space-y-2">
 				{#each activities as activity}
-					<div class="flex items-center gap-3 p-3 rounded-2xl bg-white/60 border border-white/50 backdrop-blur-sm">
-						<div class="h-8 w-8 rounded-full bg-{activity.personColor}-200 border border-white flex items-center justify-center shrink-0" class:bg-sky-200={activity.personColor === 'sky'} class:bg-emerald-200={activity.personColor === 'emerald'}>
-							<span class="text-xs font-bold text-slate-800">{activity.person[0]}</span>
+					<div class="flex items-center gap-3 p-3 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-slate-700/50 backdrop-blur-sm">
+						<div class="h-8 w-8 rounded-full bg-{activity.personColor}-200 border border-white dark:border-slate-700 flex items-center justify-center shrink-0" class:bg-sky-200={activity.personColor === 'sky'} class:bg-emerald-200={activity.personColor === 'emerald'}>
+							<span class="text-xs font-bold text-slate-800 dark:text-slate-200">{activity.person[0]}</span>
 						</div>
-						<p class="text-xs text-slate-700 leading-snug flex-1"><span class="font-bold text-slate-900">{activity.person}</span> {activity.action} <span class="font-semibold">{activity.target}</span>.</p>
+						<p class="text-xs text-slate-700 dark:text-slate-300 leading-snug flex-1"><span class="font-bold text-slate-900 dark:text-white">{activity.person}</span> {activity.action} <span class="font-semibold">{activity.target}</span>.</p>
 						<span class="text-[10px] text-slate-400">{activity.time}</span>
 					</div>
 				{/each}
@@ -267,13 +267,13 @@
 		<!-- Recent Splits -->
 		<section class="space-y-3">
 			<div class="flex items-center justify-between px-1">
-				<p class="text-lg font-bold text-slate-900">Recent Splits</p>
-				<a href="/history" class="text-sm font-semibold text-primary-600 active:scale-[0.99]">View all</a>
+				<p class="text-lg font-bold text-slate-900 dark:text-white">Recent Splits</p>
+				<a href="/history" class="text-sm font-semibold text-primary-600 dark:text-primary-400 active:scale-[0.99]">View all</a>
 			</div>
 
 			{#each recentSplits as split}
 				{@const statusColors = getStatusClasses(split.status)}
-				<article class="rounded-3xl bg-white shadow-md border border-slate-200 p-4">
+				<article class="rounded-3xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 p-4">
 					<div class="flex items-start gap-3">
 						<div class="{getColorClasses(split.color, 'bg')} border {getColorClasses(split.color, 'border')} {getColorClasses(split.color, 'text')} h-12 w-12 rounded-2xl flex items-center justify-center shrink-0">
 							{@html getIcon(split.icon)}
@@ -281,11 +281,11 @@
 						<div class="min-w-0 flex-1">
 							<div class="flex items-start justify-between gap-2 sm:gap-3">
 								<div class="min-w-0 flex-1">
-									<p class="text-sm font-semibold text-slate-900 truncate">{split.title}</p>
-									<p class="mt-0.5 text-xs text-slate-600">{split.date} • {split.people} people</p>
+									<p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{split.title}</p>
+									<p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{split.date} • {split.people} people</p>
 								</div>
 								<div class="shrink-0 flex flex-col sm:items-end items-start gap-1">
-									<p class="text-sm font-extrabold text-slate-900">{split.amount}</p>
+									<p class="text-sm font-extrabold text-slate-900 dark:text-white">{split.amount}</p>
 									<span class="{statusColors.bg} {statusColors.text} inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
 										{split.status}
 									</span>
@@ -295,11 +295,11 @@
 					</div>
 					<div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
 						<div class="flex -space-x-2">
-							<div class="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">A</div>
-							<div class="h-7 w-7 rounded-full bg-sky-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">M</div>
-							<div class="h-7 w-7 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">J</div>
+							<div class="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">A</div>
+							<div class="h-7 w-7 rounded-full bg-sky-200 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">M</div>
+							<div class="h-7 w-7 rounded-full bg-emerald-200 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">J</div>
 						</div>
-						<a href="/split/{split.id}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold shadow-sm active:scale-95 transition-transform">
+						<a href="/split/{split.id}" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold shadow-sm active:scale-95 transition-transform">
 							Details
 						</a>
 					</div>
@@ -308,7 +308,7 @@
 		</section>
 
 		<!-- Friendly helper card -->
-		<section class="rounded-3xl bg-indigo-600 shadow-md p-4 text-white relative overflow-hidden">
+		<section class="rounded-3xl bg-indigo-600 dark:bg-indigo-900 shadow-md p-4 text-white relative overflow-hidden">
 			<div class="absolute right-0 top-0 h-32 w-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
 			<div class="relative z-10 flex items-start gap-3">
 				<div class="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">

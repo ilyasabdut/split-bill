@@ -10,6 +10,11 @@
 	// Watch for changes and persist to localStorage
 	$effect(() => {
 		localStorage.setItem('darkMode', String(darkMode));
+		if (darkMode) {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
+		}
 	});
 
 	$effect(() => {
@@ -26,6 +31,7 @@
 		const savedSoundEffects = localStorage.getItem('soundEffects');
 
 		if (savedDarkMode) darkMode = savedDarkMode === 'true';
+		if (darkMode) document.documentElement.classList.add('dark');
 		if (savedNotifications) notifications = savedNotifications === 'true';
 		if (savedSoundEffects) soundEffects = savedSoundEffects === 'true';
 
