@@ -63,23 +63,23 @@ class Settings(BaseSettings):
     )
 
     # Garage/S3 Configuration
-    minio_endpoint: str = Field(
+    s3_endpoint: str = Field(
         ...,
         description="Garage/S3 endpoint address (host:port)",
     )
-    minio_access_key: str = Field(
+    s3_access_key: str = Field(
         ...,
         description="Garage access key",
     )
-    minio_secret_key: str = Field(
+    s3_secret_key: str = Field(
         ...,
         description="Garage secret key",
     )
-    minio_bucket_name: str = Field(
+    s3_bucket_name: str = Field(
         default="split-bill",
         description="Garage bucket name for storing receipts and metadata",
     )
-    minio_use_ssl: bool = Field(
+    s3_use_ssl: bool = Field(
         default=False,
         description="Whether to use SSL for Garage connections",
     )
@@ -186,14 +186,14 @@ class Settings(BaseSettings):
         return v
 
     @property
-    def minio_host(self) -> str:
-        """Extract host from Garage endpoint."""
-        return self.minio_endpoint.split(":")[0]
+    def s3_host(self) -> str:
+        """Extract host from Garage S3 endpoint."""
+        return self.s3_endpoint.split(":")[0]
 
     @property
-    def minio_port(self) -> int:
-        """Extract port from Garage endpoint."""
-        parts = self.minio_endpoint.split(":")
+    def s3_port(self) -> int:
+        """Extract port from Garage S3 endpoint."""
+        parts = self.s3_endpoint.split(":")
         return int(parts[1]) if len(parts) > 1 else 3900
 
     def get_cache_ttl_hours(self, key: str) -> int:
