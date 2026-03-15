@@ -50,7 +50,7 @@
 - **Impact**: Keyboard users cannot see which element is focused
 - **WCAG**: WCAG 2.4.7 (Focus Visible) - Level A
 - **Recommendation**: Replace `focus:outline-none` with `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`
-- **Files**: 
+- **Files**:
   - `groups/new/+page.svelte` (4 instances)
   - `split/+page.svelte` (3 instances)
   - `receipt/+page.svelte` (2 instances)
@@ -103,7 +103,7 @@
 - **Suggested command**: `/normalize`
 
 #### 5. Missing Focus States on Custom Components
-- **Location**: 
+- **Location**:
   - `Button.svelte`
   - `Toggle.svelte`
 - **Severity**: High
@@ -114,7 +114,7 @@
 - **Suggested command**: `/fixing-accessibility`
 
 #### 6. Form Inputs Missing Proper Labels
-- **Location**: 
+- **Location**:
   - `split/+page.svelte`
   - `groups/new/+page.svelte`
 - **Severity**: High
@@ -176,7 +176,7 @@
 - **Suggested command**: `/optimize`
 
 #### 12. No Image Optimization
-- **Location**: 
+- **Location**:
   - `Avatar.svelte`
   - `GroupCard.svelte`
 - **Severity**: Medium
