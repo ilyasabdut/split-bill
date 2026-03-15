@@ -10,11 +10,10 @@
     class?: string;
     children?: Snippet;
     onclick?: (event: MouseEvent) => void;
-    ariaLabel?: string;
+    ariaLabel?: string;  // Note: Use aria-label prop in template, not ariaLabel
     ariaLabelledby?: string;
     ariaControls?: string;
     ariaExpanded?: boolean;
-    ariaCurrent?: string;
   }
 
   const {
@@ -28,11 +27,10 @@
     ariaLabel,
     ariaLabelledby,
     ariaControls,
-    ariaExpanded,
-    ariaCurrent
+    ariaExpanded
   }: Props = $props();
 
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-0';
 
   const variantClasses = {
     primary: 'bg-primary-500 text-text-inverted hover:bg-primary-600',
@@ -54,11 +52,10 @@
   class={cn(baseClasses, variantClasses[variant], sizeClasses[size], 'max-w-full', className)}
   {disabled}
   {onclick}
-  {ariaLabel}
-  {ariaLabelledby}
-  {ariaControls}
-  {ariaExpanded}
-  {ariaCurrent}
+  aria-label={ariaLabel}
+  aria-labelledby={ariaLabelledby}
+  aria-controls={ariaControls}
+  aria-expanded={ariaExpanded}
 >
   {#if children}
     <span class="truncate max-w-full">{@render children()}</span>

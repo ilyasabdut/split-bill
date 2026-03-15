@@ -434,7 +434,7 @@
 									type="text"
 									value={item.name}
 									oninput={(e) => handleItemNameChange(item.id, e.currentTarget.value)}
-									class="w-full border-none bg-transparent p-0 text-label font-semibold text-text-primary focus:ring-0 focus:outline-none {itemErrors.some(e => e.message.includes('name')) ? 'text-error' : ''}"
+									class="w-full border-none bg-transparent p-0 text-label font-semibold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-sm {itemErrors.some(e => e.message.includes('name')) ? 'text-error' : ''}"
 									placeholder="Item name"
 									maxlength="100"
 									aria-invalid={itemErrors.some(e => e.message.includes('name'))}
@@ -452,7 +452,7 @@
 									type="number"
 									value={item.price === 0 ? '' : item.price}
 									oninput={(e) => handleItemPriceChange(item.id, e.currentTarget.value)}
-									class="w-20 border-none bg-transparent p-0 text-right text-label font-bold text-text-primary focus:ring-0 focus:outline-none tabular-nums {itemErrors.some(e => e.message.includes('Price')) ? 'text-error' : ''}"
+									class="w-20 border-none bg-transparent p-0 text-right text-label font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-sm tabular-nums {itemErrors.some(e => e.message.includes('Price')) ? 'text-error' : ''}"
 									placeholder="0.00"
 									step="0.01"
 									min="0"

@@ -228,8 +228,8 @@
   <div class="space-y-6 px-4 pt-14 pb-24">
     <!-- Header -->
     <div class="flex items-start justify-between gap-3">
-      <a href="/" class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-md border border-slate-200 active:scale-[0.99]">
-        <svg class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="/" class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-surface-0 shadow-md border border-surface-200 active:scale-[0.99]">
+        <svg class="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         <span class="sr-only">Back</span>
@@ -247,8 +247,8 @@
         <h1 class="mt-1 text-lg font-semibold leading-tight truncate">Dinner at Nori House</h1>
       </div>
 
-      <button type="button" class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-md border border-slate-200 active:scale-[0.99]" aria-label="More actions">
-        <svg class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button type="button" class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-surface-0 shadow-md border border-surface-200 active:scale-[0.99]" aria-label="More actions">
+        <svg class="w-6 h-6 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
         </svg>
       </button>
@@ -258,12 +258,12 @@
     <Card class="shadow-md">
       <div class="flex items-start justify-between gap-4 p-4">
         <div class="min-w-0">
-          <p class="text-xs font-medium text-slate-500">Total bill</p>
+          <p class="text-xs font-medium text-text-secondary">Total bill</p>
           <div class="mt-1 flex items-baseline gap-1">
             <p class="text-3xl font-semibold tracking-tight">{$currencyStore.formatCurrency(splitData.total)}</p>
-            <span class="text-sm font-medium text-slate-400">USD</span>
+            <span class="text-sm font-medium text-text-tertiary">USD</span>
           </div>
-          <p class="text-xs text-slate-400 font-medium">≈ €{($currencyStore.formatCurrency(splitData.total) as string).replace('$', '')} EUR</p>
+          <p class="text-xs text-text-tertiary font-medium">≈ €{($currencyStore.formatCurrency(splitData.total) as string).replace('$', '')} EUR</p>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-semibold border border-brand-100">
@@ -272,7 +272,7 @@
               </svg>
               {splitData.people.length} people
             </span>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 text-slate-700 px-3 py-1 text-xs font-semibold border border-slate-200">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-50 text-text-primary px-3 py-1 text-xs font-semibold border border-surface-200">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -292,7 +292,7 @@
 
     <!-- Settlement Overview -->
     <section>
-      <h2 class="text-sm font-semibold text-slate-900 mb-3 px-1">Settlement</h2>
+      <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Settlement</h2>
       <Card class="shadow-md">
         <div class="p-4 grid gap-4">
           {#each Object.entries(splitData.results) as [name, data]}
@@ -303,12 +303,12 @@
                     {getPersonInitials(name)}
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-sm font-medium text-slate-900">{name} owes you</span>
+                    <span class="text-sm font-medium text-text-primary">{name} owes you</span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold text-slate-900">{$currencyStore.formatCurrency(data.total)}</span>
-                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span class="text-sm font-bold text-text-primary">{$currencyStore.formatCurrency(data.total)}</span>
+                  <svg class="w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                 </div>
@@ -316,15 +316,15 @@
             {/if}
           {/each}
         </div>
-        <div class="bg-slate-50 px-4 py-2 border-t border-slate-200 text-center">
-           <p class="text-xs text-slate-500">Total receivable: <span class="font-semibold text-slate-700">$42.30</span></p>
+        <div class="bg-surface-50 px-4 py-2 border-t border-surface-200 text-center">
+           <p class="text-xs text-text-secondary">Total receivable: <span class="font-semibold text-text-primary">$42.30</span></p>
         </div>
       </Card>
     </section>
 
     <!-- Settlement Graph -->
     <section>
-      <h2 class="text-sm font-semibold text-slate-900 mb-3 px-1">Settlement Graph</h2>
+      <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Settlement Graph</h2>
       <Card class="shadow-md">
         <div class="p-4">
           <SettlementGraph results={splitData.results} />
@@ -336,7 +336,7 @@
     <section class="grid gap-4">
       <!-- Itemized Breakdown -->
       <div>
-         <h2 class="text-sm font-semibold text-slate-900 mb-3 px-1">Items</h2>
+         <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Items</h2>
          <Card class="shadow-md">
             <div class="divide-y divide-slate-100">
               {#each Object.entries(splitData.results) as [name, data]}
@@ -350,19 +350,19 @@
                           </svg>
                         </span>
                         <div>
-                          <p class="text-sm font-medium text-slate-900">{item.name}</p>
-                          <p class="text-xs text-slate-500">{name}</p>
+                          <p class="text-sm font-medium text-text-primary">{item.name}</p>
+                          <p class="text-xs text-text-secondary">{name}</p>
                         </div>
                       </div>
-                      <span class="text-sm font-semibold text-slate-700">{$currencyStore.formatCurrency(item.price)}</span>
+                      <span class="text-sm font-semibold text-text-primary">{$currencyStore.formatCurrency(item.price)}</span>
                     </div>
                   {/if}
                 {/each}
               {/each}
 
-              <div class="p-3 flex items-center justify-between bg-slate-50/50">
+              <div class="p-3 flex items-center justify-between bg-surface-50/50">
                 <div class="pl-11">
-                  <p class="text-xs font-medium text-slate-500">+ 4 more items</p>
+                  <p class="text-xs font-medium text-text-secondary">+ 4 more items</p>
                 </div>
                 <button class="text-xs font-semibold text-brand-600 flex items-center gap-1">
                   View all <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,13 +378,13 @@
       <Card class="shadow-md">
         <div class="flex items-center justify-between mb-3 p-4">
           <h2 class="text-sm font-semibold">Receipt</h2>
-          <a href="#" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+          <a href="#" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-surface-100 text-xs font-semibold text-text-primary hover:bg-slate-200 transition-colors">
             Full View
           </a>
         </div>
-        <button type="button" class="w-full rounded-xl border border-slate-200 bg-slate-50 overflow-hidden active:scale-[0.99] transition-transform">
+        <button type="button" class="w-full rounded-xl border border-surface-200 bg-surface-50 overflow-hidden active:scale-[0.99] transition-transform">
           <div class="relative h-24 bg-gradient-to-r from-slate-100 to-slate-200 flex items-center justify-center">
-             <div class="flex items-center gap-2 text-slate-400">
+             <div class="flex items-center gap-2 text-text-tertiary">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -394,12 +394,12 @@
         </button>
         <div class="mt-3 grid grid-cols-2 gap-3 text-xs p-4">
           <div class="flex flex-col">
-            <span class="text-slate-500">Date</span>
-            <span class="font-semibold text-slate-900">Mar 15, 2024</span>
+            <span class="text-text-secondary">Date</span>
+            <span class="font-semibold text-text-primary">Mar 15, 2024</span>
           </div>
           <div class="flex flex-col">
-            <span class="text-slate-500">Time</span>
-            <span class="font-semibold text-slate-900">7:42 PM</span>
+            <span class="text-text-secondary">Time</span>
+            <span class="font-semibold text-text-primary">7:42 PM</span>
           </div>
         </div>
       </Card>
@@ -407,12 +407,12 @@
 
     <!-- Breakdown with Payment Status -->
     <Card class="shadow-md overflow-hidden">
-      <div class="p-4 flex items-center justify-between gap-3 bg-slate-50/50 border-b border-slate-100">
+      <div class="p-4 flex items-center justify-between gap-3 bg-surface-50/50 border-b border-slate-100">
         <div>
           <h2 class="text-sm font-semibold">Breakdown</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Includes tax & tip</p>
+          <p class="text-xs text-text-secondary mt-0.5">Includes tax & tip</p>
         </div>
-        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
@@ -427,13 +427,13 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <p class="text-sm font-semibold text-slate-900">{name}</p>
+                    <p class="text-sm font-semibold text-text-primary">{name}</p>
                     <PaymentBadge status={paymentStatus[name] || 'pending'} />
                   </div>
-                  <p class="text-sm font-bold text-slate-900">{$currencyStore.formatCurrency(data.total)}</p>
+                  <p class="text-sm font-bold text-text-primary">{$currencyStore.formatCurrency(data.total)}</p>
                 </div>
                 <div class="mt-1 flex items-center justify-between">
-                   <span class="text-xs text-slate-500">25% share</span>
+                   <span class="text-xs text-text-secondary">25% share</span>
                    {#if paymentStatus[name] === 'paid'}
                      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-bold border border-emerald-100 uppercase tracking-wide">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,8 +467,8 @@
 
     <!-- Activity Timeline -->
     <section>
-      <h2 class="text-sm font-semibold text-slate-900 mb-3 px-1">Activity</h2>
-      <div class="ml-2 pl-4 border-l-2 border-slate-200 space-y-6 relative">
+      <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Activity</h2>
+      <div class="ml-2 pl-4 border-l-2 border-surface-200 space-y-6 relative">
         {#each activityFeed as activity}
           <ActivityFeedItem activity={activity} />
         {/each}
@@ -477,7 +477,7 @@
 
     <!-- Enhanced Actions -->
     <section>
-      <h2 class="text-sm font-semibold text-slate-900 mb-3">Actions</h2>
+      <h2 class="text-sm font-semibold text-text-primary mb-3">Actions</h2>
 
       <!-- Primary Action -->
       <Button variant="primary" onclick={shareSplit} class="w-full h-12 text-base font-semibold mb-3">
@@ -545,13 +545,13 @@
       <!-- Pro Tip -->
       <div class="mt-6 rounded-xl bg-gradient-to-r from-brand-50 to-indigo-50 border border-brand-100 p-4">
         <div class="flex items-start gap-3">
-          <div class="shrink-0 w-8 h-8 rounded-lg bg-white/80 border border-brand-100 text-brand-600 flex items-center justify-center shadow-sm">
+          <div class="shrink-0 w-8 h-8 rounded-lg bg-surface-0/80 border border-brand-100 text-brand-600 flex items-center justify-center shadow-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-slate-900">Pro tip</p>
+            <p class="text-sm font-semibold text-text-primary">Pro tip</p>
             <p class="mt-1 text-xs text-slate-600 leading-relaxed">
               Send payment requests via Venmo or PayPal links for faster settlements. Everyone can mark themselves as paid to keep the group in sync!
             </p>

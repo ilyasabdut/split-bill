@@ -132,7 +132,7 @@
 		{:else}
 			<!-- Currency Selector -->
 			<div class="flex justify-center mb-4">
-				<button class="flex items-center gap-2 px-4 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full shadow-sm text-sm font-semibold text-slate-700 dark:text-slate-200 active:scale-95 transition-transform">
+				<button class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-slate-200 active:scale-95 transition-transform">
 					<span class="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-600 flex items-center justify-center text-[10px]">🇮🇩</span>
 					IDR
 					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
@@ -144,12 +144,12 @@
 				<div class="absolute inset-0 bg-primary-500 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
 				<div class="relative bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl p-6 text-text-inverted shadow-xl shadow-primary-500/20 overflow-hidden">
 					<!-- Decorative circles -->
-					<div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+					<div class="absolute top-0 right-0 w-32 h-32 bg-surface-0/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
 
 					<div class="relative z-10">
 						<div class="flex justify-between items-start">
 							<p class="text-primary-100 text-label font-medium">Total spending this month</p>
-							<span class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1">
+							<span class="bg-surface-0/20 backdrop-blur-md px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1">
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
 								12.5%
 							</span>

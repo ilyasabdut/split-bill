@@ -329,42 +329,42 @@
 		<!-- Data -->
 		<section aria-label="Data" class="mb-6 animate-slide-up" style="animation-delay: 300ms;">
 			<div class="flex items-center justify-between px-1">
-				<h2 class="text-xs font-bold tracking-wider text-slate-500 uppercase">Data</h2>
-				<span class="text-xs text-slate-500">Export & insights</span>
+				<h2 class="text-xs font-bold tracking-wider text-text-secondary uppercase">Data</h2>
+				<span class="text-xs text-text-secondary">Export & insights</span>
 			</div>
 
-			<div class="mt-2 rounded-3xl bg-white shadow-md ring-1 ring-slate-100 overflow-hidden">
+			<div class="mt-2 rounded-3xl bg-surface-0 shadow-md ring-1 ring-slate-100 overflow-hidden">
 				<!-- Monthly Summary -->
-				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-slate-50 transition-colors">
+				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-surface-50 transition-colors">
 					<div class="flex items-center gap-3">
 						<div class="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
 						</div>
 						<div class="text-left">
-							<p class="text-sm font-semibold text-slate-900">Monthly summary</p>
-							<p class="text-xs text-slate-600">Spending breakdown.</p>
+							<p class="text-sm font-semibold text-text-primary">Monthly summary</p>
+							<p class="text-xs text-text-secondary">Spending breakdown.</p>
 						</div>
 					</div>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
 				</button>
 
-				<div class="h-px bg-slate-100 mx-4"></div>
+				<div class="h-px bg-surface-100 mx-4"></div>
 
 				<!-- Analytics -->
-				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-slate-50 transition-colors">
+				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-surface-50 transition-colors">
 					<div class="flex items-center gap-3">
 						<div class="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
 						</div>
 						<div class="text-left">
-							<p class="text-sm font-semibold text-slate-900">Analytics</p>
-							<p class="text-xs text-slate-600">Visual charts & trends.</p>
+							<p class="text-sm font-semibold text-text-primary">Analytics</p>
+							<p class="text-xs text-text-secondary">Visual charts & trends.</p>
 						</div>
 					</div>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
 				</button>
 
-				<div class="h-px bg-slate-100 mx-4"></div>
+				<div class="h-px bg-surface-100 mx-4"></div>
 
 				<!-- Export CSV -->
 				<div class="px-4 py-4">
@@ -375,7 +375,7 @@
 							</div>
 							<div class="min-w-0">
 								<p class="text-sm font-semibold">Export CSV</p>
-								<p class="text-xs text-slate-600">Download your split history.</p>
+								<p class="text-xs text-text-secondary">Download your split history.</p>
 							</div>
 						</div>
 						<button type="button" onclick={handleExport} class="h-11 px-4 rounded-2xl bg-sky-500 text-white text-label font-semibold shadow-md active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-sky-600">
@@ -384,7 +384,7 @@
 					</div>
 				</div>
 
-				<div class="h-px bg-slate-100 mx-4"></div>
+				<div class="h-px bg-surface-100 mx-4"></div>
 
 				<!-- Clear cache -->
 				<div class="px-4 py-4">
@@ -395,14 +395,14 @@
 							</div>
 							<div class="min-w-0">
 								<p class="text-sm font-semibold">Clear cache</p>
-								<p class="text-xs text-slate-600">Frees space (keeps splits).</p>
+								<p class="text-xs text-text-secondary">Frees space (keeps splits).</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2">
 							{#if clearSuccess}
 								<span class="text-caption font-semibold text-success">Cleared!</span>
 							{/if}
-							<button type="button" onclick={handleClearCache} class="h-11 px-4 rounded-2xl bg-white text-rose-600 text-label font-semibold ring-1 ring-rose-200 shadow-sm active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-rose-50">
+							<button type="button" onclick={handleClearCache} class="h-11 px-4 rounded-2xl bg-surface-0 text-rose-600 text-label font-semibold ring-1 ring-rose-200 shadow-sm active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-rose-50">
 								<span class="truncate">Clear</span>
 							</button>
 						</div>
@@ -414,26 +414,26 @@
 		<!-- Account -->
 		<section aria-label="Account" class="animate-slide-up" style="animation-delay: 400ms;">
 			<div class="flex items-center justify-between px-1">
-				<h2 class="text-xs font-bold tracking-wider text-slate-500 uppercase">Account</h2>
-				<span class="text-xs text-slate-500">Access & Privacy</span>
+				<h2 class="text-xs font-bold tracking-wider text-text-secondary uppercase">Account</h2>
+				<span class="text-xs text-text-secondary">Access & Privacy</span>
 			</div>
 
-			<div class="mt-2 rounded-3xl bg-white shadow-md ring-1 ring-slate-100 overflow-hidden">
+			<div class="mt-2 rounded-3xl bg-surface-0 shadow-md ring-1 ring-slate-100 overflow-hidden">
 				<!-- Privacy Settings -->
-				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-slate-50 transition-colors">
+				<button type="button" class="w-full px-4 py-4 flex items-center justify-between gap-4 active:bg-surface-50 transition-colors">
 					<div class="flex items-center gap-3">
-						<div class="h-11 w-11 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
+						<div class="h-11 w-11 rounded-2xl bg-surface-100 text-text-secondary flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 						</div>
 						<div class="text-left">
-							<p class="text-sm font-semibold text-slate-900">Privacy settings</p>
-							<p class="text-xs text-slate-600">Manage data visibility.</p>
+							<p class="text-sm font-semibold text-text-primary">Privacy settings</p>
+							<p class="text-xs text-text-secondary">Manage data visibility.</p>
 						</div>
 					</div>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
 				</button>
 
-				<div class="h-px bg-slate-100 mx-4"></div>
+				<div class="h-px bg-surface-100 mx-4"></div>
 
 				<!-- API key -->
 				<div class="px-4 py-4">
@@ -443,24 +443,24 @@
 						</div>
 						<div class="min-w-0">
 							<p class="text-sm font-semibold">API key</p>
-							<p class="text-xs text-slate-600">Used for receipt scanning integrations.</p>
+							<p class="text-xs text-text-secondary">Used for receipt scanning integrations.</p>
 						</div>
 					</div>
 
 					<div class="mt-3">
-						<label class="block text-xs font-semibold text-slate-600 mb-2" for="api-key">Key</label>
+						<label class="block text-xs font-semibold text-text-secondary mb-2" for="api-key">Key</label>
 						<div class="flex items-stretch gap-2">
 							<input
 								id="api-key"
 								type="text"
 								readonly
 								value="sb_live_24x9•••••••••••••R7"
-								class="h-11 w-full rounded-2xl bg-slate-50 px-3 text-sm text-slate-700 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+								class="h-11 w-full rounded-2xl bg-surface-50 px-3 text-sm text-slate-700 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
 							/>
 							<button
 								type="button"
 								onclick={copyAPIKey}
-								class="h-11 min-w-[44px] rounded-2xl {copySuccess ? 'bg-success text-white animate-pulse-success' : 'bg-white ring-1 ring-slate-200 hover:bg-slate-50'} ring-1 ring-slate-200 shadow-sm flex items-center justify-center active:scale-[0.99] transition-all duration-200"
+								class="h-11 min-w-[44px] rounded-2xl {copySuccess ? 'bg-success text-white animate-pulse-success' : 'bg-surface-0 ring-1 ring-slate-200 hover:bg-surface-50'} ring-1 ring-slate-200 shadow-sm flex items-center justify-center active:scale-[0.99] transition-all duration-200"
 								aria-label="Copy API key"
 							>
 								{#if copySuccess}
@@ -473,20 +473,20 @@
 					</div>
 				</div>
 
-				<div class="h-px bg-slate-100 mx-4"></div>
+				<div class="h-px bg-surface-100 mx-4"></div>
 
 				<!-- App Version -->
 				<div class="px-4 py-4 flex items-center justify-between gap-4">
 					<div class="flex items-center gap-3">
-						<div class="h-11 w-11 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center">
+						<div class="h-11 w-11 rounded-2xl bg-surface-50 text-text-tertiary flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
 						</div>
 						<div>
-							<p class="text-sm font-semibold text-slate-900">App version</p>
-							<p class="text-xs text-slate-600">Build 2023.10.42</p>
+							<p class="text-sm font-semibold text-text-primary">App version</p>
+							<p class="text-xs text-text-secondary">Build 2023.10.42</p>
 						</div>
 					</div>
-					<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">v2.4.0</span>
+					<span class="text-xs font-medium text-text-tertiary bg-surface-100 px-2 py-1 rounded-lg">v2.4.0</span>
 				</div>
 			</div>
 		</section>
@@ -498,8 +498,8 @@
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 				</div>
 				<div class="min-w-0">
-					<p class="text-sm font-semibold text-slate-900">Privacy-first</p>
-					<p class="text-xs text-slate-600">Your splits stay on your device unless you share them.</p>
+					<p class="text-sm font-semibold text-text-primary">Privacy-first</p>
+					<p class="text-xs text-text-secondary">Your splits stay on your device unless you share them.</p>
 				</div>
 			</div>
 		</div>

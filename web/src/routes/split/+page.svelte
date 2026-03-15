@@ -350,15 +350,15 @@
 		</section>
 
 		<!-- Split Style Tabs -->
-		<section class="rounded-3xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
-			<div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700">
-				<h2 class="text-sm font-bold text-slate-900 dark:text-white">Split Method</h2>
+		<section class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
+			<div class="px-5 py-3 border-b border-surface-100 dark:border-slate-700">
+				<h2 class="text-sm font-bold text-text-primary">Split Method</h2>
 			</div>
 			<div class="p-5">
 				<div class="grid grid-cols-3 gap-3 mb-4">
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'equal' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5'}"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'equal' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5'}"
 						onclick={() => splitMethod = 'equal'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8"/><path d="M12 15V9"/><path d="M12 9H4"/><path d="M12 9h8"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/></svg>
@@ -366,7 +366,7 @@
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
 						onclick={() => splitMethod = 'percentage'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
@@ -374,7 +374,7 @@
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
 						onclick={() => splitMethod = 'item'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
@@ -386,22 +386,22 @@
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 					</div>
 					<div>
-						<p class="text-sm font-bold text-slate-900 dark:text-white">Equal Split</p>
-						<p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">We'll divide the total bill evenly between everyone added below.</p>
+						<p class="text-sm font-bold text-text-primary">Equal Split</p>
+						<p class="text-xs text-text-secondary leading-relaxed mt-0.5">We'll divide the total bill evenly between everyone added below.</p>
 					</div>
 				</div>
 			</div>
 		</section>
 
 		<!-- People Manager -->
-		<section class="rounded-3xl bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
-			<div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-				<h2 class="text-sm font-bold text-slate-900 dark:text-white">People</h2>
-				<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-lg text-xs font-bold">{people.length}</span>
+		<section class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
+			<div class="px-5 py-3 border-b border-surface-100 dark:border-slate-700 flex justify-between items-center">
+				<h2 class="text-sm font-bold text-text-primary">People</h2>
+				<span class="bg-surface-100 dark:bg-slate-700 text-text-secondary dark:text-slate-300 px-2.5 py-0.5 rounded-lg text-xs font-bold">{people.length}</span>
 			</div>
 			<div class="p-5 space-y-4">
 				{#each people as person, index}
-					<div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-3 border border-slate-200 dark:border-slate-600 animate-scale-in transition-all duration-200" style="animation-delay: {Math.min(index * 50, 150)}ms;">
+					<div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-3 border border-surface-200 dark:border-slate-600 animate-scale-in transition-all duration-200" style="animation-delay: {Math.min(index * 50, 150)}ms;">
 						<div class="flex items-center gap-3 mb-3">
 							<Avatar name={person.name} size="md" color={person.color || 'slate'} variant="solid" />
 							<div class="flex-1 min-w-0">
@@ -412,17 +412,17 @@
 									bind:value={person.name}
 									maxlength="50"
 									oninput={(e) => updatePersonName(index, e.currentTarget.value)}
-									class="bg-transparent border-none p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 w-full {errors[`person-${index}`] ? 'text-red-600' : ''}"
+									class="bg-transparent border-none p-0 text-sm font-bold text-text-primary focus:ring-0 w-full {errors[`person-${index}`] ? 'text-red-600' : ''}"
 								/>
 								{#if errors[`person-${index}`]}
 									<p class="text-xs text-red-600 dark:text-red-400">{errors[`person-${index}`]}</p>
 								{:else}
-									<div class="text-xs text-slate-500 dark:text-slate-400">{(100 / people.length).toFixed(1)}% share</div>
+									<div class="text-xs text-text-secondary">{(100 / people.length).toFixed(1)}% share</div>
 								{/if}
 							</div>
 							<button
 								type="button"
-								class="h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+								class="h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
 								aria-label="Remove {person.name}"
 								onclick={() => removePerson(index)}
 							>
@@ -433,12 +433,12 @@
 						<div class="flex items-center gap-2">
 							<button
 								type="button"
-								class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 shadow-sm text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-500 active:scale-95 transition-all"
+								class="flex-1 h-10 rounded-xl bg-surface-0 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 shadow-sm text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-500 active:scale-95 transition-all"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M12 5v14M5 12h14"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="M12 5v14M5 12h14"/></svg>
 								Assign Items
 							</button>
-							<div class="px-3 h-10 rounded-xl bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 flex items-center justify-center text-sm font-black text-slate-800 dark:text-white shadow-sm min-w-[90px] tabular-nums">
+							<div class="px-3 h-10 rounded-xl bg-surface-0 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 flex items-center justify-center text-sm font-black text-slate-800 dark:text-white shadow-sm min-w-[90px] tabular-nums">
 								{formatCurrency(personShare)}
 							</div>
 						</div>
@@ -448,7 +448,7 @@
 				<!-- Add Button -->
 				<button
 					type="button"
-					class="w-full h-12 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center gap-2 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all active:scale-[0.99]"
+					class="w-full h-12 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-text-secondary font-bold text-sm flex items-center justify-center gap-2 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all active:scale-[0.99]"
 					onclick={addPerson}
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
@@ -470,9 +470,9 @@
 
 			<button
 				type="button"
-				class="mt-3 w-full h-14 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-600 hover:shadow-md"
+				class="mt-3 w-full h-14 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-600 hover:shadow-md"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
 				Save as Template
 			</button>
 		</section>

@@ -68,23 +68,23 @@
 >
 	<!-- Modal -->
 	<div
-		class="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+		class="w-full max-w-lg bg-surface-0 rounded-t-3xl shadow-2xl overflow-hidden"
 		transition:fly={{ y: 100, duration: 300 }}
 		onclick={(e) => e.stopPropagation()}
 		style="padding-bottom: env(safe-area-inset-bottom, 0);"
 	>
 		<!-- Handle -->
 		<div class="flex justify-center pt-3 pb-2">
-			<div class="h-1.5 w-12 rounded-full bg-slate-300"></div>
+			<div class="h-1.5 w-12 rounded-full bg-surface-300"></div>
 		</div>
 
 		<!-- Header -->
 		<div class="px-5 pb-3 flex items-center justify-between">
-			<h2 class="text-lg font-bold text-slate-900">Currency Converter</h2>
+			<h2 class="text-lg font-bold text-text-primary">Currency Converter</h2>
 			<button
 				type="button"
 				onclick={onClose}
-				class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+				class="h-10 w-10 rounded-full bg-surface-100 flex items-center justify-center text-text-secondary hover:bg-surface-200 transition-colors focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
 				aria-label="Close currency converter"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -94,28 +94,28 @@
 		<!-- Content -->
 		<div class="px-5 pb-6 space-y-4">
 			<!-- Source Currency -->
-			<div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+			<div class="rounded-2xl bg-surface-50 border border-surface-200 p-4">
 				<div class="flex items-center justify-between mb-3">
-					<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">From</span>
+					<span class="text-xs font-bold text-text-secondary uppercase tracking-wider">From</span>
 					<button
 						type="button"
 						onclick={() => showSourceDropdown = !showSourceDropdown}
-						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-0 border border-surface-200 shadow-sm active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
 						aria-label="Change source currency"
 						aria-expanded={showSourceDropdown}
 						aria-controls="source-currency-dropdown"
 					>
 						<span class="text-lg">{getCurrency(sourceCurrency).flag}</span>
-						<span class="text-sm font-bold text-slate-900">{getCurrency(sourceCurrency).code}</span>
-						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+						<span class="text-sm font-bold text-text-primary">{getCurrency(sourceCurrency).code}</span>
+						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
 					</button>
 				</div>
 				<div class="flex items-center gap-2">
-					<span class="text-2xl font-bold text-slate-400">{getCurrency(sourceCurrency).symbol}</span>
+					<span class="text-2xl font-bold text-text-tertiary">{getCurrency(sourceCurrency).symbol}</span>
 					<input
 						type="number"
 						bind:value={sourceAmount}
-						class="flex-1 bg-transparent text-3xl font-black text-slate-900 focus:outline-none tabular-nums"
+						class="flex-1 bg-transparent text-3xl font-black text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-sm tabular-nums"
 						min="0"
 					/>
 				</div>
@@ -140,7 +140,7 @@
 					<button
 						type="button"
 						onclick={() => showTargetDropdown = !showTargetDropdown}
-						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 active:scale-95 transition-transform"
+						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-0/20 backdrop-blur-sm border border-white/30 active:scale-95 transition-transform"
 					>
 						<span class="text-lg">{getCurrency(targetCurrency).flag}</span>
 						<span class="text-sm font-bold">{getCurrency(targetCurrency).code}</span>
@@ -155,46 +155,46 @@
 
 			<!-- Exchange Rate Info -->
 			<div class="flex items-center justify-center gap-2 py-2">
-				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-				<span class="text-xs text-slate-500">
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+				<span class="text-xs text-text-secondary">
 					1 {sourceCurrency} = {formatNumber(convert(1, sourceCurrency, targetCurrency), targetCurrency)} {targetCurrency}
 				</span>
 			</div>
 
 			<!-- Currency List -->
 			{#if showSourceDropdown}
-				<div class="rounded-2xl bg-white border border-slate-200 shadow-xl max-h-48 overflow-y-auto">
+				<div class="rounded-2xl bg-surface-0 border border-surface-200 shadow-xl max-h-48 overflow-y-auto">
 					{#each currencies as curr}
 						<button
 							type="button"
 							onclick={() => { sourceCurrency = curr.code; showSourceDropdown = false; }}
-							class="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors {curr.code === sourceCurrency ? 'bg-indigo-50' : ''}"
+							class="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-50 transition-colors {curr.code === sourceCurrency ? 'bg-indigo-50' : ''}"
 						>
 							<span class="text-xl">{curr.flag}</span>
 							<span class="flex-1 text-left">
-								<span class="text-sm font-bold text-slate-900">{curr.code}</span>
-								<span class="text-xs text-slate-500 ml-2">{curr.name}</span>
+								<span class="text-sm font-bold text-text-primary">{curr.code}</span>
+								<span class="text-xs text-text-secondary ml-2">{curr.name}</span>
 							</span>
-							<span class="text-sm font-medium text-slate-600">{curr.symbol}</span>
+							<span class="text-sm font-medium text-text-secondary">{curr.symbol}</span>
 						</button>
 					{/each}
 				</div>
 			{/if}
 
 			{#if showTargetDropdown}
-				<div class="rounded-2xl bg-white border border-slate-200 shadow-xl max-h-48 overflow-y-auto">
+				<div class="rounded-2xl bg-surface-0 border border-surface-200 shadow-xl max-h-48 overflow-y-auto">
 					{#each currencies as curr}
 						<button
 							type="button"
 							onclick={() => { targetCurrency = curr.code; showTargetDropdown = false; }}
-							class="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors {curr.code === targetCurrency ? 'bg-indigo-50' : ''}"
+							class="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-50 transition-colors {curr.code === targetCurrency ? 'bg-indigo-50' : ''}"
 						>
 							<span class="text-xl">{curr.flag}</span>
 							<span class="flex-1 text-left">
-								<span class="text-sm font-bold text-slate-900">{curr.code}</span>
-								<span class="text-xs text-slate-500 ml-2">{curr.name}</span>
+								<span class="text-sm font-bold text-text-primary">{curr.code}</span>
+								<span class="text-xs text-text-secondary ml-2">{curr.name}</span>
 							</span>
-							<span class="text-sm font-medium text-slate-600">{curr.symbol}</span>
+							<span class="text-sm font-medium text-text-secondary">{curr.symbol}</span>
 						</button>
 					{/each}
 				</div>
@@ -206,7 +206,7 @@
 					<button
 						type="button"
 						onclick={() => sourceAmount = quickAmount}
-						class="h-10 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 active:scale-95 transition-all {sourceAmount === quickAmount ? 'ring-2 ring-indigo-500 bg-indigo-50 text-indigo-700' : ''}"
+						class="h-10 rounded-xl bg-surface-100 text-text-primary text-xs font-bold hover:bg-surface-200 active:scale-95 transition-all {sourceAmount === quickAmount ? 'ring-2 ring-indigo-500 bg-indigo-50 text-indigo-700' : ''}"
 					>
 						{quickAmount >= 1000000 ? `${quickAmount / 1000000}M` : `${quickAmount / 1000}k`}
 					</button>
@@ -214,7 +214,7 @@
 			</div>
 
 			<!-- Disclaimer -->
-			<p class="text-[10px] text-slate-400 text-center">
+			<p class="text-[10px] text-text-tertiary text-center">
 				Rates are approximate. Last updated: Today, 12:00 PM WIB
 			</p>
 		</div>

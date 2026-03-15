@@ -63,11 +63,11 @@
             <img
               src={member.avatar_url}
               alt={member.name}
-              class="size-8 rounded-full border-2 border-white object-cover"
+              class="size-8 rounded-full border-2 border-surface-0 object-cover"
             />
           {:else}
             <div
-              class="size-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-semibold border-2 border-white"
+              class="size-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-semibold border-2 border-surface-0"
             >
               {getInitials(member.name)}
             </div>
@@ -75,7 +75,7 @@
         {/each}
         {#if group.members.length > 3}
           <div
-            class="size-8 rounded-full bg-surface-200 text-text-secondary flex items-center justify-center text-xs font-semibold border-2 border-white"
+            class="size-8 rounded-full bg-surface-200 text-text-secondary flex items-center justify-center text-xs font-semibold border-2 border-surface-0"
           >
             <span class="tabular-nums">+{group.members.length - 3}</span>
           </div>
