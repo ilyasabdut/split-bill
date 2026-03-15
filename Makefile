@@ -67,8 +67,8 @@ infra-up:
 		docker-compose -f $(COMPOSE_FILE) pull; \
 		docker-compose -f $(COMPOSE_FILE) up -d; \
 	else \
-		echo "Using development configuration (infrastructure only: redis, minio, postgres)..."; \
-		docker-compose -f $(COMPOSE_FILE) up -d redis minio postgres; \
+		echo "Using development configuration (infrastructure only: redis, garage, postgres)..."; \
+		docker-compose -f $(COMPOSE_FILE) up -d redis garage postgres; \
 	fi
 
 # Stop infrastructure services (dev or prod based on ENV var)
