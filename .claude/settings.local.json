@@ -21,7 +21,17 @@
       "Bash(pkill:*)",
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__take_screenshot",
-      "mcp__chrome-devtools__navigate_page"
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(docker-compose:*)",
+      "mcp__chrome-devtools__hover",
+      "mcp__chrome-devtools__list_network_requests",
+      "mcp__chrome-devtools__evaluate_script",
+      "Bash(rm:*)"
     ]
   }
 }

@@ -56,14 +56,14 @@
 	<!-- Header -->
 	<header class="shrink-0 px-4" style="padding-top: max(env(safe-area-inset-top), 3rem);">
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50" aria-label="Go back home">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</a>
 			<div class="text-center">
 				<div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Group</div>
 				<h1 class="text-lg font-black tracking-tight text-slate-900">{group.name}</h1>
 			</div>
-			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform">
+			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50" aria-label="More options">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 			</button>
 		</div>
@@ -71,11 +71,11 @@
 
 	<!-- Main Content -->
 	<main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
-		
+
 		<!-- Summary Card -->
 		<section class="rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl shadow-indigo-500/25 p-5 text-white relative overflow-hidden">
 			<div class="absolute right-0 top-0 h-40 w-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-			
+
 			<div class="relative z-10">
 				<div class="flex items-start justify-between mb-4">
 					<div>

@@ -35,11 +35,11 @@
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantClasses = {
-    primary: 'bg-[--color-primary-600] text-white hover:bg-[--color-primary-700]',
-    secondary: 'bg-surface-200 text-text hover:bg-surface-300',
-    ghost: 'bg-transparent text-text hover:bg-surface-100',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
-    outline: 'bg-transparent border-2 border-surface-300 text-text hover:bg-surface-50 hover:border-surface-400',
+    primary: 'bg-primary-500 text-text-inverted hover:bg-primary-600',
+    secondary: 'bg-surface-100 text-text-primary hover:bg-surface-200 border border-surface-200',
+    ghost: 'bg-transparent text-text-primary hover:bg-surface-50',
+    danger: 'bg-error text-text-inverted hover:bg-error/90',
+    outline: 'bg-transparent border-2 border-surface-200 text-text-primary hover:bg-surface-50 hover:border-surface-300',
   };
 
   const sizeClasses = {

@@ -20,7 +20,7 @@
 </script>
 
 <div
-  class={cn('bg-white rounded-xl shadow-sm border border-surface-200', paddingClasses[padding], className)}
+  class={cn('bg-surface-0 rounded-xl shadow-card border border-surface-200', paddingClasses[padding], className)}
   {onclick}
 >
   {#if children}

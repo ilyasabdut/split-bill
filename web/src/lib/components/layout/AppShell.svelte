@@ -12,14 +12,14 @@
   const { title = 'Split Bill', class: className = '', children, showHeader = true }: Props = $props();
 </script>
 
-<div class="flex flex-col min-h-dvh bg-surface overflow-x-hidden">
+<div class="flex flex-col min-h-dvh bg-surface-50 overflow-x-hidden">
   {#if showHeader}
     <header
-      class="sticky top-0 z-header bg-white border-b border-surface-200 w-full px-safe py-3"
+      class="sticky top-0 z-header bg-surface-0 border-b border-surface-200 w-full px-safe py-3"
       style="padding-top: max(env(safe-area-inset-top), 0.75rem);"
     >
       <div class="max-w-[430px] mx-auto">
-        <h1 class="text-xl font-semibold text-text text-balance">{title}</h1>
+        <h1 class="text-xl font-semibold text-text-primary text-balance">{title}</h1>
       </div>
     </header>
   {/if}

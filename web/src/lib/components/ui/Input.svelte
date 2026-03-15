@@ -80,9 +80,9 @@
     bind:this={inputElement}
     oninput={validateInput}
     onkeydown={onkeydown}
-    class="w-full px-4 py-3 text-base bg-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none disabled:bg-surface-100 disabled:cursor-not-allowed min-h-[44px] {className} {error ? 'border-red-500' : 'border-surface-300'}"
+    class="w-full px-4 py-3 text-base bg-surface-0 border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 focus:outline-none disabled:bg-surface-50 disabled:cursor-not-allowed min-h-[44px] text-text-primary placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20' : ''}"
   />
   {#if error}
-    <p class="mt-1 text-sm text-red-600">{error}</p>
+    <p class="mt-1 text-sm text-error">{error}</p>
   {/if}
 </div>

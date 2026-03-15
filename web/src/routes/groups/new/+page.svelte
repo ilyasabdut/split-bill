@@ -16,7 +16,7 @@
 	let isCreating = $state(false);
 	let errors = $state<Record<string, string>>({});
 
-	const colors: Array<'indigo' | 'emerald' | 'rose' | 'amber' | 'sky' | 'violet' | 'slate'> = 
+	const colors: Array<'indigo' | 'emerald' | 'rose' | 'amber' | 'sky' | 'violet' | 'slate'> =
 		['indigo', 'emerald', 'rose', 'amber', 'sky', 'violet', 'slate'];
 
 	function addMember() {
@@ -36,7 +36,7 @@
 	}
 
 	function updateMember(id: string, field: 'name' | 'email', value: string) {
-		members = members.map(m => 
+		members = members.map(m =>
 			m.id === id ? { ...m, [field]: value } : m
 		);
 	}
@@ -77,11 +77,11 @@
 		if (!validateForm()) return;
 
 		isCreating = true;
-		
+
 		await new Promise(resolve => setTimeout(resolve, 1000));
-		
+
 		const groupId = 'group-' + Date.now();
-		
+
 		goto(`/groups/${groupId}`);
 	}
 </script>
@@ -101,7 +101,7 @@
 	<!-- Header -->
 	<header class="shrink-0 px-4" style="padding-top: max(env(safe-area-inset-top), 3rem);">
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50" aria-label="Go back home">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</a>
 			<div class="text-center">
@@ -114,7 +114,7 @@
 
 	<!-- Main Content -->
 	<main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
-		
+
 		<!-- Group Info Card -->
 		<section class="rounded-3xl bg-white shadow-md border border-slate-200 overflow-hidden">
 			<div class="px-5 py-3 border-b border-slate-100 bg-slate-50/50">

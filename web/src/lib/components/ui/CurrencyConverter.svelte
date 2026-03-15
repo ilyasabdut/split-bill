@@ -58,7 +58,7 @@
 </svelte:head>
 
 <!-- Backdrop -->
-<div 
+<div
 	class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
 	onclick={onClose}
 	onkeydown={(e) => e.key === 'Escape' && onClose()}
@@ -81,10 +81,11 @@
 		<!-- Header -->
 		<div class="px-5 pb-3 flex items-center justify-between">
 			<h2 class="text-lg font-bold text-slate-900">Currency Converter</h2>
-			<button 
+			<button
 				type="button"
 				onclick={onClose}
-				class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+				class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+				aria-label="Close currency converter"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 			</button>
@@ -96,10 +97,13 @@
 			<div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
 				<div class="flex items-center justify-between mb-3">
 					<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">From</span>
-					<button 
+					<button
 						type="button"
 						onclick={() => showSourceDropdown = !showSourceDropdown}
-						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm active:scale-95 transition-transform"
+						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+						aria-label="Change source currency"
+						aria-expanded={showSourceDropdown}
+						aria-controls="source-currency-dropdown"
 					>
 						<span class="text-lg">{getCurrency(sourceCurrency).flag}</span>
 						<span class="text-sm font-bold text-slate-900">{getCurrency(sourceCurrency).code}</span>
@@ -119,10 +123,11 @@
 
 			<!-- Swap Button -->
 			<div class="flex justify-center -my-2 relative z-10">
-				<button 
+				<button
 					type="button"
 					onclick={swapCurrencies}
-					class="h-12 w-12 rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center active:scale-90 transition-transform"
+					class="h-12 w-12 rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center active:scale-90 transition-transform focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2"
+					aria-label="Swap currencies"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
 				</button>
@@ -132,7 +137,7 @@
 			<div class="rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-4 text-white shadow-lg">
 				<div class="flex items-center justify-between mb-3">
 					<span class="text-xs font-bold text-indigo-200 uppercase tracking-wider">To</span>
-					<button 
+					<button
 						type="button"
 						onclick={() => showTargetDropdown = !showTargetDropdown}
 						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 active:scale-95 transition-transform"

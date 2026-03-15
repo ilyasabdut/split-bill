@@ -30,44 +30,44 @@
 
 	const colorClasses = {
 		slate: {
-			solid: 'bg-slate-600 text-white',
-			soft: 'bg-slate-200 text-slate-700 ring-2 ring-white',
+			solid: 'bg-text-tertiary text-text-inverted',
+			soft: 'bg-surface-200 text-text-secondary ring-2 ring-surface-0',
 		},
 		primary: {
-			solid: 'bg-primary-600 text-white',
-			soft: 'bg-primary-200 text-primary-800 ring-2 ring-white',
+			solid: 'bg-primary-600 text-text-inverted',
+			soft: 'bg-primary-100 text-primary-700 ring-2 ring-surface-0',
 		},
 		emerald: {
-			solid: 'bg-emerald-600 text-white',
-			soft: 'bg-emerald-200 text-emerald-800 ring-2 ring-white',
+			solid: 'bg-success text-text-inverted',
+			soft: 'bg-success/10 text-success ring-2 ring-surface-0',
 		},
 		rose: {
-			solid: 'bg-rose-600 text-white',
-			soft: 'bg-rose-200 text-rose-900 ring-2 ring-white',
+			solid: 'bg-error text-text-inverted',
+			soft: 'bg-error/10 text-error ring-2 ring-surface-0',
 		},
 		amber: {
-			solid: 'bg-amber-600 text-white',
-			soft: 'bg-amber-200 text-amber-900 ring-2 ring-white',
+			solid: 'bg-warning text-text-inverted',
+			soft: 'bg-warning/10 text-warning ring-2 ring-surface-0',
 		},
 		violet: {
-			solid: 'bg-violet-600 text-white',
-			soft: 'bg-violet-200 text-violet-700 ring-2 ring-white',
+			solid: 'bg-violet-600 text-text-inverted',
+			soft: 'bg-violet-100 text-violet-700 ring-2 ring-surface-0',
 		},
 		indigo: {
-			solid: 'bg-indigo-600 text-white',
-			soft: 'bg-indigo-200 text-indigo-700 ring-2 ring-white',
+			solid: 'bg-indigo-600 text-text-inverted',
+			soft: 'bg-indigo-100 text-indigo-700 ring-2 ring-surface-0',
 		},
 		pink: {
-			solid: 'bg-pink-600 text-white',
-			soft: 'bg-pink-200 text-pink-700 ring-2 ring-white',
+			solid: 'bg-pink-600 text-text-inverted',
+			soft: 'bg-pink-100 text-pink-700 ring-2 ring-surface-0',
 		},
 		sky: {
-			solid: 'bg-sky-600 text-white',
-			soft: 'bg-sky-200 text-sky-800 ring-2 ring-white',
+			solid: 'bg-info text-text-inverted',
+			soft: 'bg-info/10 text-info ring-2 ring-surface-0',
 		},
 		orange: {
-			solid: 'bg-orange-600 text-white',
-			soft: 'bg-orange-200 text-orange-500 ring-2 ring-white',
+			solid: 'bg-orange-600 text-text-inverted',
+			soft: 'bg-orange-100 text-orange-600 ring-2 ring-surface-0',
 		},
 	};
 

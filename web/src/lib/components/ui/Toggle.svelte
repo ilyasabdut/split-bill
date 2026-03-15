@@ -48,7 +48,7 @@
   aria-label={ariaLabel}
   aria-labelledby={ariaLabelledby}
 >
-  <div class="relative inline-flex items-center h-6 w-11 rounded-full bg-slate-200 transition-colors" class:bg-primary-500={checked}>
+  <div class="relative inline-flex items-center h-6 w-11 rounded-full bg-surface-200 transition-colors" class:bg-primary-500={checked}>
     <input
       type="checkbox"
       {checked}
@@ -57,12 +57,12 @@
       class="sr-only"
     />
     <div
-      class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+      class="inline-block h-5 w-5 rounded-full bg-surface-0 shadow transition-transform"
       class:translate-x-6={checked}
       class:translate-x-1={!checked}
     />
   </div>
   {#if label}
-    <span class="ml-3 text-sm font-medium">{label}</span>
+    <span class="ml-3 text-label font-medium text-text-primary">{label}</span>
   {/if}
 </div>

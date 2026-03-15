@@ -41,9 +41,9 @@
 		if (selectedMembers.length === 0) return;
 
 		isSending = true;
-		
+
 		await new Promise(resolve => setTimeout(resolve, 1500));
-		
+
 		isSending = false;
 		sent = true;
 	}
@@ -72,7 +72,7 @@
 	<!-- Header -->
 	<header class="shrink-0 px-4" style="padding-top: max(env(safe-area-inset-top), 3rem);">
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<button type="button" onclick={handleBack} class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50">
+			<button type="button" onclick={handleBack} class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-white shadow-md border border-slate-200 active:scale-95 transition-transform hover:bg-slate-50" aria-label="Go back">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</button>
 			<div class="text-center">
@@ -85,7 +85,7 @@
 
 	<!-- Main Content -->
 	<main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
-		
+
 		{#if sent}
 			<!-- Success State -->
 			<section class="pt-20 text-center">
@@ -94,7 +94,7 @@
 				</div>
 				<h2 class="text-2xl font-black text-slate-900">Reminders Sent!</h2>
 				<p class="text-slate-600 mt-2">Email notifications have been sent to {selectedMembers.length} member{selectedMembers.length > 1 ? 's' : ''}.</p>
-				
+
 				<div class="mt-8 rounded-2xl bg-white shadow-md border border-slate-200 p-4 text-left">
 					<p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Recipients</p>
 					{#each selectedMembers as member}
@@ -123,7 +123,7 @@
 			<!-- Amount Summary -->
 			<section class="rounded-3xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-xl shadow-amber-500/25 p-5 text-white relative overflow-hidden">
 				<div class="absolute right-0 top-0 h-40 w-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-				
+
 				<div class="relative z-10">
 					<div class="flex items-center gap-2 mb-2">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>

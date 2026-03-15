@@ -12,7 +12,7 @@
 
 <div class="w-full bg-surface-200 rounded-full overflow-hidden {className}" role="progressbar" aria-valuenow={value} aria-valuemin="0" aria-valuemax={max}>
   <div
-    class="h-full bg-[--color-primary-600] transition-all duration-300 ease-out"
+    class="h-full bg-primary-500 transition-all duration-300 ease-out"
     style="width: {percentage}%"
   ></div>
 </div>

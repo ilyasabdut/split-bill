@@ -32,17 +32,14 @@
 
 <div class="flex flex-col gap-1.5">
 	{#if label}
-		<label for={restProps.id} class="block text-sm font-bold text-slate-700">
+		<label for={restProps.id} class="block text-sm font-bold text-text-primary">
 			{label}
 		</label>
 	{/if}
 	<div class="relative">
 		<select
 			bind:value={selectedValue}
-			class="h-11 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-10 text-sm font-bold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all placeholder:text-slate-300"
-			class:border-rose-300={error}
-			class:focus:ring-rose-500={error}
-			class:focus:border-rose-500={error}
+			class="h-11 w-full appearance-none rounded-2xl border border-surface-200 bg-surface-50 px-4 pr-10 text-sm font-bold text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20 focus:border-error' : ''}"
 			{...restProps}
 		>
 			<option value="" disabled>{placeholder}</option>
@@ -53,7 +50,7 @@
 			{/each}
 		</select>
 		<span
-			class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 transition-transform"
+			class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary transition-transform"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -71,6 +68,6 @@
 		</span>
 	</div>
 	{#if error}
-		<p class="text-xs font-semibold text-rose-600">{error}</p>
+		<p class="text-xs font-semibold text-error">{error}</p>
 	{/if}
 </div>

@@ -53,7 +53,7 @@
 	aria-label="Main navigation"
 >
 	<nav
-		class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-[28px] px-3 py-2 mx-auto max-w-2xl"
+		class="bg-surface-0 border border-surface-200 shadow-elevated rounded-[28px] px-3 py-2 mx-auto max-w-2xl"
 	>
 		<ul class="grid grid-cols-4 gap-2">
 			{#each navItems as item}
@@ -65,15 +65,15 @@
 							'min-h-[44px] flex flex-col items-center justify-center gap-1 py-2 rounded-2xl active:scale-[0.99] transition-all',
 							// Regular items (Home, History, Settings)
 							!item.isProminent && isActive(item.path, currentPath)
-								? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
+								? 'bg-primary-50 text-primary-600'
 								: !item.isProminent
-									? 'text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400'
+									? 'text-text-tertiary hover:text-primary-600'
 									: null,
 							// Prominent center button (Scan)
 							item.isProminent && isProminentActive(item)
-								? 'bg-primary-500 text-white shadow-md'
+								? 'bg-primary-500 text-text-inverted shadow-md'
 								: item.isProminent
-									? 'text-slate-600 dark:text-slate-400'
+									? 'text-text-tertiary'
 									: null
 						)}
 						aria-current={isActive(item.path, currentPath) ? 'page' : undefined}

@@ -24,19 +24,19 @@
 	}: Props = $props();
 
 	const variantClasses = {
-		slate: 'bg-slate-50 border-slate-200',
+		slate: 'bg-surface-50 border-surface-200',
 		primary: 'bg-primary-50 border-primary-500/15',
-		emerald: 'bg-emerald-50 border-emerald-500/15',
-		amber: 'bg-amber-50 border-amber-500/15',
-		rose: 'bg-rose-50 border-rose-500/15',
+		emerald: 'bg-success/10 border-success/20',
+		amber: 'bg-warning/10 border-warning/20',
+		rose: 'bg-error/10 border-error/20',
 	};
 
 	const iconClasses = {
-		slate: 'bg-slate-50 text-slate-600',
+		slate: 'bg-surface-100 text-text-secondary',
 		primary: 'bg-primary-100 text-primary-600',
-		emerald: 'bg-emerald-100 text-emerald-600',
-		amber: 'bg-amber-100 text-amber-600',
-		rose: 'bg-rose-100 text-rose-600',
+		emerald: 'bg-success/10 text-success',
+		amber: 'bg-warning/10 text-warning',
+		rose: 'bg-error/10 text-error',
 	};
 </script>
 
@@ -50,11 +50,11 @@
 		</span>
 	{/if}
 	<div>
-		<p class="text-[11px] uppercase tracking-wider text-slate-500 font-bold leading-tight">{label}</p>
-		<p class="text-[15px] font-bold text-slate-900 tabular-nums">{value}</p>
+		<p class="text-caption uppercase tracking-wider text-text-tertiary font-bold leading-tight">{label}</p>
+		<p class="text-label font-bold text-text-primary tabular-nums">{value}</p>
 		{#if trend}
 			<p
-				class="text-[10px] font-medium {trend.up ? 'text-emerald-600' : 'text-rose-600'}"
+				class="text-caption font-medium {trend.up ? 'text-success' : 'text-error'}"
 			>
 				{trend.up ? '+' : '-'}{trend.value}
 			</p>

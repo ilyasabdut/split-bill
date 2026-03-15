@@ -36,21 +36,21 @@
 	}: Props = $props();
 
 	const statusColors = {
-		unpaid: 'bg-amber-400',
-		completed: 'bg-emerald-500',
-		pending: 'bg-slate-400',
+		unpaid: 'bg-warning',
+		completed: 'bg-success',
+		pending: 'bg-text-tertiary',
 	};
 
 	const iconBgColors = {
-		unpaid: 'bg-slate-50 border-slate-100 text-slate-700 hover:bg-primary-50 hover:border-primary-100 hover:text-primary-600',
-		completed: 'bg-emerald-50 border-emerald-100 text-emerald-600',
-		pending: 'bg-slate-50 border-slate-100 text-slate-700',
+		unpaid: 'bg-surface-50 border-surface-100 text-text-secondary hover:bg-primary-50 hover:border-primary-100 hover:text-primary-600',
+		completed: 'bg-success/10 border-success/20 text-success',
+		pending: 'bg-surface-50 border-surface-100 text-text-secondary',
 	};
 </script>
 
 <a
 	{href}
-	class="group block bg-white border border-slate-200 shadow-sm rounded-2xl p-4 active:scale-[0.99] transition-all relative overflow-hidden {className}"
+	class="group block bg-surface-0 border border-surface-200 shadow-card rounded-2xl p-4 active:scale-[0.99] transition-all relative overflow-hidden {className}"
 	{...restProps}
 >
 	<!-- Status Line Indicator -->
@@ -65,11 +65,11 @@
 		<div class="flex-1 min-w-0">
 			<div class="flex items-start justify-between gap-3">
 				<div class="min-w-0">
-					<h3 class="text-[15px] font-bold text-slate-900 truncate">{title}</h3>
-					<p class="text-[12px] text-slate-500 mt-0.5">{date}</p>
+					<h3 class="text-label font-bold text-text-primary truncate">{title}</h3>
+					<p class="text-caption text-text-tertiary mt-0.5">{date}</p>
 				</div>
 				<div class="text-right shrink-0">
-					<p class="text-[17px] font-bold text-slate-900 leading-none tabular-nums">{amount}</p>
+					<p class="text-subheading font-bold text-text-primary leading-none tabular-nums">{amount}</p>
 					{#if status === 'unpaid'}
 						<Badge variant="warning" dot={true} class="mt-2">Unpaid</Badge>
 					{:else if status === 'completed'}
@@ -78,17 +78,17 @@
 								>Completed</Badge
 							>
 							{#if paidDate}
-								<span class="text-[10px] text-slate-400 font-medium">Paid on {paidDate}</span>
+								<span class="text-caption text-text-tertiary font-medium">Paid on {paidDate}</span>
 							{/if}
 						</div>
 					{:else if status === 'pending'}
-						<Badge variant="slate" class="mt-2">Pending</Badge>
+						<Badge variant="neutral" class="mt-2">Pending</Badge>
 					{/if}
 				</div>
 			</div>
 
-			<div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between">
-				<div class="flex items-center gap-2 text-slate-500">
+			<div class="mt-3 pt-3 border-t border-surface-100 flex items-center justify-between">
+				<div class="flex items-center gap-2 text-text-tertiary">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="14"
@@ -104,7 +104,7 @@
 						<circle cx="9" cy="7" r="4" />
 						<path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
 					</svg>
-					<span class="text-[12px] font-medium">{people.length} people</span>
+					<span class="text-caption font-medium">{people.length} people</span>
 				</div>
 				<div class="flex -space-x-2">
 					{#each people.slice(0, 4) as person}
@@ -112,7 +112,7 @@
 					{/each}
 					{#if people.length > 4}
 						<div
-							class="w-6 h-6 rounded-full bg-slate-200 ring-2 ring-white flex items-center justify-center text-[9px] font-bold text-slate-700"
+							class="w-6 h-6 rounded-full bg-surface-200 ring-2 ring-surface-0 flex items-center justify-center text-caption font-bold text-text-secondary"
 						>
 							+{people.length - 4}
 						</div>
