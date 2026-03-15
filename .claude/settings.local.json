@@ -12,7 +12,16 @@
       "Bash(claude plugin marketplace --help:*)",
       "Bash(claude plugin marketplace add:*)",
       "Bash(claude plugin list)",
-      "Bash(ln:*)"
+      "Bash(ln:*)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(npm ls:*)",
+      "Bash(lsof:*)",
+      "mcp__chrome-devtools__new_page",
+      "Bash(pkill:*)",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__navigate_page"
     ]
   }
 }
