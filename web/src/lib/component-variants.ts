@@ -47,6 +47,27 @@ export const gapVariants = {
 } as const;
 
 /**
+ * Text overflow utilities - prevent text from overflowing containers
+ */
+export const textOverflow = {
+  truncate: 'truncate',           // Single line with ellipsis
+  clamp2: 'line-clamp-2',         // 2 lines max
+  clamp3: 'line-clamp-3',         // 3 lines max
+  break: 'break-words',          // Break words at natural points
+  breakAll: 'break-all',         // Break anywhere (emergency)
+} as const;
+
+/**
+ * Flex overflow utilities - prevent flex children from overflowing
+ */
+export const flexOverflow = {
+  safe: 'min-w-0 min-h-0',        // Allow flex items to shrink
+  shrink: 'shrink-0',              // Never shrink
+  grow: 'flex-1',                 // Grow to fill space
+  growWrap: 'flex-1 min-w-0',     // Grow but can shrink
+} as const;
+
+/**
  * Merge class names with proper precedence.
  * Wrapper around clsx + tailwind-merge for consistent utility class handling.
  */
@@ -60,3 +81,5 @@ export type ButtonVariant = keyof typeof buttonVariants;
 export type InputSize = keyof typeof inputSizes;
 export type CardPadding = keyof typeof cardPadding;
 export type GapVariant = keyof typeof gapVariants;
+export type TextOverflow = keyof typeof textOverflow;
+export type FlexOverflow = keyof typeof flexOverflow;

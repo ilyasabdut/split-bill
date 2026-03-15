@@ -378,8 +378,8 @@
 								<p class="text-xs text-slate-600">Download your split history.</p>
 							</div>
 						</div>
-						<button type="button" onclick={handleExport} class="h-11 px-4 rounded-2xl bg-sky-500 text-white text-sm font-semibold shadow-md active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-sky-600">
-							Export
+						<button type="button" onclick={handleExport} class="h-11 px-4 rounded-2xl bg-sky-500 text-white text-label font-semibold shadow-md active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-sky-600">
+							<span class="truncate">Export</span>
 						</button>
 					</div>
 				</div>
@@ -402,8 +402,8 @@
 							{#if clearSuccess}
 								<span class="text-caption font-semibold text-success">Cleared!</span>
 							{/if}
-							<button type="button" onclick={handleClearCache} class="h-11 px-4 rounded-2xl bg-white text-rose-600 text-sm font-semibold ring-1 ring-rose-200 shadow-sm active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-rose-50">
-								Clear
+							<button type="button" onclick={handleClearCache} class="h-11 px-4 rounded-2xl bg-white text-rose-600 text-label font-semibold ring-1 ring-rose-200 shadow-sm active:scale-[0.99] transition-transform whitespace-nowrap hover:bg-rose-50">
+								<span class="truncate">Clear</span>
 							</button>
 						</div>
 					</div>

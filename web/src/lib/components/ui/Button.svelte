@@ -43,15 +43,15 @@
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm min-h-[36px]',
-    md: 'px-4 py-2 text-base min-h-[44px]',
-    lg: 'px-6 py-3 text-lg min-h-[52px]',
+    sm: 'px-3 py-1.5 text-label min-h-[36px]',
+    md: 'px-4 py-2 text-body min-h-[44px]',
+    lg: 'px-6 py-3 text-subheading min-h-[52px]',
   };
 </script>
 
 <button
   {type}
-  class={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
+  class={cn(baseClasses, variantClasses[variant], sizeClasses[size], 'max-w-full', className)}
   {disabled}
   {onclick}
   {ariaLabel}
@@ -61,6 +61,6 @@
   {ariaCurrent}
 >
   {#if children}
-    {@render children()}
+    <span class="truncate max-w-full">{@render children()}</span>
   {/if}
 </button>

@@ -43,14 +43,14 @@
 </script>
 
 <span
-	class={\`inline-flex items-center gap-1.5 rounded-full border font-bold uppercase tracking-wide \${variantClasses[variant]} \${sizeClasses[size]} \${className}\`}
+	class={\`inline-flex items-center gap-1.5 rounded-full border font-bold uppercase tracking-wide max-w-full \${variantClasses[variant]} \${sizeClasses[size]} \${className}\`}
 	{...restProps}
 >
 	{#if dot}
-		<span class={\`w-1.5 h-1.5 rounded-full \${dotColors[variant]}\`}></span>
+		<span class={\`w-1.5 h-1.5 rounded-full shrink-0 \${dotColors[variant]}\`}></span>
 	{/if}
 	{#if icon}
-		<span class="text-xs">{@html icon}</span>
+		<span class="text-xs shrink-0">{@html icon}</span>
 	{/if}
-	{children}
+	<span class="truncate">{children}</span>
 </span>

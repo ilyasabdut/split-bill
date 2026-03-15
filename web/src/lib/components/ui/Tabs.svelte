@@ -31,7 +31,7 @@
 			{#if tab.href}
 				<a
 					href={tab.href}
-					class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-[14px] font-semibold transition-all active:scale-95"
+					class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold transition-all active:scale-95 max-w-[180px]"
 					class:bg-primary-500={activeTab === tab.id}
 					class:text-text-inverted={activeTab === tab.id}
 					class:shadow-md={activeTab === tab.id}
@@ -47,11 +47,11 @@
 						}
 					}}
 				>
-					{tab.label}
+					<span class="truncate">{tab.label}</span>
 				</a>
 			{:else}
 				<button
-					class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-[14px] font-semibold transition-all active:scale-95"
+					class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold transition-all active:scale-95 max-w-[180px]"
 					class:bg-primary-500={activeTab === tab.id}
 					class:text-text-inverted={activeTab === tab.id}
 					class:shadow-md={activeTab === tab.id}
@@ -62,7 +62,7 @@
 					class:active:bg-surface-50={activeTab !== tab.id}
 					onclick={() => setActiveTab(tab.id)}
 				>
-					{tab.label}
+					<span class="truncate">{tab.label}</span>
 				</button>
 			{/if}
 		{/each}

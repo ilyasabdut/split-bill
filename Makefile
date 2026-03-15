@@ -127,12 +127,12 @@ test-e2e:
 	cd web && bun run test:e2e
 
 # Start Lightpanda browser
-lightpanda:start:
+lightpanda-start:
 	@echo "🌐 Starting Lightpanda browser..."
 	cd web && bun run lightpanda:start
 
 # Fetch Lightpanda binaries
-lightpanda:fetch:
+lightpanda-fetch:
 	@echo "📥 Fetching Lightpanda binaries..."
 	cd web && bun run lightpanda:fetch
 
