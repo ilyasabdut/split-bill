@@ -213,7 +213,7 @@
 		</section>
 
 		<!-- Activity Feed -->
-		<section aria-label="Recent activity">
+		<section aria-label="Recent activity" aria-live="polite">
 			<h2 class="px-1 mb-3 text-label font-bold text-text-primary">Activity</h2>
 			<div class="space-y-2">
 				{#each activities as activity}

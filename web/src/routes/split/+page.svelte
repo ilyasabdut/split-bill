@@ -219,15 +219,14 @@
 					<div class="relative group">
 						<span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-lg">Rp</span>
 						<input
-							id="bill-amount"
-							name="bill-amount"
+							type="text"
 							inputmode="numeric"
-							bind:value={billAmount}
-							min="0"
+							aria-invalid={!!errors.billAmount}
+							aria-describedby="bill-amount-error"
 							class="h-14 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-section font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary tabular-nums {errors.billAmount ? 'border-error' : ''}"
 						/>
 						{#if errors.billAmount}
-							<p class="mt-1 text-caption text-error">{errors.billAmount}</p>
+							<p id="bill-amount-error" class="mt-1 text-caption text-error" role="alert">{errors.billAmount}</p>
 						{/if}
 					</div>
 				</div>

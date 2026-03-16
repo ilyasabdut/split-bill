@@ -465,8 +465,8 @@
       </div>
     </Card>
 
-    <!-- Activity Timeline -->
-    <section>
+     <!-- Activity Timeline -->
+     <section aria-live="polite">
       <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Activity</h2>
       <div class="ml-2 pl-4 border-l-2 border-surface-200 space-y-6 relative">
         {#each activityFeed as activity}

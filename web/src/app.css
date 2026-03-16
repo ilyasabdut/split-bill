@@ -106,19 +106,7 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
-
-.animate-slide-up {
-  animation: slide-up 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
+ 
 .animate-pulse-success {
   animation: pulse-success 0.5s ease-in-out;
 }
