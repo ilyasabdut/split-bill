@@ -201,7 +201,7 @@
 
 	<main class="flex-1 overflow-y-auto px-4 py-4 space-y-section max-w-lg mx-auto w-full" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);">
 		<!-- Amounts Card -->
-		<section class="rounded-3xl bg-surface-0 shadow-card border border-surface-200 overflow-hidden animate-slide-up">
+		<section class="rounded-2xl bg-surface-0 shadow-card border border-surface-200 overflow-hidden animate-slide-up">
 			<!-- Currency Selector Header -->
 			<div class="px-5 py-3 border-b border-surface-100 flex items-center justify-between bg-surface-50/50">
 				<span class="text-caption font-bold text-text-tertiary uppercase tracking-wider">Currency</span>
@@ -313,7 +313,7 @@
 		</section>
 
 		<!-- Smart Rounding Options -->
-		<section class="rounded-3xl bg-surface-0 shadow-card border border-surface-200 p-5 animate-slide-up" style="animation-delay: 100ms;">
+		<section class="rounded-2xl bg-surface-0 shadow-card border border-surface-200 p-5 animate-slide-up" style="animation-delay: 100ms;">
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-label font-bold text-text-primary">Smart Rounding</h2>
 				<span class="text-caption font-bold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-lg">ACTIVE</span>
@@ -350,7 +350,7 @@
 		</section>
 
 		<!-- Split Style Tabs -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
+		<section class="rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
 			<div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700">
 				<h2 class="text-sm font-bold text-text-primary">Split Method</h2>
 			</div>
@@ -394,7 +394,7 @@
 		</section>
 
 		<!-- People Manager -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
+		<section class="rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
 			<div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700 flex justify-between items-center">
 				<h2 class="text-sm font-bold text-text-primary">People</h2>
 				<span class="bg-surface-100 dark:bg-surface-700 text-text-secondary dark:text-text-secondary px-2.5 py-0.5 rounded-lg text-xs font-bold">{people.length}</span>

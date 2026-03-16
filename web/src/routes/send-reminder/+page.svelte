@@ -121,7 +121,7 @@
 			</section>
 		{:else}
 			<!-- Amount Summary -->
-			<section class="rounded-3xl bg-amber-600 shadow-xl p-5 text-white relative overflow-hidden" aria-label="Amount summary">
+			<section class="rounded-2xl bg-amber-600 shadow-xl p-5 text-white relative overflow-hidden" aria-label="Amount summary">
 				<div class="absolute right-0 top-0 h-40 w-40 bg-surface-0/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
 				<div class="relative z-10">
@@ -137,7 +137,7 @@
 			<!-- Select Recipients -->
 			<section>
 				<h2 class="text-sm font-bold text-text-primary mb-3">Select Recipients</h2>
-				<div class="rounded-3xl bg-surface-0 shadow-md border border-surface-200 overflow-hidden">
+				<div class="rounded-xl bg-surface-0 shadow-md border border-surface-200 overflow-hidden">
 					{#each members as member, index}
 						<button
 							type="button"

@@ -116,7 +116,7 @@
 	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-[120px] relative z-0 no-scrollbar">
 		<div class="max-w-lg mx-auto space-y-section">
 		<!-- Hero Card Section -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in" aria-label="Quick stats and currency selection">
+		<section class="rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in" aria-label="Quick stats and currency selection">
 			<!-- Currency & Title -->
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div class="flex-1">
@@ -129,7 +129,7 @@
 					<h1 class="text-heading font-extrabold tracking-tight text-text-primary leading-tight">Split bills easily with friends</h1>
 				</div>
 				<div class="shrink-0">
-					<div class="h-14 w-14 rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/20 flex items-center justify-center">
+					<div class="h-14 w-14 rounded-xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/20 flex items-center justify-center">
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 					</div>
 				</div>

@@ -352,13 +352,13 @@
 				/>
 				<button
 					type="button"
-					class="w-full rounded-3xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity group hover:border-primary-600 transition-all duration-200"
+					class="w-full rounded-2xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity group hover:border-primary-600 transition-all duration-200"
 					disabled={loading}
 				>
 					<div class="px-5 py-10">
 						<div class="mx-auto flex flex-col items-center">
 							{#if loading && scanStatus === 'scanning'}
-								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
+								<div class="h-20 w-20 rounded-xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										width="32"

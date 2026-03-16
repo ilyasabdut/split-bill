@@ -41,7 +41,7 @@
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-label min-h-[36px]',
+    sm: 'px-3 py-1.5 text-label min-h-[44px]',
     md: 'px-4 py-2 text-body min-h-[44px]',
     lg: 'px-6 py-3 text-subheading min-h-[52px]',
   };
