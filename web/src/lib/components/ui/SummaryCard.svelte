@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements';
 
-	interface Props extends HTMLAttributes<HTMLDivElement> {
+	interface Props extends HTMLAttributes<HTMLElement> {
 		title: string;
 		amount: string;
 		comparison?: string;
