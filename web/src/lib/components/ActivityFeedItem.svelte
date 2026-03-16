@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cn } from '$lib/utils';
+  
   export interface Activity {
     id: string;
     type: 'split_created' | 'payment_made' | 'member_joined' | 'member_left' | 'template_used' | 'split_completed';

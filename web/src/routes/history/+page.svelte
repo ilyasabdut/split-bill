@@ -93,9 +93,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </svelte:head>
 
-<div class="w-full h-screen flex flex-col bg-surface-50 dark:bg-slate-900 text-text-primary dark:text-text-primary font-sans">
+<div class="w-full h-screen flex flex-col bg-surface-50 dark:bg-surface-900 text-text-primary dark:text-text-primary font-sans">
 	<!-- Header -->
-	<header class="shrink-0 pt-12 px-4 pb-2 bg-surface-0 dark:bg-slate-800 border-b border-surface-100 dark:border-slate-700 sticky top-0 z-30">
+	<header class="shrink-0 pt-12 px-4 pb-2 bg-surface-0 dark:bg-surface-800 border-b border-surface-100 dark:border-surface-700 sticky top-0 z-30">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
 				<div class="w-11 h-11 rounded-2xl bg-primary-100/50 dark:bg-primary-900/30 shadow-sm flex items-center justify-center">
@@ -106,7 +106,7 @@
 					<p class="text-caption text-text-tertiary font-medium">Recent splits & settlements</p>
 				</div>
 			</div>
-			<a href="#search" class="w-11 h-11 rounded-2xl bg-surface-0 dark:bg-slate-700 shadow-sm border border-surface-200 dark:border-slate-600 flex items-center justify-center text-text-secondary dark:text-text-tertiary active:scale-95 transition-transform hover:bg-surface-50 dark:hover:bg-slate-600" aria-label="Search splits">
+			<a href="#search" class="w-11 h-11 rounded-2xl bg-surface-0 dark:bg-surface-700 shadow-sm border border-surface-200 dark:border-surface-600 flex items-center justify-center text-text-secondary dark:text-text-tertiary active:scale-95 transition-transform hover:bg-surface-50 dark:hover:bg-surface-600" aria-label="Search splits">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 			</a>
 		</div>
@@ -115,11 +115,11 @@
 		<nav class="mt-5 -mx-4 overflow-hidden">
 			<div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
 				<a href="#all" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10">All</a>
-				<a href="#unpaid" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-slate-600">Unpaid</a>
-				<a href="#completed" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-slate-600">Completed</a>
-				<a href="#groups" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-slate-600">Groups</a>
-				<a href="#templates" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-slate-600">Templates</a>
-				<a href="#analytics" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-slate-600">Analytics</a>
+				<a href="#unpaid" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Unpaid</a>
+				<a href="#completed" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Completed</a>
+				<a href="#groups" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Groups</a>
+				<a href="#templates" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Templates</a>
+				<a href="#analytics" class="shrink-0 h-[38px] px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Analytics</a>
 			</div>
 		</nav>
 	</header>
@@ -132,24 +132,24 @@
 		{:else}
 			<!-- Currency Selector -->
 			<div class="flex justify-center mb-4">
-				<button class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-slate-200 active:scale-95 transition-transform">
-					<span class="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-600 flex items-center justify-center text-[10px]">🇮🇩</span>
+				<button class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-text-primary active:scale-95 transition-transform">
+					<span class="w-5 h-5 rounded-full bg-surface-100 dark:bg-surface-600 flex items-center justify-center text-[10px]">🇮🇩</span>
 					IDR
-					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
 				</button>
 			</div>
 
 			<!-- Monthly Spending Summary -->
 			<section class="mb-section relative group animate-fade-in">
 				<div class="absolute inset-0 bg-primary-500 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-				<div class="relative bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl p-6 text-text-inverted shadow-xl shadow-primary-500/20 overflow-hidden">
+				<div class="relative bg-primary-600 rounded-3xl p-6 text-text-inverted shadow-xl overflow-hidden">
 					<!-- Decorative circles -->
 					<div class="absolute top-0 right-0 w-32 h-32 bg-surface-0/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
 
 					<div class="relative z-10">
 						<div class="flex justify-between items-start">
 							<p class="text-primary-100 text-label font-medium">Total spending this month</p>
-							<span class="bg-surface-0/20 backdrop-blur-md px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1">
+							<span class="bg-surface-0/30 px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1">
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
 								12.5%
 							</span>
@@ -163,8 +163,8 @@
 			<!-- Summary Chips -->
 			<section class="mb-section overflow-x-auto no-scrollbar animate-slide-up" style="animation-delay: 100ms;">
 				<div class="flex gap-3 pb-1 min-w-max">
-					<div class="bg-surface-0 dark:bg-slate-800 border border-surface-200 dark:border-slate-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
-						<span class="w-10 h-10 rounded-xl bg-surface-50 dark:bg-slate-700 flex items-center justify-center">
+					<div class="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
+						<span class="w-10 h-10 rounded-xl bg-surface-50 dark:bg-surface-700 flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary dark:text-text-tertiary"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 						</span>
 						<div>
@@ -172,7 +172,7 @@
 							<p class="text-label font-bold text-text-primary">{peopleCount} Friends</p>
 						</div>
 					</div>
-					<div class="bg-surface-0 dark:bg-slate-800 border border-surface-200 dark:border-slate-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
+					<div class="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
 						<span class="w-10 h-10 rounded-xl bg-warning/10 dark:bg-warning/20 flex items-center justify-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 12 2"/></svg>
 						</span>
@@ -220,17 +220,17 @@
 			<section aria-label="Split list">
 				<div class="flex items-center justify-between mb-4">
 					<h2 class="text-subheading font-bold text-text-primary">Recent Activity</h2>
-					<a href="#all" class="h-8 px-3 rounded-lg hover:bg-surface-100 dark:hover:bg-slate-700 inline-flex items-center justify-center text-caption font-semibold text-primary-600 transition-colors">View all</a>
+					<a href="#all" class="h-8 px-3 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 inline-flex items-center justify-center text-caption font-semibold text-primary-600 transition-colors">View all</a>
 				</div>
 
 				<div class="space-y-4">
 					{#each history.slice(0, 10) as item, index}
-						<a href="/split/{item.id}" class="group block bg-surface-0 dark:bg-slate-800 border border-surface-200 dark:border-slate-700 shadow-card rounded-2xl p-4 active:scale-[0.99] transition-all relative overflow-hidden animate-slide-in-right hover:shadow-elevated" style="animation-delay: {Math.min(index * 50 + 300, 600)}ms;">
+						<a href="/split/{item.id}" class="group block bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl p-4 active:scale-[0.99] transition-all relative overflow-hidden animate-slide-in-right hover:shadow-elevated" style="animation-delay: {Math.min(index * 50 + 300, 600)}ms;">
 							<!-- Status Line Indicator -->
 							<div class="absolute left-0 top-0 bottom-0 w-1" class:bg-warning={item.status === 'unpaid'} class:bg-success={item.status === 'completed'}></div>
 
 							<div class="flex items-start gap-4">
-								<div class="w-12 h-12 rounded-2xl bg-surface-50 dark:bg-slate-700 border border-surface-100 dark:border-slate-600 flex items-center justify-center shrink-0 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:border-primary-100 dark:group-hover:border-primary-800 transition-colors">
+								<div class="w-12 h-12 rounded-2xl bg-surface-50 dark:bg-surface-700 border border-surface-100 dark:border-surface-600 flex items-center justify-center shrink-0 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:border-primary-100 dark:group-hover:border-primary-800 transition-colors">
 									{@html getIconForCategory(item.category)}
 								</div>
 								<div class="flex-1 min-w-0">
@@ -258,14 +258,14 @@
 										</div>
 									</div>
 
-									<div class="mt-3 pt-3 border-t border-surface-100 dark:border-slate-700 flex items-center justify-between">
+									<div class="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
 										<div class="flex items-center gap-2 text-text-tertiary">
 											<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 											<span class="text-caption font-medium">{item.people.length} people</span>
 										</div>
 										<div class="flex -space-x-2">
 											{#each item.people.slice(0, 4) as person}
-												<div class="w-6 h-6 rounded-full bg-surface-200 dark:bg-slate-600 ring-2 ring-surface-0 dark:ring-slate-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">{person[0]}</div>
+												<div class="w-6 h-6 rounded-full bg-surface-200 dark:bg-surface-600 ring-2 ring-surface-0 dark:ring-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">{person[0]}</div>
 											{/each}
 										</div>
 									</div>

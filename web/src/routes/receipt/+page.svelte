@@ -303,7 +303,7 @@
 		style="padding-top: max(env(safe-area-inset-top), 3.5rem);"
 	>
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-slate-700 transition-colors" aria-label="Go back home">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors" aria-label="Go back home">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="m15 18-6-6 6"/><path d="m18 15-6-6"/></svg>
 			</a>
 
@@ -311,7 +311,7 @@
 				<p class="text-body font-semibold">Scan Receipt</p>
 			</div>
 
-			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-slate-700 transition-colors" aria-label="Get help">
+			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors" aria-label="Get help">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 12h.01"/></svg>
 			</a>
 		</div>
@@ -352,13 +352,13 @@
 				/>
 				<button
 					type="button"
-					class="w-full rounded-3xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity group hover:border-primary-600 transition-all duration-200"
+					class="w-full rounded-3xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity group hover:border-primary-600 transition-all duration-200"
 					disabled={loading}
 				>
 					<div class="px-5 py-10">
 						<div class="mx-auto flex flex-col items-center">
 							{#if loading && scanStatus === 'scanning'}
-								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-slate-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
+								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										width="32"
@@ -377,7 +377,7 @@
 								<p class="mt-4 text-body font-semibold animate-fade-in">Scanning receipt...</p>
 								<p class="mt-1 text-label text-text-secondary text-center animate-fade-in animate-delay-100">This may take a moment</p>
 							{:else}
-								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-slate-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
 									<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500 dark:text-primary-400"><path d="m23 19-7-16 2v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"/><path d="M16 3h5"/><path d="M21 14V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M21 14v7"/></svg>
 								</div>
 
@@ -402,7 +402,7 @@
 		</section>
 
 		<section class="mt-section rounded-3xl bg-surface-0 shadow-card border border-surface-200">
-			<div class="px-4 py-3 bg-surface-50 dark:bg-slate-700/50 flex items-center justify-between">
+			<div class="px-4 py-3 bg-surface-50 dark:bg-surface-700/50 flex items-center justify-between">
 				<div class="flex items-center gap-2">
 					<div class="h-5 w-5 rounded-full bg-success flex items-center justify-center">
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-inverted"><path d="M20 6 9 17 4 18"/><path d="m4 18 9-17"/></svg>
@@ -422,7 +422,7 @@
 						<div class="flex items-center gap-3 {itemErrors.length > 0 ? 'bg-error/5 dark:bg-error/10 rounded-xl p-2 -m-2 animate-shake' : 'animate-slide-in-right'}" style="animation-delay: {Math.min(index * 50, 200)}ms;">
 							<button
 								type="button"
-								class="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-surface-100 dark:bg-slate-700 flex items-center justify-center hover:bg-error/10 dark:hover:bg-error/20 hover:text-error dark:hover:text-error/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform duration-150"
+								class="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-surface-100 dark:bg-surface-700 flex items-center justify-center hover:bg-error/10 dark:hover:bg-error/20 hover:text-error dark:hover:text-error/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform duration-150"
 								onclick={() => handleRemoveItem(item.id)}
 								aria-label="Remove {item.name || 'item ' + (index + 1)}"
 								disabled={items.length <= 1 || loading}
@@ -482,7 +482,7 @@
 					</div>
 				</div>
 
-				<div class="mt-4 pt-4 border-t border-surface-100 dark:border-slate-700 space-y-component">
+				<div class="mt-4 pt-4 border-t border-surface-100 dark:border-surface-700 space-y-component">
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-2">
 							<div class="h-7 w-7 rounded-lg bg-warning/10 dark:bg-warning/20 flex items-center justify-center text-warning">
@@ -498,7 +498,7 @@
 						</button>
 					</div>
 
-					<div class="flex items-center justify-between rounded-xl bg-surface-50 dark:bg-slate-700/50 p-3 border border-surface-100 dark:border-slate-600">
+					<div class="flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-700/50 p-3 border border-surface-100 dark:border-surface-600">
 						<span class="text-label font-semibold text-text-secondary">Total Amount</span>
 						<div class="flex items-baseline gap-1">
 							<span class="text-caption font-bold text-text-tertiary">USD</span>
@@ -552,7 +552,7 @@
 		<section class="mt-section rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800">
 			<div class="p-4">
 				<div class="flex items-start gap-3">
-					<div class="h-11 w-11 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-primary-200 dark:border-primary-800 flex items-center justify-center">
+					<div class="h-11 w-11 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-primary-200 dark:border-primary-800 flex items-center justify-center">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500 dark:text-primary-400"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
 					</div>
 					<div class="flex-1">
@@ -572,7 +572,7 @@
 							</li>
 						</ul>
 						<div class="mt-4 flex gap-component">
-							<a href="#learn-more" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-slate-700 border border-primary-200 dark:border-primary-800 text-label font-semibold text-primary-600 dark:text-primary-300 shadow-md">
+							<a href="#learn-more" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-surface-700 border border-primary-200 dark:border-primary-800 text-label font-semibold text-primary-600 dark:text-primary-300 shadow-md">
 								Learn more
 							</a>
 							<a href="#troubleshoot" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-primary-500 dark:bg-primary-600 text-label font-semibold text-text-inverted shadow-md">

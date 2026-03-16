@@ -23,7 +23,8 @@ describe('ApiClient', () => {
     it('should have default timeout if not provided', () => {
       const config = {
         baseURL: 'https://api.example.com',
-        apiKey: 'test-key'
+        apiKey: 'test-key',
+        timeout: 5000
       };
 
       const client = new ApiClient(config);
@@ -160,7 +161,7 @@ describe('ApiClient', () => {
 
       const client = new ApiClient(config);
       const mockFetch = vi.fn(() => {
-        return new Promise(() => {});
+        return new Promise<Response>(() => {});
       });
 
       global.fetch = mockFetch;

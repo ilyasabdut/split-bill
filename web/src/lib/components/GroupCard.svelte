@@ -64,6 +64,7 @@
               src={member.avatar_url}
               alt={member.name}
               class="size-8 rounded-full border-2 border-surface-0 object-cover"
+              loading="lazy"
             />
           {:else}
             <div

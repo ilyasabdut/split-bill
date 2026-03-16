@@ -45,13 +45,13 @@
 		]);
 
 		// Check if there's receipt data from the receipt page
-		const receiptData = receiptStore.getReceipt();
+		const receiptData = receiptStore.getReceipt() as import('$lib/types/receipt').ReceiptData | null;
 		if (receiptData && receiptData.items && receiptData.items.length > 0) {
 			// Pre-populate the bill amount with the receipt total
-			billAmount = receiptData.total * 1000; // Convert to IDR if needed
+			billAmount = (receiptData.total || 0) * 1000; // Convert to IDR if needed
 
 			// If tax was detected, add it
-			if (receiptData.tax > 0) {
+			if (receiptData.tax && receiptData.tax > 0) {
 				tax = receiptData.tax * 1000;
 			}
 		}
@@ -186,14 +186,14 @@
 		style="padding-top: max(env(safe-area-inset-top), 3rem);"
 	>
 		<div class="flex items-center justify-between max-w-lg mx-auto">
-			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-slate-800 shadow-sm border border-surface-200 active:scale-95 transition-transform hover:bg-surface-100 dark:hover:bg-slate-700" aria-label="Go back home">
+			<a href="/" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-sm border border-surface-200 active:scale-95 transition-transform hover:bg-surface-100 dark:hover:bg-surface-700" aria-label="Go back home">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="m15 18-6-6 6-6"/><path d="M18 6 6 18"/></svg>
 			</a>
 			<div class="text-center">
 				<div class="text-caption font-bold text-text-tertiary uppercase tracking-wider">New Split</div>
 				<h1 class="text-subheading font-black tracking-tight text-text-primary">Bill Details</h1>
 			</div>
-			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-slate-800 shadow-sm border border-surface-200 active:scale-95 transition-transform" aria-label="More options">
+			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-sm border border-surface-200 active:scale-95 transition-transform" aria-label="More options">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
 			</button>
 		</div>
@@ -224,7 +224,7 @@
 							inputmode="numeric"
 							bind:value={billAmount}
 							min="0"
-							class="h-14 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-section font-bold text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary tabular-nums {errors.billAmount ? 'border-error' : ''}"
+							class="h-14 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-section font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary tabular-nums {errors.billAmount ? 'border-error' : ''}"
 						/>
 						{#if errors.billAmount}
 							<p class="mt-1 text-caption text-error">{errors.billAmount}</p>
@@ -249,7 +249,7 @@
 							inputmode="numeric"
 							bind:value={tax}
 							placeholder="0"
-							class="h-12 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-body font-bold text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all tabular-nums"
+							class="h-12 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-body font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all tabular-nums"
 						/>
 					</div>
 					<p class="mt-1.5 text-caption text-text-tertiary font-medium">If not included in bill amount.</p>
@@ -268,7 +268,7 @@
 							name="tip-amount"
 							inputmode="numeric"
 							bind:value={tip}
-							class="h-12 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-body font-bold text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all tabular-nums"
+							class="h-12 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-body font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all tabular-nums"
 						/>
 					</div>
 
@@ -350,15 +350,15 @@
 		</section>
 
 		<!-- Split Style Tabs -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
-			<div class="px-5 py-3 border-b border-surface-100 dark:border-slate-700">
+		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 200ms;">
+			<div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700">
 				<h2 class="text-sm font-bold text-text-primary">Split Method</h2>
 			</div>
 			<div class="p-5">
 				<div class="grid grid-cols-3 gap-3 mb-4">
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'equal' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5'}"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'equal' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5'}"
 						onclick={() => splitMethod = 'equal'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8"/><path d="M12 15V9"/><path d="M12 9H4"/><path d="M12 9h8"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/></svg>
@@ -366,7 +366,7 @@
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
 						onclick={() => splitMethod = 'percentage'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
@@ -374,7 +374,7 @@
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-text-secondary dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
 						onclick={() => splitMethod = 'item'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
@@ -394,14 +394,14 @@
 		</section>
 
 		<!-- People Manager -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
-			<div class="px-5 py-3 border-b border-surface-100 dark:border-slate-700 flex justify-between items-center">
+		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 overflow-hidden animate-slide-up" style="animation-delay: 300ms;">
+			<div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700 flex justify-between items-center">
 				<h2 class="text-sm font-bold text-text-primary">People</h2>
-				<span class="bg-surface-100 dark:bg-slate-700 text-text-secondary dark:text-slate-300 px-2.5 py-0.5 rounded-lg text-xs font-bold">{people.length}</span>
+				<span class="bg-surface-100 dark:bg-surface-700 text-text-secondary dark:text-text-secondary px-2.5 py-0.5 rounded-lg text-xs font-bold">{people.length}</span>
 			</div>
 			<div class="p-5 space-y-4">
 				{#each people as person, index}
-					<div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-3 border border-surface-200 dark:border-slate-600 animate-scale-in transition-all duration-200" style="animation-delay: {Math.min(index * 50, 150)}ms;">
+					<div class="bg-surface-50 dark:bg-surface-700/50 rounded-2xl p-3 border border-surface-200 dark:border-surface-600 animate-scale-in transition-all duration-200" style="animation-delay: {Math.min(index * 50, 150)}ms;">
 						<div class="flex items-center gap-3 mb-3">
 							<Avatar name={person.name} size="md" color={person.color || 'slate'} variant="solid" />
 							<div class="flex-1 min-w-0">
@@ -433,12 +433,12 @@
 						<div class="flex items-center gap-2">
 							<button
 								type="button"
-								class="flex-1 h-10 rounded-xl bg-surface-0 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 shadow-sm text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-500 active:scale-95 transition-all"
+								class="flex-1 h-10 rounded-xl bg-surface-0 dark:bg-surface-600 border border-surface-200 dark:border-surface-500 shadow-sm text-xs font-bold text-text-primary dark:text-text-primary flex items-center justify-center gap-2 hover:bg-surface-50 dark:hover:bg-surface-500 active:scale-95 transition-all"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="M12 5v14M5 12h14"/></svg>
 								Assign Items
 							</button>
-							<div class="px-3 h-10 rounded-xl bg-surface-0 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 flex items-center justify-center text-sm font-black text-slate-800 dark:text-white shadow-sm min-w-[90px] tabular-nums">
+							<div class="px-3 h-10 rounded-xl bg-surface-0 dark:bg-surface-600 border border-surface-200 dark:border-surface-500 flex items-center justify-center text-sm font-black text-text-primary dark:text-text-inverted shadow-sm min-w-[90px] tabular-nums">
 								{formatCurrency(personShare)}
 							</div>
 						</div>
@@ -448,7 +448,7 @@
 				<!-- Add Button -->
 				<button
 					type="button"
-					class="w-full h-12 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-text-secondary font-bold text-sm flex items-center justify-center gap-2 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all active:scale-[0.99]"
+					class="w-full h-12 rounded-2xl border-2 border-dashed border-surface-300 dark:border-surface-600 text-text-secondary font-bold text-sm flex items-center justify-center gap-2 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all active:scale-[0.99]"
 					onclick={addPerson}
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
@@ -470,7 +470,7 @@
 
 			<button
 				type="button"
-				class="mt-3 w-full h-14 rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-600 hover:shadow-md"
+				class="mt-3 w-full h-14 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-primary dark:text-text-primary font-bold text-sm shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 hover:bg-surface-50 dark:hover:bg-surface-600 hover:shadow-md"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
 				Save as Template

@@ -41,7 +41,7 @@
 
 	// Superdesign spec: prominent button (Scan) gets brand background when active
 	function isProminentActive(item: NavItem): boolean {
-		return item.isProminent && isActive(item.path, currentPath);
+		return !!(item.isProminent && isActive(item.path, currentPath));
 	}
 </script>
 

@@ -378,12 +378,12 @@
       <Card class="shadow-md">
         <div class="flex items-center justify-between mb-3 p-4">
           <h2 class="text-sm font-semibold">Receipt</h2>
-          <a href="#" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-surface-100 text-xs font-semibold text-text-primary hover:bg-slate-200 transition-colors">
+          <a href="#" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-surface-100 text-xs font-semibold text-text-primary hover:bg-surface-200 transition-colors">
             Full View
           </a>
         </div>
         <button type="button" class="w-full rounded-xl border border-surface-200 bg-surface-50 overflow-hidden active:scale-[0.99] transition-transform">
-          <div class="relative h-24 bg-gradient-to-r from-slate-100 to-slate-200 flex items-center justify-center">
+          <div class="relative h-24 bg-surface-100 flex items-center justify-center">
              <div class="flex items-center gap-2 text-text-tertiary">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -407,7 +407,7 @@
 
     <!-- Breakdown with Payment Status -->
     <Card class="shadow-md overflow-hidden">
-      <div class="p-4 flex items-center justify-between gap-3 bg-surface-50/50 border-b border-slate-100">
+      <div class="p-4 flex items-center justify-between gap-3 bg-surface-50/50 border-b border-surface-100">
         <div>
           <h2 class="text-sm font-semibold">Breakdown</h2>
           <p class="text-xs text-text-secondary mt-0.5">Includes tax & tip</p>
@@ -543,7 +543,7 @@
       </Button>
 
       <!-- Pro Tip -->
-      <div class="mt-6 rounded-xl bg-gradient-to-r from-brand-50 to-indigo-50 border border-brand-100 p-4">
+      <div class="mt-6 rounded-xl bg-brand-50 border border-brand-100 p-4">
         <div class="flex items-start gap-3">
           <div class="shrink-0 w-8 h-8 rounded-lg bg-surface-0/80 border border-brand-100 text-brand-600 flex items-center justify-center shadow-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -552,7 +552,7 @@
           </div>
           <div class="min-w-0">
             <p class="text-sm font-semibold text-text-primary">Pro tip</p>
-            <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+            <p class="mt-1 text-xs text-text-secondary leading-relaxed">
               Send payment requests via Venmo or PayPal links for faster settlements. Everyone can mark themselves as paid to keep the group in sync!
             </p>
           </div>

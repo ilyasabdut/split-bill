@@ -72,7 +72,7 @@
     {placeholder}
     {disabled}
     {required}
-    {maxLength}
+    maxlength={maxLength}
     {min}
     {max}
     {pattern}
@@ -80,7 +80,7 @@
     bind:this={inputElement}
     oninput={validateInput}
     onkeydown={onkeydown}
-    class="w-full px-4 py-3 text-base bg-surface-0 border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 focus:outline-none disabled:bg-surface-50 disabled:cursor-not-allowed min-h-[44px] text-text-primary placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20' : ''}"
+    class="w-full px-4 py-3 text-base bg-surface-0 border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 focus-visible:outline-none disabled:bg-surface-50 disabled:cursor-not-allowed min-h-[44px] text-text-primary placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20' : ''}"
   />
   {#if error}
     <p class="mt-1 text-sm text-error">{error}</p>

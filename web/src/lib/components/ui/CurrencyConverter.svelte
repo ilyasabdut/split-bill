@@ -134,13 +134,13 @@
 			</div>
 
 			<!-- Target Currency -->
-			<div class="rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-4 text-white shadow-lg">
+			<div class="rounded-2xl bg-indigo-600 p-4 text-white shadow-lg">
 				<div class="flex items-center justify-between mb-3">
 					<span class="text-xs font-bold text-indigo-200 uppercase tracking-wider">To</span>
 					<button
 						type="button"
 						onclick={() => showTargetDropdown = !showTargetDropdown}
-						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-0/20 backdrop-blur-sm border border-white/30 active:scale-95 transition-transform"
+						class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-0/30 border border-white/30 active:scale-95 transition-transform"
 					>
 						<span class="text-lg">{getCurrency(targetCurrency).flag}</span>
 						<span class="text-sm font-bold">{getCurrency(targetCurrency).code}</span>

@@ -5,6 +5,7 @@
   import { currencyService } from '$lib/services/api/currency';
   import { onMount } from 'svelte';
   import { cn } from '$lib/utils';
+  import { get } from 'svelte/store';
 
   interface Props {
     selected?: CurrencyCode;
@@ -26,7 +27,7 @@
     ariaLabel
   }: Props = $props();
 
-  const selected = $derived(propSelected ?? currencyStore.selected);
+  let selectedValue = $derived(propSelected ?? get(currencyStore.selected));
 
   let loading = $state(false);
   let error = $state('');
@@ -68,11 +69,11 @@
     <div class="text-sm text-red-600 text-balance">{error}</div>
   {:else}
     <select
-      value={$selected}
+      value={selectedValue}
       onchange={handleChange}
       {disabled}
       class={cn(
-        'block w-full appearance-none bg-surface-100 border border-surface-300 rounded-lg px-4 py-2 pr-8 text-text focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 min-h-[44px]'
+        'block w-full appearance-none bg-surface-100 border border-surface-300 rounded-lg px-4 py-2 pr-8 text-text focus-visible:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 min-h-[44px]'
       )}
       aria-label={ariaLabel || 'Select currency'}
     >

@@ -144,8 +144,8 @@
 		</div>
 
 		<!-- Accent strip -->
-		<div class="mt-4 rounded-3xl bg-gradient-to-r from-primary-200 via-primary-100 to-surface-0 p-[2px] shadow-card">
-			<div class="rounded-[22px] bg-surface-0 px-4 py-3 flex items-center gap-3">
+		<div class="mt-4 rounded-3xl bg-primary-50 border border-primary-100 p-4 shadow-card">
+			<div class="flex items-center gap-3">
 				<div class="h-10 w-10 rounded-2xl bg-primary-500 text-text-inverted flex items-center justify-center shadow-card">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3l-5.8 1.9 5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3l5.8-1.9-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>
 				</div>
@@ -455,18 +455,18 @@
 								type="text"
 								readonly
 								value="sb_live_24x9•••••••••••••R7"
-								class="h-11 w-full rounded-2xl bg-surface-50 px-3 text-sm text-slate-700 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+								class="h-11 w-full rounded-2xl bg-surface-50 px-3 text-sm text-text-secondary ring-1 ring-surface-200 focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20"
 							/>
 							<button
 								type="button"
 								onclick={copyAPIKey}
-								class="h-11 min-w-[44px] rounded-2xl {copySuccess ? 'bg-success text-white animate-pulse-success' : 'bg-surface-0 ring-1 ring-slate-200 hover:bg-surface-50'} ring-1 ring-slate-200 shadow-sm flex items-center justify-center active:scale-[0.99] transition-all duration-200"
+								class="h-11 min-w-[44px] rounded-2xl {copySuccess ? 'bg-success text-white animate-pulse-success' : 'bg-surface-0 ring-1 ring-surface-200 hover:bg-surface-50'} ring-1 ring-surface-200 shadow-sm flex items-center justify-center active:scale-[0.99] transition-all duration-200"
 								aria-label="Copy API key"
 							>
 								{#if copySuccess}
 									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 								{:else}
-									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-700"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"/></svg>
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"/></svg>
 								{/if}
 							</button>
 						</div>

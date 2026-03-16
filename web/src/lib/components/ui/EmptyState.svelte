@@ -29,7 +29,7 @@
 
 <div class="flex flex-col items-center justify-center text-center px-6 py-12">
 	{#if icon}
-		<div class="{sizeClasses.icon} rounded-2xl bg-surface-100 dark:bg-slate-700 text-text-tertiary flex items-center justify-center mb-4">
+		<div class="{sizeClasses.icon} rounded-2xl bg-surface-100 dark:bg-surface-700 text-text-tertiary flex items-center justify-center mb-4">
 			{@render icon()}
 		</div>
 	{/if}

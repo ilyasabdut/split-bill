@@ -48,7 +48,7 @@
     }
   };
 
-  const config = $derived(() => statusConfig[status]);
+  const config = $derived(statusConfig[status]);
 
   const sizeClasses = {
     sm: {
@@ -68,7 +68,7 @@
     }
   };
 
-  const sizeConfig = $derived(() => sizeClasses[size]);
+  const sizeConfig = $derived(sizeClasses[size]);
 </script>
 
 <div

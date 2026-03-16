@@ -87,8 +87,8 @@
   {:else if qrCodeUrl}
     <div class="flex flex-col items-center space-y-4">
       <!-- QR Code -->
-      <div class="bg-white p-4 rounded-lg shadow-sm">
-        <img src={qrCodeUrl} alt="QR Code" class="w-full h-auto" style="max-width: {size}px" />
+      <div class="bg-surface-0 p-4 rounded-lg shadow-sm">
+        <img src={qrCodeUrl} alt="QR Code" class="w-full h-auto" style="max-width: {size}px" loading="lazy" />
       </div>
 
       <!-- Data preview -->

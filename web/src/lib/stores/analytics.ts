@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 
 export interface SpendingData {
   month: string;
@@ -69,7 +69,7 @@ function createAnalyticsStore() {
 
     /** Get spending insights (derived from spending data) */
     getSpendingInsights() {
-      const spending = this.spending?.();
+      const spending = get(this.spending);
       return spending.length > 0 ? {
         thisMonth: spending[0]?.total || 0,
         avgSplit: 0,
@@ -79,7 +79,7 @@ function createAnalyticsStore() {
 
     /** Get monthly spending data */
     getMonthlySpending(): Record<string, number> {
-      const spending = this.spending?.();
+      const spending = get(this.spending);
       return spending.reduce((acc: Record<string, number>, item) => {
         acc[item.month] = item.total;
         return acc;
@@ -97,8 +97,8 @@ function createAnalyticsStore() {
 
     /** Export analytics data */
     async exportData(format: 'csv' | 'json') {
-      const spending = this.spending?.();
-      const trends = this.trends?.();
+      const spending = get(this.spending);
+      const trends = get(this.trends);
 
       const data = {
         spending: spending,

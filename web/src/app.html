@@ -1,14 +1,27 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Split bills easily with friends" />
-    <meta name="theme-color" content="#0ea5e9" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    %sveltekit.head%
+ <!doctype html>
+ <html lang="en">
+   <head>
+     <meta charset="utf-8" />
+     <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+     <meta name="description" content="Split bills easily with friends" />
+     <meta id="theme-color" name="theme-color" content="#0ea5e9" />
+     <meta name="apple-mobile-web-app-capable" content="yes" />
+     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+     <script>
+       function updateThemeColor() {
+         const isDark = document.documentElement.classList.contains('dark');
+         const themeColor = document.getElementById('theme-color');
+         if (themeColor) {
+           themeColor.content = isDark ? '#075985' : '#0ea5e9';
+         }
+       }
+       
+       const observer = new MutationObserver(updateThemeColor);
+       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+       updateThemeColor();
+     </script>
+     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
     %sveltekit.body%

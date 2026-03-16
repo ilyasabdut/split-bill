@@ -22,9 +22,15 @@
   });
 </script>
 
-<div class="min-h-screen flex justify-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
+<div class="min-h-screen flex justify-center bg-surface-50 dark:bg-surface-900 text-text-primary dark:text-text-primary font-sans">
+  <!-- Skip link for keyboard users -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-500 focus:text-white focus:rounded-lg focus:font-semibold">
+    Skip to content
+  </a>
   <div class="w-full max-w-[430px] min-h-screen flex flex-col relative">
-    {@render children?.()}
+    <main id="main-content" class="flex-1">
+      {@render children?.()}
+    </main>
   </div>
 </div>
 

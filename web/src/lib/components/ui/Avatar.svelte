@@ -88,7 +88,7 @@
 	{...restProps}
 >
 	{#if src}
-		<img {src} {alt} class="h-full w-full rounded-full object-cover" />
+		<img {src} {alt} class="h-full w-full rounded-full object-cover" loading="lazy" />
 	{:else}
 		{initials}
 	{/if}

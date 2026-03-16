@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements';
+	import type { Snippet } from 'svelte';
 
-	interface Props extends HTMLAttributes<HTMLSpanElement> {
+	interface Props extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
 		variant?: 'success' | 'warning' | 'error' | 'info' | 'slate';
 		size?: 'sm' | 'md';
 		dot?: boolean;
 		icon?: string;
 		class?: string;
-		children?: string;
+		children?: Snippet;
 	}
 
 	const {
@@ -16,7 +17,7 @@
 		dot = false,
 		icon,
 		class: className = '',
-		children = '',
+		children,
 		...restProps
 	}: Props = $props();
 
@@ -43,14 +44,16 @@
 </script>
 
 <span
-	class={\`inline-flex items-center gap-1.5 rounded-full border font-bold uppercase tracking-wide max-w-full \${variantClasses[variant]} \${sizeClasses[size]} \${className}\`}
+	class="inline-flex items-center gap-1.5 rounded-full border font-bold uppercase tracking-wide max-w-full {variantClasses[variant]} {sizeClasses[size]} {className}"
 	{...restProps}
 >
 	{#if dot}
-		<span class={\`w-1.5 h-1.5 rounded-full shrink-0 \${dotColors[variant]}\`}></span>
+		<span class="w-1.5 h-1.5 rounded-full shrink-0 {dotColors[variant]}"></span>
 	{/if}
 	{#if icon}
 		<span class="text-xs shrink-0">{@html icon}</span>
 	{/if}
-	<span class="truncate">{children}</span>
+	{#if children}
+		<span class="truncate">{@render children()}</span>
+	{/if}
 </span>

@@ -39,7 +39,7 @@
 	<div class="relative">
 		<select
 			bind:value={selectedValue}
-			class="h-11 w-full appearance-none rounded-2xl border border-surface-200 bg-surface-50 px-4 pr-10 text-sm font-bold text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20 focus:border-error' : ''}"
+			class="h-11 w-full appearance-none rounded-2xl border border-surface-200 bg-surface-50 px-4 pr-10 text-sm font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary {className} {error ? 'border-error text-error focus:ring-error/20 focus:border-error' : ''}"
 			{...restProps}
 		>
 			<option value="" disabled>{placeholder}</option>

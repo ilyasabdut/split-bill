@@ -81,7 +81,7 @@
 	<title>Split Bill - Home</title>
 </svelte:head>
 
-<div class="w-full min-h-screen flex flex-col bg-surface-50 dark:bg-slate-900 text-text-primary dark:text-text-primary">
+<div class="w-full min-h-screen flex flex-col bg-surface-50 dark:bg-surface-900 text-text-primary dark:text-text-primary">
 	<!-- Decorative background -->
 	<div class="pointer-events-none absolute inset-0 overflow-hidden -z-10">
 		<div class="absolute -top-24 -right-20 h-72 w-72 rounded-full bg-primary-500/15 dark:bg-primary-500/10 blur-2xl"></div>
@@ -102,10 +102,10 @@
 				</div>
 			</div>
 			<div class="flex items-center gap-2">
-				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 transition-colors" aria-label="Notifications">
+				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Notifications">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
 				</button>
-				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 transition-colors" aria-label="Profile">
+				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Profile">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 				</button>
 			</div>
@@ -116,13 +116,13 @@
 	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-[120px] relative z-0 no-scrollbar">
 		<div class="max-w-lg mx-auto space-y-section">
 		<!-- Hero Card Section -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 p-5 relative overflow-hidden animate-fade-in">
+		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in">
 			<!-- Currency & Title -->
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div class="flex-1">
 					<!-- Currency Pill -->
-					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-surface-100 dark:bg-slate-700 pl-3 pr-2 py-1 text-caption font-bold text-text-secondary hover:bg-surface-200 dark:hover:bg-slate-600 active:scale-95 transition-transform">
-						<span class="w-4 h-4 rounded-full bg-surface-0 dark:bg-slate-600 flex items-center justify-center shadow-sm text-caption">Rp</span>
+					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-surface-100 dark:bg-surface-700 pl-3 pr-2 py-1 text-caption font-bold text-text-secondary hover:bg-surface-200 dark:hover:bg-surface-600 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-transform">
+						<span class="w-4 h-4 rounded-full bg-surface-0 dark:bg-surface-600 flex items-center justify-center shadow-sm text-caption">Rp</span>
 						IDR
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
 					</button>
@@ -137,11 +137,11 @@
 
 			<!-- Action Buttons -->
 			<div class="grid grid-cols-2 gap-3 mb-6">
-				<a href="/split" class="h-12 min-h-[44px] rounded-2xl bg-primary-500 shadow-md flex items-center justify-center gap-2 text-text-inverted font-semibold active:scale-[0.99] transition-transform hover:bg-primary-600 hover:shadow-lg animate-slide-in-right animate-delay-100">
+				<a href="/split" class="h-12 min-h-[44px] rounded-2xl bg-primary-500 shadow-md flex items-center justify-center gap-2 text-text-inverted font-semibold active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-transform hover:bg-primary-600 hover:shadow-lg animate-slide-in-right animate-delay-100">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-inverted"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 					<span class="text-label">New Split</span>
 				</a>
-				<a href="/receipt" class="h-12 min-h-[44px] rounded-2xl bg-surface-0 dark:bg-slate-700 border border-surface-200 dark:border-slate-600 shadow-md flex items-center justify-center gap-2 text-text-primary dark:text-text-inverted font-semibold active:scale-[0.99] transition-transform">
+				<a href="/receipt" class="h-12 min-h-[44px] rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 shadow-md flex items-center justify-center gap-2 text-text-primary dark:text-text-inverted font-semibold active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary-500 transition-transform">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600 dark:text-primary-400"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
 					<span class="text-label">Scan Receipt</span>
 				</a>
@@ -150,20 +150,20 @@
 			<!-- Saved Templates -->
 			<div class="mb-6">
 				<div class="flex items-center justify-between mb-3">
-					<h3 class="text-caption font-bold text-text-tertiary uppercase tracking-wider">Saved Templates</h3>
-					<button class="text-primary-600 text-caption font-semibold active:opacity-70">Edit</button>
+					<h2 class="text-caption font-bold text-text-tertiary uppercase tracking-wider">Saved Templates</h2>
+					<button class="text-primary-600 text-caption font-semibold active:opacity-70 focus-visible:ring-2 focus-visible:ring-primary-500/50">Edit</button>
 				</div>
 				<div class="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
 					{#each templates as template}
-						<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
+						<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
 							<div class="{getColorClasses(template.color, 'bg')} border {getColorClasses(template.color, 'border')} {getColorClasses(template.color, 'text')} h-[52px] w-[52px] rounded-2xl flex items-center justify-center group-active:scale-95 transition-transform">
 								{@html getIcon(template.icon)}
 							</div>
 							<span class="text-caption font-medium text-text-secondary text-center leading-tight">{template.name}{template.count > 0 ? ` (${template.count})` : ''}</span>
 						</button>
 					{/each}
-					<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group">
-						<div class="h-[52px] w-[52px] rounded-2xl bg-surface-50 dark:bg-slate-700 border border-surface-100 dark:border-slate-600 text-text-tertiary flex items-center justify-center group-active:scale-95 transition-transform">
+					<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
+						<div class="h-[52px] w-[52px] rounded-2xl bg-surface-50 dark:bg-surface-700 border border-surface-100 dark:border-surface-600 text-text-tertiary flex items-center justify-center group-active:scale-95 transition-transform">
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 						</div>
 						<span class="text-caption font-medium text-text-secondary text-center leading-tight">Add</span>
@@ -191,12 +191,12 @@
 		<!-- Your Groups -->
 		<section>
 			<div class="flex items-center justify-between mb-3">
-				<h3 class="text-section font-bold text-text-primary">Your Groups</h3>
+				<h2 class="text-section font-bold text-text-primary">Your Groups</h2>
 				<a href="/groups/new" class="text-label font-semibold text-primary-600">+ Create Group</a>
 			</div>
 			<div class="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
 				{#each groups as group}
-					<a href="/groups/{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 active:scale-[0.98] transition-transform block">
+					<a href="/groups/{group.id}" class="shrink-0 w-36 sm:w-40 p-4 rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-transform block">
 						<div class="flex items-center gap-3 mb-3">
 							<div class="{getColorClasses(group.color, 'bg')} {getColorClasses(group.color, 'text')} h-10 w-10 rounded-xl flex items-center justify-center">
 								{@html getIcon(group.icon)}
@@ -214,11 +214,11 @@
 
 		<!-- Activity Feed -->
 		<section>
-			<h3 class="px-1 mb-3 text-label font-bold text-text-primary">Activity</h3>
+			<h2 class="px-1 mb-3 text-label font-bold text-text-primary">Activity</h2>
 			<div class="space-y-2">
 				{#each activities as activity}
-					<div class="flex items-center gap-3 p-3 rounded-2xl bg-surface-0/60 dark:bg-slate-800/60 border border-surface-50 dark:border-slate-700/50 backdrop-blur-sm">
-						<div class="h-8 w-8 rounded-full {activity.personColor === 'sky' ? 'bg-info/10' : activity.personColor === 'emerald' ? 'bg-success/10' : 'bg-surface-200'} border border-surface-0 dark:border-slate-700 flex items-center justify-center shrink-0">
+					<div class="flex items-center gap-3 p-3 rounded-2xl bg-surface-0 dark:bg-surface-800 border border-surface-100 dark:border-surface-700">
+						<div class="h-8 w-8 rounded-full {activity.personColor === 'sky' ? 'bg-info/10' : activity.personColor === 'emerald' ? 'bg-success/10' : 'bg-surface-200'} border border-surface-0 dark:border-surface-700 flex items-center justify-center shrink-0">
 							<span class="text-caption font-bold text-text-primary dark:text-text-primary">{activity.person[0]}</span>
 						</div>
 						<p class="text-caption text-text-primary leading-snug flex-1"><span class="font-bold text-text-primary">{activity.person}</span> {activity.action} <span class="font-semibold">{activity.target}</span>.</p>
@@ -267,12 +267,12 @@
 		<section class="space-y-3">
 			<div class="flex items-center justify-between px-1">
 				<p class="text-section font-bold text-text-primary">Recent Splits</p>
-				<a href="/history" class="text-label font-semibold text-primary-600 active:scale-[0.99]">View all</a>
+				<a href="/history" class="text-label font-semibold text-primary-600 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary-500/50">View all</a>
 			</div>
 
 			{#each recentSplits as split, index}
 				{@const statusColors = getStatusClasses(split.status)}
-				<article class="rounded-3xl bg-surface-0 dark:bg-slate-800 shadow-card border border-surface-200 dark:border-slate-700 p-4 hover:shadow-elevated transition-all duration-200 group animate-slide-in" style="animation-delay: {Math.min(index * 100 + 400, 700)}ms;">
+				<article class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-4 hover:shadow-elevated transition-all duration-200 group animate-slide-in" style="animation-delay: {Math.min(index * 100 + 400, 700)}ms;">
 					<div class="flex items-start gap-3">
 						<div class="{getColorClasses(split.color, 'bg')} border {getColorClasses(split.color, 'border')} {getColorClasses(split.color, 'text')} h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
 							{@html getIcon(split.icon)}
@@ -294,11 +294,11 @@
 					</div>
 					<div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
 						<div class="flex -space-x-2">
-							<div class="h-7 w-7 rounded-full bg-surface-200 dark:bg-slate-700 border-2 border-surface-0 dark:border-slate-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">A</div>
-							<div class="h-7 w-7 rounded-full bg-info/10 border-2 border-surface-0 dark:border-slate-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">M</div>
-							<div class="h-7 w-7 rounded-full bg-success/10 border-2 border-surface-0 dark:border-slate-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">J</div>
+							<div class="h-7 w-7 rounded-full bg-surface-200 dark:bg-surface-700 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">A</div>
+							<div class="h-7 w-7 rounded-full bg-info/10 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">M</div>
+							<div class="h-7 w-7 rounded-full bg-success/10 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">J</div>
 						</div>
-						<a href="/split/{split.id}" class="px-4 py-2 rounded-xl bg-surface-100 dark:bg-slate-700 text-text-primary dark:text-text-inverted text-caption font-bold shadow-sm active:scale-95 transition-transform">
+						<a href="/split/{split.id}" class="px-4 py-2 rounded-xl bg-surface-100 dark:bg-surface-700 text-text-primary dark:text-text-inverted text-caption font-bold shadow-sm active:scale-95 transition-transform">
 							Details
 						</a>
 					</div>
@@ -308,9 +308,9 @@
 
 		<!-- Friendly helper card -->
 		<section class="rounded-3xl bg-primary-600 dark:bg-primary-900 shadow-card p-4 text-text-inverted relative overflow-hidden">
-			<div class="absolute right-0 top-0 h-32 w-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+			<div class="absolute right-0 top-0 h-32 w-32 bg-surface-0/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
 			<div class="relative z-10 flex items-start gap-3">
-				<div class="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">
+				<div class="h-10 w-10 rounded-xl bg-surface-0/20 flex items-center justify-center shadow-sm">
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3l-5.8 1.9 5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3l5.8-1.9-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>
 				</div>
 				<div class="min-w-0">
