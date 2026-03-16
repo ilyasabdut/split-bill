@@ -103,3 +103,7 @@ web/.svelte-kit/
 .env.*.local
 
 lightpanda
+
+# Worktrees
+.worktrees/
+worktrees/
