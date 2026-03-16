@@ -161,7 +161,7 @@
 			</section>
 
 			<!-- Summary Chips -->
-			<section class="mb-section overflow-x-auto no-scrollbar animate-slide-up" style="animation-delay: 100ms;">
+			<section class="mb-section overflow-x-auto no-scrollbar animate-slide-up animate-delay-100">
 				<div class="flex gap-3 pb-1 min-w-max">
 					<div class="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
 						<span class="w-10 h-10 rounded-xl bg-surface-50 dark:bg-surface-700 flex items-center justify-center">
@@ -185,7 +185,7 @@
 			</section>
 
 			<!-- Settlement Summary -->
-			<section class="mb-section animate-slide-up" style="animation-delay: 200ms;">
+			<section class="mb-section animate-slide-up animate-delay-200">
 				<h3 class="text-label font-bold text-text-primary mb-3 ml-1 flex items-center gap-2">Settlement Summary</h3>
 				<div class="grid grid-cols-2 gap-3">
 					<!-- You Owe -->

@@ -201,7 +201,7 @@
 		</section>
 
 		<!-- Preferences -->
-		<section aria-label="Preferences" class="mb-section animate-slide-up" style="animation-delay: 100ms;">
+		<section aria-label="Preferences" class="mb-section animate-slide-up animate-delay-100">
 			<div class="flex items-center justify-between px-1">
 				<h2 class="text-caption font-bold tracking-wider text-text-tertiary uppercase">Preferences</h2>
 				<span class="text-caption text-text-tertiary">Appearance & alerts</span>
@@ -272,7 +272,7 @@
 		</section>
 
 		<!-- Social -->
-		<section aria-label="Social" class="mb-section animate-slide-up" style="animation-delay: 200ms;">
+		<section aria-label="Social" class="mb-section animate-slide-up animate-delay-200">
 			<div class="flex items-center justify-between px-1">
 				<h2 class="text-caption font-bold tracking-wider text-text-tertiary uppercase">Social</h2>
 				<span class="text-caption text-text-tertiary">Groups & payments</span>
@@ -327,7 +327,7 @@
 		</section>
 
 		<!-- Data -->
-		<section aria-label="Data" class="mb-6 animate-slide-up" style="animation-delay: 300ms;">
+		<section aria-label="Data" class="mb-6 animate-slide-up animate-delay-300">
 			<div class="flex items-center justify-between px-1">
 				<h2 class="text-xs font-bold tracking-wider text-text-secondary uppercase">Data</h2>
 				<span class="text-xs text-text-secondary">Export & insights</span>
@@ -412,7 +412,7 @@
 		</section>
 
 		<!-- Account -->
-		<section aria-label="Account" class="animate-slide-up" style="animation-delay: 400ms;">
+		<section aria-label="Account" class="animate-slide-up animate-delay-400">
 			<div class="flex items-center justify-between px-1">
 				<h2 class="text-xs font-bold tracking-wider text-text-secondary uppercase">Account</h2>
 				<span class="text-xs text-text-secondary">Access & Privacy</span>
