@@ -1,0 +1,205 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - main [ref=e5]:
+      - generic [ref=e7]:
+        - heading "Split Bill" [level=1] [ref=e10]
+        - main [ref=e11]:
+          - generic [ref=e13]:
+            - generic [ref=e15]:
+              - generic [ref=e16]:
+                - img [ref=e18]
+                - generic [ref=e21]:
+                  - paragraph [ref=e22]: Split Bill
+                  - paragraph [ref=e23]: Make it fair in seconds
+              - generic [ref=e24]:
+                - button "Notifications" [ref=e25]:
+                  - img [ref=e26]
+                - button "Profile" [ref=e29]:
+                  - img [ref=e30]
+            - main [ref=e33]:
+              - generic [ref=e34]:
+                - region "Quick stats and currency selection" [ref=e35]:
+                  - generic [ref=e36]:
+                    - generic [ref=e37]:
+                      - button "Rp IDR" [ref=e38]:
+                        - generic [ref=e39]: Rp
+                        - text: IDR
+                        - img [ref=e40]
+                      - heading "Split bills easily with friends" [level=1] [ref=e42]
+                    - img [ref=e45]
+                  - generic [ref=e49]:
+                    - link "New Split" [ref=e50] [cursor=pointer]:
+                      - /url: /split
+                      - img [ref=e51]
+                      - generic [ref=e52]: New Split
+                    - link "Scan Receipt" [ref=e53] [cursor=pointer]:
+                      - /url: /receipt
+                      - img [ref=e54]
+                      - generic [ref=e59]: Scan Receipt
+                  - generic [ref=e60]:
+                    - generic [ref=e61]:
+                      - heading "Saved Templates" [level=2] [ref=e62]
+                      - button "Edit" [ref=e63]
+                    - generic [ref=e64]:
+                      - button "Lunch (3)" [ref=e65]:
+                        - img [ref=e67]
+                        - generic [ref=e70]: Lunch (3)
+                      - button "Rent" [ref=e71]:
+                        - img [ref=e73]
+                        - generic [ref=e76]: Rent
+                      - button "Trip" [ref=e77]:
+                        - img [ref=e79]
+                        - generic [ref=e82]: Trip
+                      - button "Add" [ref=e83]:
+                        - img [ref=e85]
+                        - generic [ref=e86]: Add
+                  - generic [ref=e87]:
+                    - generic [ref=e88]:
+                      - paragraph [ref=e89]: This month
+                      - paragraph [ref=e90]: Rp 3.850k
+                    - generic [ref=e91]:
+                      - paragraph [ref=e92]: Settled
+                      - paragraph [ref=e93]: 5 of 7
+                    - generic [ref=e94]:
+                      - paragraph [ref=e95]: Pending
+                      - paragraph [ref=e96]: 2 splits
+                - region "Your groups" [ref=e97]:
+                  - generic [ref=e98]:
+                    - heading "Your Groups" [level=2] [ref=e99]
+                    - link "+ Create Group" [ref=e100] [cursor=pointer]:
+                      - /url: /groups/new
+                  - generic [ref=e101]:
+                    - link "Roomies 4 members Last split 2d ago" [ref=e102] [cursor=pointer]:
+                      - /url: /groups/roomies
+                      - generic [ref=e103]:
+                        - img [ref=e105]
+                        - generic [ref=e108]:
+                          - paragraph [ref=e109]: Roomies
+                          - paragraph [ref=e110]: 4 members
+                      - paragraph [ref=e111]: Last split 2d ago
+                    - link "Game Crew 6 members Last split Yesterday" [ref=e112] [cursor=pointer]:
+                      - /url: /groups/gamecrew
+                      - generic [ref=e113]:
+                        - img [ref=e115]
+                        - generic [ref=e121]:
+                          - paragraph [ref=e122]: Game Crew
+                          - paragraph [ref=e123]: 6 members
+                      - paragraph [ref=e124]: Last split Yesterday
+                    - link "Hikers 12 members Last split 1w ago" [ref=e125] [cursor=pointer]:
+                      - /url: /groups/hikers
+                      - generic [ref=e126]:
+                        - img [ref=e128]
+                        - generic [ref=e130]:
+                          - paragraph [ref=e131]: Hikers
+                          - paragraph [ref=e132]: 12 members
+                      - paragraph [ref=e133]: Last split 1w ago
+                - region "Recent activity" [ref=e134]:
+                  - heading "Activity" [level=2] [ref=e135]
+                  - generic [ref=e136]:
+                    - generic [ref=e137]:
+                      - generic [ref=e139]: M
+                      - paragraph [ref=e140]: Maya marked Sushi Night.
+                      - generic [ref=e141]: 2h
+                    - generic [ref=e142]:
+                      - generic [ref=e144]: J
+                      - paragraph [ref=e145]: Jordan joined Road Trip.
+                      - generic [ref=e146]: 5h
+                - region "Spending insights" [ref=e147]:
+                  - generic [ref=e148]:
+                    - generic [ref=e149]:
+                      - generic [ref=e150]:
+                        - paragraph [ref=e151]: Total Spent (Feb)
+                        - heading "Rp 3.850k" [level=2] [ref=e152]
+                      - link "Insights" [ref=e153] [cursor=pointer]:
+                        - /url: "#insights"
+                    - generic [ref=e154]:
+                      - generic [ref=e156] [cursor=pointer]: Dec
+                      - generic [ref=e158] [cursor=pointer]: Jan
+                      - generic [ref=e160] [cursor=pointer]: Feb
+                      - generic [ref=e163] [cursor=pointer]: Mar
+                - generic [ref=e164]:
+                  - generic [ref=e165]:
+                    - paragraph [ref=e166]: Recent Splits
+                    - link "View all" [ref=e167] [cursor=pointer]:
+                      - /url: /history
+                  - article [ref=e168]:
+                    - generic [ref=e169]:
+                      - img [ref=e171]
+                      - generic [ref=e175]:
+                        - generic [ref=e176]:
+                          - paragraph [ref=e177]: Sushi Night
+                          - paragraph [ref=e178]: Feb 9 • 4 people
+                        - generic [ref=e179]:
+                          - paragraph [ref=e180]: Rp 1.350k
+                          - generic [ref=e181]: Unpaid
+                    - generic [ref=e182]:
+                      - generic [ref=e183]:
+                        - generic [ref=e184]: A
+                        - generic [ref=e185]: M
+                        - generic [ref=e186]: J
+                      - link "Details" [ref=e187] [cursor=pointer]:
+                        - /url: /split/1
+                  - article [ref=e188]:
+                    - generic [ref=e189]:
+                      - img [ref=e191]
+                      - generic [ref=e196]:
+                        - generic [ref=e197]:
+                          - paragraph [ref=e198]: Road Trip Gas
+                          - paragraph [ref=e199]: Feb 6 • 3 people
+                        - generic [ref=e200]:
+                          - paragraph [ref=e201]: Rp 815k
+                          - generic [ref=e202]: Paid
+                    - generic [ref=e203]:
+                      - generic [ref=e204]:
+                        - generic [ref=e205]: A
+                        - generic [ref=e206]: M
+                        - generic [ref=e207]: J
+                      - link "Details" [ref=e208] [cursor=pointer]:
+                        - /url: /split/2
+                  - article [ref=e209]:
+                    - generic [ref=e210]:
+                      - img [ref=e212]
+                      - generic [ref=e218]:
+                        - generic [ref=e219]:
+                          - paragraph [ref=e220]: Movie Snacks
+                          - paragraph [ref=e221]: Feb 2 • 2 people
+                        - generic [ref=e222]:
+                          - paragraph [ref=e223]: Rp 295k
+                          - generic [ref=e224]: Unpaid
+                    - generic [ref=e225]:
+                      - generic [ref=e226]:
+                        - generic [ref=e227]: A
+                        - generic [ref=e228]: M
+                        - generic [ref=e229]: J
+                      - link "Details" [ref=e230] [cursor=pointer]:
+                        - /url: /split/3
+                - generic [ref=e233]:
+                  - img [ref=e235]
+                  - generic [ref=e237]:
+                    - paragraph [ref=e238]: Scanning Tips
+                    - paragraph [ref=e239]: Ensure good lighting for best results. We'll handle the math!
+  - contentinfo "Main navigation" [ref=e240]:
+    - navigation [ref=e241]:
+      - list [ref=e242]:
+        - listitem [ref=e243]:
+          - link "Home" [ref=e244] [cursor=pointer]:
+            - /url: /
+            - img [ref=e246]
+            - generic [ref=e249]: Home
+        - listitem [ref=e250]:
+          - link "History" [ref=e251] [cursor=pointer]:
+            - /url: /history
+            - img [ref=e253]
+            - generic [ref=e257]: History
+        - listitem [ref=e258]:
+          - link "Scan" [ref=e259] [cursor=pointer]:
+            - /url: /receipt
+            - img [ref=e262]
+            - generic [ref=e268]: Scan
+        - listitem [ref=e269]:
+          - link "Settings" [ref=e270] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e272]
+            - generic [ref=e275]: Settings
