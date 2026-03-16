@@ -88,7 +88,7 @@
 
 		{#if sent}
 			<!-- Success State -->
-			<section class="pt-20 text-center">
+			<section class="pt-20 text-center" aria-label="Success confirmation">
 				<div class="mx-auto h-24 w-24 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
 					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600"><path d="M20 6 9 12 15 15 9"/><path d="M20 6"/></svg>
 				</div>
@@ -121,7 +121,7 @@
 			</section>
 		{:else}
 			<!-- Amount Summary -->
-			<section class="rounded-3xl bg-amber-600 shadow-xl p-5 text-white relative overflow-hidden">
+			<section class="rounded-3xl bg-amber-600 shadow-xl p-5 text-white relative overflow-hidden" aria-label="Amount summary">
 				<div class="absolute right-0 top-0 h-40 w-40 bg-surface-0/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
 				<div class="relative z-10">

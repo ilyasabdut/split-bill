@@ -116,7 +116,7 @@
 	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-[120px] relative z-0 no-scrollbar">
 		<div class="max-w-lg mx-auto space-y-section">
 		<!-- Hero Card Section -->
-		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in">
+		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in" aria-label="Quick stats and currency selection">
 			<!-- Currency & Title -->
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div class="flex-1">
@@ -189,7 +189,7 @@
 		</section>
 
 		<!-- Your Groups -->
-		<section>
+		<section aria-label="Your groups">
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-section font-bold text-text-primary">Your Groups</h2>
 				<a href="/groups/new" class="text-label font-semibold text-primary-600">+ Create Group</a>
@@ -213,7 +213,7 @@
 		</section>
 
 		<!-- Activity Feed -->
-		<section>
+		<section aria-label="Recent activity">
 			<h2 class="px-1 mb-3 text-label font-bold text-text-primary">Activity</h2>
 			<div class="space-y-2">
 				{#each activities as activity}
@@ -229,7 +229,7 @@
 		</section>
 
 		<!-- Spending Insights -->
-		<section>
+		<section aria-label="Spending insights">
 			<div class="rounded-3xl bg-text-primary text-text-inverted p-5 shadow-lg relative overflow-hidden">
 				<div class="relative z-10 flex items-start justify-between">
 					<div>

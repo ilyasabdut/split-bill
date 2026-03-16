@@ -340,7 +340,7 @@
 			/>
 		{/if}
 
-		<section class="mt-section">
+		<section class="mt-section" aria-label="Receipt items">
 			<div class="relative">
 				<input
 					type="file"
@@ -401,7 +401,7 @@
 			</div>
 		</section>
 
-		<section class="mt-section rounded-3xl bg-surface-0 shadow-card border border-surface-200">
+		<section class="mt-section rounded-3xl bg-surface-0 shadow-card border border-surface-200" aria-label="Item details">
 			<div class="px-4 py-3 bg-surface-50 dark:bg-surface-700/50 flex items-center justify-between">
 				<div class="flex items-center gap-2">
 					<div class="h-5 w-5 rounded-full bg-success flex items-center justify-center">
@@ -549,7 +549,7 @@
 			</div>
 		</section>
 
-		<section class="mt-section rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800">
+		<section class="mt-section rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800" aria-label="Tips and help">
 			<div class="p-4">
 				<div class="flex items-start gap-3">
 					<div class="h-11 w-11 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-primary-200 dark:border-primary-800 flex items-center justify-center">
