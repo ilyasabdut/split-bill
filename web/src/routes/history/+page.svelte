@@ -118,8 +118,6 @@
 				<a href="#unpaid" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Unpaid</a>
 				<a href="#completed" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Completed</a>
 				<a href="#groups" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Groups</a>
-				<a href="#templates" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Templates</a>
-				<a href="#analytics" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Analytics</a>
 			</div>
 		</nav>
 	</header>
@@ -133,7 +131,7 @@
 			<!-- Currency Selector -->
 			<div class="flex justify-center mb-4">
 				<button class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-text-primary active:scale-95 transition-transform">
-					<span class="w-5 h-5 rounded-full bg-surface-100 dark:bg-surface-600 flex items-center justify-center text-[10px]">🇮🇩</span>
+					<span class="w-5 h-5 rounded-full flex items-center justify-center text-[12px]">🇮🇩</span>
 					IDR
 					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
 				</button>

@@ -341,52 +341,69 @@
 		{/if}
 
 		<section class="mt-section" aria-label="Receipt items">
-			<div class="relative">
-				<input
-					type="file"
-					id="receipt-upload"
-					accept="image/jpeg,image/png,image/webp,application/pdf"
-					onchange={handleFileUpload}
-					class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-					disabled={loading}
-				/>
+			<div class="w-full rounded-2xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-surface-800 transition-all duration-200">
+				<div class="px-5 py-10">
+					<div class="mx-auto flex flex-col items-center">
+						{#if loading && scanStatus === 'scanning'}
+							<div class="h-20 w-20 rounded-xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="32"
+									height="32"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									class="text-primary-500 animate-spin"
+								>
+									<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+								</svg>
+							</div>
+							<p class="mt-4 text-body font-semibold animate-fade-in">Scanning receipt...</p>
+							<p class="mt-1 text-label text-text-secondary text-center animate-fade-in animate-delay-100">This may take a moment</p>
+						{:else}
+							<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center">
+								<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500 dark:text-primary-400"><path d="m23 19-7-16 2v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"/><path d="M16 3h5"/><path d="M21 14V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M21 14v7"/></svg>
+							</div>
+							<p class="mt-4 text-body font-semibold">Tap to scan</p>
+							<p class="mt-1 text-label text-text-secondary text-center">Or upload a photo/PDF of your receipt</p>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<div class="flex gap-3 mt-4">
 				<button
 					type="button"
-					class="w-full rounded-2xl border-2 border-dashed border-primary-500 bg-primary-50 dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity group hover:border-primary-600 transition-all duration-200"
+					onclick={handleOpenCamera}
 					disabled={loading}
+					class="flex-1 h-12 min-h-[44px] rounded-2xl bg-primary-500 shadow-md flex items-center justify-center gap-2 text-text-inverted font-semibold active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<div class="px-5 py-10">
-						<div class="mx-auto flex flex-col items-center">
-							{#if loading && scanStatus === 'scanning'}
-								<div class="h-20 w-20 rounded-xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center animate-scale-in">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="32"
-										height="32"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										class="text-primary-500 animate-spin"
-									>
-										<path d="M21 12a9 9 0 1 1-6.219-8.56" />
-									</svg>
-								</div>
-								<p class="mt-4 text-body font-semibold animate-fade-in">Scanning receipt...</p>
-								<p class="mt-1 text-label text-text-secondary text-center animate-fade-in animate-delay-100">This may take a moment</p>
-							{:else}
-								<div class="h-20 w-20 rounded-3xl bg-surface-0 dark:bg-surface-700 ring-1 ring-primary-200 dark:ring-primary-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-									<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500 dark:text-primary-400"><path d="m23 19-7-16 2v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"/><path d="M16 3h5"/><path d="M21 14V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9"/><path d="M21 14v7"/></svg>
-								</div>
-
-								<p class="mt-4 text-body font-semibold">Tap to scan</p>
-								<p class="mt-1 text-label text-text-secondary text-center">Or upload a photo/PDF of your receipt</p>
-							{/if}
-						</div>
-					</div>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-inverted"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+					<span class="text-label">Open Camera</span>
 				</button>
+
+				<div class="relative flex-1">
+					<input
+						type="file"
+						id="receipt-upload"
+						accept="image/jpeg,image/png,image/webp,application/pdf"
+						onchange={handleFileUpload}
+						class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+						disabled={loading}
+						aria-label="Upload receipt image"
+					/>
+					<button
+						type="button"
+						disabled={loading}
+						class="w-full h-12 min-h-[44px] rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 shadow-md flex items-center justify-center gap-2 text-text-primary dark:text-text-inverted font-semibold active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary-500 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-primary"><path d="m21 15-4 4-4"/><path d="M17 8h-4"/><path d="m21 3-5 7-7-5"/><path d="M3 3v18h18"/></svg>
+						<span class="text-label">Upload File</span>
+					</button>
+				</div>
 			</div>
 
 			<div class="flex justify-center gap-3 mt-4">

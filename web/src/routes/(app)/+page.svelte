@@ -116,13 +116,11 @@
 	<main class="flex-1 overflow-y-auto px-4 pt-5 pb-[120px] relative z-0 no-scrollbar">
 		<div class="max-w-lg mx-auto space-y-section">
 		<!-- Hero Card Section -->
-		<section class="rounded-2xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in" aria-label="Quick stats and currency selection">
-			<!-- Currency & Title -->
+		<section class="rounded-3xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 dark:border-surface-700 p-5 relative overflow-hidden animate-fade-in" aria-label="Quick stats and currency selection">
 			<div class="flex items-start justify-between gap-4 mb-5">
 				<div class="flex-1">
-					<!-- Currency Pill -->
 					<button onclick={() => showCurrencyConverter = true} class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-surface-100 dark:bg-surface-700 pl-3 pr-2 py-1 text-caption font-bold text-text-secondary hover:bg-surface-200 dark:hover:bg-surface-600 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-transform">
-						<span class="w-4 h-4 rounded-full bg-surface-0 dark:bg-surface-600 flex items-center justify-center shadow-sm text-caption">Rp</span>
+						<span class="w-5 h-5 rounded-full flex items-center justify-center shadow-sm text-caption">🇮🇩</span>
 						IDR
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
 					</button>
@@ -171,19 +169,18 @@
 				</div>
 			</div>
 
-			<!-- Quick Stats -->
 			<div class="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
-				<div class="flex-1 min-w-[100px] shrink-0 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/15 px-3 py-2">
-					<p class="text-caption text-text-secondary">This month</p>
-					<p class="text-label font-bold text-text-primary">Rp 3.850k</p>
+				<div class="flex-1 min-w-[100px] shrink-0 rounded-2xl bg-primary-600 dark:bg-primary-700 border border-primary-500 px-3 py-2 shadow-card">
+					<p class="text-caption text-primary-100">This month</p>
+					<p class="text-label font-bold text-text-inverted">Rp 3.850k</p>
 				</div>
-				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-success/10 dark:bg-success/20 border border-success/20 px-3 py-2">
+				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-3 py-2">
 					<p class="text-caption text-text-secondary">Settled</p>
-					<p class="text-label font-bold text-text-primary">{settledCount} of {totalCount}</p>
+					<p class="text-label font-bold text-emerald-700 dark:text-emerald-400">{settledCount} of {totalCount}</p>
 				</div>
-				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-warning/10 dark:bg-warning/20 border border-warning/20 px-3 py-2">
+				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 px-3 py-2">
 					<p class="text-caption text-text-secondary">Pending</p>
-					<p class="text-label font-bold text-text-primary">{pendingCount} splits</p>
+					<p class="text-label font-bold text-amber-700 dark:text-amber-400">{pendingCount} splits</p>
 				</div>
 			</div>
 		</section>
@@ -217,7 +214,7 @@
 			<h2 class="px-1 mb-3 text-label font-bold text-text-primary">Activity</h2>
 			<div class="space-y-2">
 				{#each activities as activity}
-					<div class="flex items-center gap-3 p-3 rounded-2xl bg-surface-0 dark:bg-surface-800 border border-surface-100 dark:border-surface-700">
+					<div class="flex items-center gap-3 p-3 rounded-3xl bg-surface-0 dark:bg-surface-800 border border-surface-100 dark:border-surface-700">
 						<div class="h-8 w-8 rounded-full {activity.personColor === 'sky' ? 'bg-info/10' : activity.personColor === 'emerald' ? 'bg-success/10' : 'bg-surface-200'} border border-surface-0 dark:border-surface-700 flex items-center justify-center shrink-0">
 							<span class="text-caption font-bold text-text-primary dark:text-text-primary">{activity.person[0]}</span>
 						</div>
