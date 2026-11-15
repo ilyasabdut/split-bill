@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { groupsStore } from '$lib/stores/groups';
 
 	interface Member {
 		id: string;
@@ -78,11 +79,36 @@
 
 		isCreating = true;
 
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		try {
+			const response = await fetch('/api/groups', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: groupName.trim(), owner_id: 1 })
+			});
 
-		const groupId = 'group-' + Date.now();
+			if (!response.ok) {
+				const err = await response.json().catch(() => ({ detail: 'Failed to create group' }));
+				throw new Error(err.detail || 'Failed to create group');
+			}
 
-		goto(`/groups/${groupId}`);
+			const group = await response.json();
+
+			const memberAdds = members
+				.filter(m => m.name.trim() && m.name !== 'You')
+				.map(m => fetch(`/api/groups/${group.id}/members`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ user_id: 1 })
+				}).catch(() => null));
+
+			await Promise.all(memberAdds);
+
+			groupsStore.addGroup({ id: group.id, name: group.name, members: [], created_at: group.created_at });
+			goto(`/groups/${group.id}`);
+		} catch (err) {
+			errors.submit = err instanceof Error ? err.message : 'Failed to create group';
+			isCreating = false;
+		}
 	}
 </script>
 

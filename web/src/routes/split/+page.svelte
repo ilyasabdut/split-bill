@@ -2,12 +2,14 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { splitsService } from '$lib/services/api';
+	import { splitsService, templatesService } from '$lib/services/api';
 	import { receiptStore, splitStore, currencyStore, templatesStore, groupsStore } from '$lib/stores';
 	import { calculateSplit } from '$lib/services/offline';
+	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 	import { offlineStore } from '$lib/stores/offline';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
+	import CurrencySelector from '$lib/components/CurrencySelector.svelte';
 
 	interface Person {
 		name: string;
@@ -22,11 +24,13 @@
 	let tax = $state(0);
 	let tip = $state(50000);
 	let calculating = $state(false);
-	let selectedTip = $state(20);
+	let selectedTip = $state<number | 'custom'>(20);
 	let roundingMode = $state<'down' | 'exact' | 'up'>('exact');
 	let splitMethod = $state<'equal' | 'percentage' | 'item'>('equal');
 	let selectedCurrency = $state('IDR');
 	let errors = $state<Record<string, string>>({});
+	let percentages = $state<number[]>([50, 50]);
+	let receiptItems = $state<{ name: string; price: number; assignedTo: number[] }[]>([]);
 
 	const currencies = [
 		{ value: 'USD', label: 'USD ($)', icon: '🇺🇸' },
@@ -54,6 +58,13 @@
 			if (receiptData.tax && receiptData.tax > 0) {
 				tax = receiptData.tax * 1000;
 			}
+
+			// Populate receipt items for "By Item" split
+			receiptItems = receiptData.items.map(item => ({
+				name: item.name || 'Item',
+				price: (item.price || 0) * 1000,
+				assignedTo: []
+			}));
 		}
 	});
 
@@ -70,10 +81,18 @@
 			color: colors[people.length % colors.length]
 		};
 		people = [...people, newPerson];
+		const equalShare = Math.floor(100 / people.length);
+		percentages = people.map((_, i) => i === people.length - 1 ? 100 - equalShare * (people.length - 1) : equalShare);
 	}
 
 	function removePerson(index: number) {
 		people = people.filter((_, i) => i !== index);
+		percentages = percentages.filter((_, i) => i !== index);
+		const total = percentages.reduce((s, p) => s + p, 0);
+		if (total !== 100 && percentages.length > 0) {
+			percentages[0] += 100 - total;
+			percentages = [...percentages];
+		}
 	}
 
 	function updatePersonName(index: number, name: string) {
@@ -86,38 +105,76 @@
 		people = people.map((p, i) => i === index ? { ...p, name } : p);
 	}
 
+	function toggleItemAssignment(itemIndex: number, personIndex: number) {
+		const item = receiptItems[itemIndex];
+		const idx = item.assignedTo.indexOf(personIndex);
+		if (idx >= 0) {
+			item.assignedTo = item.assignedTo.filter(i => i !== personIndex);
+		} else {
+			item.assignedTo = [...item.assignedTo, personIndex];
+		}
+		receiptItems = [...receiptItems];
+	}
+
 	const estimatedTotal = $derived(billAmount + tax + tip);
-	const personShare = $derived(Math.round(estimatedTotal / people.length));
+
+	function applyRounding(amount: number): number {
+		if (roundingMode === 'exact') return Math.round(amount);
+		const unit = 1000;
+		if (roundingMode === 'up') return Math.ceil(amount / unit) * unit;
+		return Math.floor(amount / unit) * unit;
+	}
+
+	const personShare = $derived.by(() => {
+		if (splitMethod === 'percentage') {
+			return percentages.map(p => applyRounding(estimatedTotal * p / 100));
+		}
+		if (splitMethod === 'item' && receiptItems.length > 0) {
+			const shares = people.map(() => 0);
+			for (const item of receiptItems) {
+				if (item.assignedTo.length > 0) {
+					const perPerson = item.price / item.assignedTo.length;
+					for (const idx of item.assignedTo) {
+						shares[idx] += perPerson;
+					}
+				}
+			}
+			// Add tax and tip proportionally
+			const itemTotal = shares.reduce((s, v) => s + v, 0);
+			if (itemTotal > 0) {
+				const extras = tax + tip;
+				return shares.map(s => applyRounding(s + (s / itemTotal) * extras));
+			}
+			return shares.map(s => applyRounding(s));
+		}
+		return people.map(() => applyRounding(estimatedTotal / people.length));
+	});
+	const percentageTotal = $derived(percentages.reduce((s, p) => s + p, 0));
 
 	function validateForm(): boolean {
 		errors = {};
 		let isValid = true;
 
-		// Validate bill amount
 		if (billAmount <= 0) {
 			errors.billAmount = 'Bill amount must be greater than 0';
 			isValid = false;
 		}
 
-		// Validate tax
 		if (tax < 0) {
 			errors.tax = 'Tax cannot be negative';
 			isValid = false;
 		}
 
-		// Validate tip
 		if (tip < 0) {
 			errors.tip = 'Tip cannot be negative';
 			isValid = false;
 		}
 
-		// Validate people
 		if (people.length < 2) {
 			errors.people = 'At least 2 people are required';
 			isValid = false;
 		}
 
-		// Validate person names
 		people.forEach((person, index) => {
 			if (!person.name.trim()) {
 				errors[`person-${index}`] = 'Name is required';
@@ -125,11 +182,15 @@
 			}
 		});
 
+		if (splitMethod === 'percentage' && percentageTotal !== 100) {
+			errors.percentages = 'Percentages must add up to 100%';
+			isValid = false;
+		}
+
 		return isValid;
 	}
 
 	async function handleCalculateSplit() {
-		// Validate form first
 		if (!validateForm()) {
 			alert('Please fix the errors before proceeding');
 			return;
@@ -138,23 +199,53 @@
 		calculating = true;
 
 		try {
-			// Prepare the split data
 			const splitData = {
 				person_names: people.map(p => p.name),
-				item_assignments: [], // Will be populated when item splitting is implemented
+				item_assignments: [],
 				tax_amount_input: tax,
 				tip_amount_input: tip,
 				split_evenly: splitMethod === 'equal',
-				total_amount: billAmount
+				total_amount: billAmount,
+				percentages: splitMethod === 'percentage' ? percentages : undefined
 			};
 
-			// Call the API to calculate the split
-			const response = await splitsService.calculate(splitData);
+			let splitId: string;
+			let results: Record<string, any>;
 
-			// Store the split ID for sharing
-			const splitId = response.split_id;
+			try {
+				const response = await splitsService.calculate(splitData);
+				splitId = response.split_id;
+				results = response.split_results;
+			} catch {
+				splitId = crypto.randomUUID();
+				results = {};
+				const taxPerPerson = tax / people.length;
+				const tipPerPerson = tip / people.length;
 
-			// Navigate to the split detail page
+				people.forEach((person, i) => {
+					const share = splitMethod === 'percentage'
+						? applyRounding(billAmount * percentages[i] / 100)
+						: applyRounding(billAmount / people.length);
+					results[person.name] = {
+						total: share + Math.round(taxPerPerson) + Math.round(tipPerPerson),
+						items: [],
+						tax_share: Math.round(taxPerPerson),
+						tip_share: Math.round(tipPerPerson)
+					};
+				});
+			}
+
+			const indexedDB = await getIndexedDB();
+			await indexedDB.put(STORES.SPLITS, {
+				id: splitId,
+				results,
+				createdAt: Date.now(),
+				people: people.map(p => p.name),
+				total: estimatedTotal,
+				currency: selectedCurrency,
+				status: 'unpaid'
+			});
+
 			await goto(`/split/${splitId}`);
 
 		} catch (error) {
@@ -162,6 +253,41 @@
 			alert('Failed to calculate split. Please try again.');
 		} finally {
 			calculating = false;
+		}
+	}
+
+	async function handleSaveTemplate() {
+		if (people.length < 2) {
+			alert('Add at least 2 people to save a template');
+			return;
+		}
+
+		const name = prompt('Template name:');
+		if (!name?.trim()) return;
+
+		const config = {
+			people: people.map(p => p.name),
+			splitMethod,
+			percentages: splitMethod === 'percentage' ? percentages : undefined,
+			currency: selectedCurrency
+		};
+
+		try {
+			await templatesService.createTemplate({ name: name.trim(), config });
+			alert('Template saved!');
+		} catch {
+			try {
+				const indexedDB = await getIndexedDB();
+				await indexedDB.put(STORES.TEMPLATES, {
+					id: crypto.randomUUID(),
+					name: name.trim(),
+					createdAt: Date.now(),
+					...config
+				});
+				alert('Template saved locally!');
+			} catch {
+				alert('Failed to save template.');
+			}
 		}
 	}
 
@@ -205,11 +331,7 @@
 			<!-- Currency Selector Header -->
 			<div class="px-5 py-3 border-b border-surface-100 flex items-center justify-between bg-surface-50/50">
 				<span class="text-caption font-bold text-text-tertiary uppercase tracking-wider">Currency</span>
-				<button type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-0 border border-surface-200 shadow-sm text-label font-bold text-text-primary active:scale-95 transition-transform hover:bg-surface-100">
-					<span class="text-lg">🇮🇩</span>
-					<span>IDR (Rp)</span>
-					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
-				</button>
+				<CurrencySelector selected={selectedCurrency} onChange={(c) => selectedCurrency = c} class="px-3 py-1.5 rounded-xl bg-surface-0 border border-surface-200 shadow-sm text-label font-bold text-text-primary active:scale-95 transition-transform hover:bg-surface-100" />
 			</div>
 
 			<div class="p-5 space-y-section">
@@ -219,8 +341,11 @@
 					<div class="relative group">
 						<span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-lg">Rp</span>
 						<input
+							id="bill-amount"
 							type="text"
 							inputmode="numeric"
+							bind:value={billAmount}
+							placeholder="0"
 							aria-invalid={!!errors.billAmount}
 							aria-describedby="bill-amount-error"
 							class="h-14 w-full rounded-2xl border border-surface-200 bg-surface-50 pl-12 pr-4 text-section font-bold text-text-primary shadow-sm focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-text-tertiary tabular-nums {errors.billAmount ? 'border-error' : ''}"
@@ -235,7 +360,7 @@
 				<div>
 					<div class="flex items-center justify-between mb-2">
 						<label for="tax-amount" class="block text-label font-bold text-text-primary">Tax</label>
-						<button type="button" class="text-caption font-bold text-primary-500 flex items-center gap-1 hover:text-primary-600 transition-colors bg-primary-50 px-2 py-1 rounded-lg">
+						<button type="button" class="text-caption font-bold text-primary-500 flex items-center gap-1 hover:text-primary-600 transition-colors bg-primary-50 px-2 py-1 rounded-lg" onclick={() => tax = Math.round(billAmount * 0.11)}>
 							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 9h9l-9 9 9-9h-9l9-9-9 9z"/></svg>
 							Auto-detect
 						</button>
@@ -295,10 +420,22 @@
 								{percent}%
 							</button>
 						{/each}
-						<button type="button" class="h-10 rounded-xl bg-surface-50 border border-surface-200 text-text-secondary text-caption font-bold hover:bg-primary-50 hover:border-primary-200 hover:text-primary-700 transition-all duration-200 hover:scale-105 active:scale-95">
+						<button type="button" class="h-10 rounded-xl {selectedTip === 'custom' ? 'bg-primary-500 border-primary-600 text-text-inverted shadow-sm' : 'bg-surface-50 border border-surface-200 text-text-secondary hover:bg-primary-50 hover:border-primary-200 hover:text-primary-700'} text-caption font-bold transition-all duration-200 hover:scale-105 active:scale-95" onclick={() => selectedTip = 'custom'}>
 							Custom
 						</button>
 					</div>
+					{#if selectedTip === 'custom'}
+						<div class="mt-3 flex items-center gap-2">
+							<span class="text-caption font-medium text-text-secondary">Tip amount:</span>
+							<input
+								type="number"
+								bind:value={tip}
+								min="0"
+								step="1000"
+								class="w-28 h-9 text-sm font-bold text-text-primary bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl px-3 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+							/>
+						</div>
+					{/if}
 				</div>
 			</div>
 
@@ -343,7 +480,13 @@
 			<div class="flex items-start gap-2.5 rounded-xl bg-surface-50 border border-surface-100 p-3">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
 				<p class="text-caption text-text-secondary font-medium leading-relaxed">
-					Total will be exactly <span class="font-bold text-text-primary">{formatCurrency(estimatedTotal)}</span>. No rounding applied.
+					{#if roundingMode === 'exact'}
+						Total will be exactly <span class="font-bold text-text-primary">{formatCurrency(estimatedTotal)}</span>. No rounding applied.
+					{:else if roundingMode === 'up'}
+						Each share rounded <span class="font-bold text-text-primary">up</span> to nearest IDR 1,000.
+					{:else}
+						Each share rounded <span class="font-bold text-text-primary">down</span> to nearest IDR 1,000.
+					{/if}
 				</p>
 			</div>
 		</section>
@@ -365,30 +508,100 @@
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'percentage' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5'}"
 						onclick={() => splitMethod = 'percentage'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-						<span class="text-xs font-bold">% Split</span>
+						<span class="text-xs font-extrabold">% Split</span>
 					</button>
 					<button
 						type="button"
-						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+						class="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl transition-all duration-200 active:scale-[0.98] {splitMethod === 'item' ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-secondary hover:border-surface-300 dark:hover:border-surface-500 hover:shadow-sm hover:-translate-y-0.5'}"
 						onclick={() => splitMethod = 'item'}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
-						<span class="text-xs font-bold">By Item</span>
+						<span class="text-xs font-extrabold">By Item</span>
 					</button>
 				</div>
-				<div class="flex items-start gap-3">
-					<div class="h-10 w-10 shrink-0 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+
+				{#if splitMethod === 'equal'}
+					<div class="flex items-start gap-3">
+						<div class="h-10 w-10 shrink-0 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+						</div>
+						<div>
+							<p class="text-sm font-bold text-text-primary">Equal Split</p>
+							<p class="text-xs text-text-secondary leading-relaxed mt-0.5">We'll divide the total bill evenly between everyone added below.</p>
+						</div>
 					</div>
-					<div>
-						<p class="text-sm font-bold text-text-primary">Equal Split</p>
-						<p class="text-xs text-text-secondary leading-relaxed mt-0.5">We'll divide the total bill evenly between everyone added below.</p>
+				{:else if splitMethod === 'percentage'}
+					<div class="space-y-3">
+						<div class="flex items-center justify-between">
+							<p class="text-sm font-bold text-text-primary">Custom Percentages</p>
+							<span class="text-caption font-bold {percentageTotal === 100 ? 'text-success' : 'text-error'}">{percentageTotal}%</span>
+						</div>
+						{#each people as person, index}
+							<div class="flex items-center gap-3">
+								<span class="text-sm font-medium text-text-secondary w-16 truncate">{person.name}</span>
+								<input
+									type="range"
+									min="0"
+									max="100"
+									bind:value={percentages[index]}
+									class="flex-1 h-2 accent-primary-500"
+								/>
+								<div class="flex items-center gap-1 w-16">
+									<input
+										type="number"
+										min="0"
+										max="100"
+										bind:value={percentages[index]}
+										class="w-12 h-8 rounded-lg border border-surface-200 bg-surface-50 text-center text-sm font-bold text-text-primary focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+									/>
+									<span class="text-xs text-text-tertiary font-bold">%</span>
+								</div>
+							</div>
+						{/each}
+						{#if percentageTotal !== 100}
+							<p class="text-caption text-error font-medium">Percentages must add up to 100%</p>
+						{/if}
 					</div>
-				</div>
+				{:else if splitMethod === 'item'}
+					{#if receiptItems.length === 0}
+						<div class="flex items-start gap-3">
+							<div class="h-10 w-10 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+							</div>
+							<div>
+								<p class="text-sm font-bold text-text-primary">No items to assign</p>
+								<p class="text-xs text-text-secondary leading-relaxed mt-0.5">Scan a receipt first to populate items, then assign them to people here.</p>
+							</div>
+						</div>
+					{:else}
+						<div class="space-y-3">
+							<p class="text-sm font-bold text-text-primary">Assign items to people</p>
+							{#each receiptItems as item, itemIndex}
+								<div class="bg-surface-50 dark:bg-surface-700/50 rounded-xl p-3 border border-surface-200 dark:border-surface-600">
+									<div class="flex justify-between items-center mb-2">
+										<span class="text-sm font-medium text-text-primary">{item.name}</span>
+										<span class="text-sm font-bold text-text-primary tabular-nums">Rp {item.price.toLocaleString('id-ID')}</span>
+									</div>
+									<div class="flex flex-wrap gap-1.5">
+										{#each people as person, personIndex}
+											<button
+												type="button"
+												class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all active:scale-95 {item.assignedTo.includes(personIndex) ? 'bg-primary-500 text-white shadow-sm' : 'bg-surface-100 dark:bg-surface-600 text-text-secondary hover:bg-primary-50 hover:text-primary-600'}"
+												onclick={() => toggleItemAssignment(itemIndex, personIndex)}
+											>
+												{person.name}
+											</button>
+										{/each}
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/if}
 			</div>
 		</section>
 
@@ -416,7 +629,7 @@
 								{#if errors[`person-${index}`]}
 									<p class="text-xs text-red-600 dark:text-red-400">{errors[`person-${index}`]}</p>
 								{:else}
-									<div class="text-xs text-text-secondary">{(100 / people.length).toFixed(1)}% share</div>
+									<div class="text-xs text-text-secondary">{splitMethod === 'percentage' ? `${percentages[index]}%` : `${(100 / people.length).toFixed(1)}%`} share</div>
 								{/if}
 							</div>
 							<button
@@ -433,12 +646,13 @@
 							<button
 								type="button"
 								class="flex-1 h-10 rounded-xl bg-surface-0 dark:bg-surface-600 border border-surface-200 dark:border-surface-500 shadow-sm text-xs font-bold text-text-primary dark:text-text-primary flex items-center justify-center gap-2 hover:bg-surface-50 dark:hover:bg-surface-500 active:scale-95 transition-all"
+								onclick={() => splitMethod = 'item'}
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="M12 5v14M5 12h14"/></svg>
 								Assign Items
 							</button>
 							<div class="px-3 h-10 rounded-xl bg-surface-0 dark:bg-surface-600 border border-surface-200 dark:border-surface-500 flex items-center justify-center text-sm font-black text-text-primary dark:text-text-inverted shadow-sm min-w-[90px] tabular-nums">
-								{formatCurrency(personShare)}
+								{formatCurrency(personShare[index])}
 							</div>
 						</div>
 					</div>
@@ -470,6 +684,7 @@
 			<button
 				type="button"
 				class="mt-3 w-full h-14 rounded-2xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-primary dark:text-text-primary font-bold text-sm shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 hover:bg-surface-50 dark:hover:bg-surface-600 hover:shadow-md"
+				onclick={handleSaveTemplate}
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
 				Save as Template

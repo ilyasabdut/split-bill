@@ -93,7 +93,7 @@ logs/
 
 # Docker
 .docker/
-# .superdesign
+.superdesign/
 
 # Node / Web
 node_modules/
@@ -104,6 +104,31 @@ web/.svelte-kit/
 
 lightpanda
 
+# Screenshots (regenerated on demand)
+screenshots/
+snapshots/
+*.png
+!web/static/*.png
+
+# One-off scripts and session logs
+dark-screenshots.js
+visual-qa.js
+session-*.md
+
+# AI tool configs
+.agent/
+.agents/
+.sisyphus/
+.kiro/
+.claude/skills/
+web/.claude/
+
+# Root bun.lock (real one is web/bun.lock)
+/bun.lock
+
 # Worktrees
 .worktrees/
 worktrees/
+
+web/.playwright-cli
+.playwright-cli

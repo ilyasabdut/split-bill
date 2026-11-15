@@ -53,7 +53,7 @@
 	aria-label="Main navigation"
 >
 	<nav
-		class="bg-surface-0 border border-surface-200 shadow-elevated rounded-[28px] px-3 py-2 mx-auto max-w-2xl"
+		class="bg-surface-0 border border-surface-200 shadow-xl rounded-[28px] px-3 py-2 mx-auto max-w-2xl"
 	>
 		<ul class="grid grid-cols-4 gap-2">
 			{#each navItems as item}
@@ -62,10 +62,10 @@
 						href={item.path}
 						class={cn(
 							// Base styles matching Superdesign
-							'min-h-[44px] flex flex-col items-center justify-center gap-1 py-2 rounded-2xl active:scale-[0.99] transition-all',
+							'h-14 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl active:scale-[0.99] transition-all',
 							// Regular items (Home, History, Settings)
 							!item.isProminent && isActive(item.path, currentPath)
-								? 'bg-primary-50 text-primary-600'
+								? 'bg-primary-50 text-primary-600 ring-1 ring-primary-100'
 								: !item.isProminent
 									? 'text-text-tertiary hover:text-primary-600'
 									: null,
@@ -87,7 +87,7 @@
 							<!-- Regular items: icon + label -->
 							<span class="text-xl" aria-hidden="true">{@html getIcon(item.icon)}</span>
 						{/if}
-						<span class="text-[12px] font-semibold">{item.label}</span>
+						<span class="text-[12px] {isActive(item.path, currentPath) ? 'font-extrabold' : 'font-semibold'}">{item.label}</span>
 					</a>
 				</li>
 			{/each}

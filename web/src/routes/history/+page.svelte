@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 	import { currencyStore, analyticsStore } from '$lib/stores';
 	import type { SplitResults } from '$lib/types/split';
 	import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte';
 	import SkeletonLoader from '$lib/components/ui/SkeletonLoader.svelte';
+	import CurrencySelector from '$lib/components/CurrencySelector.svelte';
 
 	interface HistoryItem {
 		id: string;
@@ -21,18 +21,61 @@
 
 	let history = $state<HistoryItem[]>([]);
 	let loading = $state(true);
-	let monthlySpending = $state<number>(4250000);
-	let peopleCount = $state<number>(12);
-	let pendingCount = $state<number>(2);
-	let youOwe = $state<number>(150000);
-	let owedToYou = $state<number>(320000);
+	let activeFilter = $state<'all' | 'unpaid' | 'completed' | 'groups'>('all');
+	let searchOpen = $state(false);
+	let searchQuery = $state('');
 
-	onMount(async () => {
+	const monthlySpending = $derived(() => {
+		const now = new Date();
+		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+		return history
+			.filter(item => item.createdAt >= startOfMonth)
+			.reduce((sum, item) => sum + item.total, 0);
+	});
+
+	const peopleCount = $derived(() => new Set(history.flatMap(item => item.people)).size);
+	const pendingCount = $derived(() => history.filter(item => item.status === 'unpaid').length);
+
+	const owedToYou = $derived(() => {
+		return history
+			.filter(item => item.status === 'unpaid')
+			.reduce((sum, item) => {
+				const people = Object.keys(item.results);
+				if (people.length < 2) return sum;
+				return sum + people.slice(1).reduce((s, p) => s + (item.results[p]?.total || 0), 0);
+			}, 0);
+	});
+
+	const filteredHistory = $derived(() => {
+		let items = activeFilter === 'all' ? history :
+			activeFilter === 'unpaid' ? history.filter(item => item.status === 'unpaid') :
+			activeFilter === 'completed' ? history.filter(item => item.status === 'completed') :
+			activeFilter === 'groups' ? history.filter(item => item.group) :
+			history;
+		if (searchQuery.trim()) {
+			const q = searchQuery.toLowerCase();
+			items = items.filter(item =>
+				item.people.some(p => p.toLowerCase().includes(q)) ||
+				(item.title && item.title.toLowerCase().includes(q)) ||
+				(item.category && item.category.toLowerCase().includes(q))
+			);
+		}
+		return items;
+	});
+
+	let dataLoaded = $state(false);
+
+	$effect(() => {
+		if (!dataLoaded) {
+			dataLoaded = true;
+			loadHistory();
+		}
+	});
+
+	async function loadHistory() {
 		try {
-			await Promise.all([
-				currencyStore.init(),
-				analyticsStore.loadAnalytics()
-			]);
+			currencyStore.init();
+			analyticsStore.loadAnalytics().catch(() => {});
 
 			const indexedDB = await getIndexedDB();
 			const items = await indexedDB.getAll<any>(STORES.SPLITS);
@@ -56,14 +99,12 @@
 					};
 				}) as HistoryItem[];
 
-			peopleCount = new Set(history.flatMap(item => item.people)).size;
-			pendingCount = history.filter(item => item.status === 'unpaid').length;
 		} catch (error) {
 			console.error('Failed to load history:', error);
 		} finally {
 			loading = false;
 		}
-	});
+	}
 
 	function formatDate(timestamp: number): string {
 		const date = new Date(timestamp);
@@ -106,20 +147,29 @@
 					<p class="text-caption text-text-tertiary font-medium">Recent splits & settlements</p>
 				</div>
 			</div>
-			<a href="#search" class="w-11 h-11 rounded-2xl bg-surface-0 dark:bg-surface-700 shadow-sm border border-surface-200 dark:border-surface-600 flex items-center justify-center text-text-secondary dark:text-text-tertiary active:scale-95 transition-transform hover:bg-surface-50 dark:hover:bg-surface-600" aria-label="Search splits">
+			<button type="button" class="w-11 h-11 rounded-2xl bg-surface-0 dark:bg-surface-700 shadow-sm border border-surface-200 dark:border-surface-600 flex items-center justify-center text-text-secondary dark:text-text-tertiary active:scale-95 transition-transform hover:bg-surface-50 dark:hover:bg-surface-600" aria-label="Search splits" onclick={() => { searchOpen = !searchOpen; if (!searchOpen) searchQuery = ''; }}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-			</a>
+			</button>
 		</div>
+
+		{#if searchOpen}
+			<div class="px-5 mt-3">
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="Search by name, title..."
+					class="w-full h-10 px-4 rounded-xl bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-sm text-text-primary placeholder:text-text-tertiary focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
+				/>
+			</div>
+		{/if}
 
 		<!-- Scrollable Tabs -->
 		<nav class="mt-5 -mx-4 overflow-hidden">
 			<div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
-				<a href="#all" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10">All</a>
-				<a href="#unpaid" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Unpaid</a>
-				<a href="#completed" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Completed</a>
-				<a href="#groups" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Groups</a>
-				<a href="#templates" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Templates</a>
-				<a href="#analytics" class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary active:bg-surface-50 dark:active:bg-surface-600">Analytics</a>
+				<button onclick={() => activeFilter = 'all'} class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold active:scale-95 transition-all {activeFilter === 'all' ? 'bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary'}">All</button>
+				<button onclick={() => activeFilter = 'unpaid'} class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold active:scale-95 transition-all {activeFilter === 'unpaid' ? 'bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary'}">Unpaid</button>
+				<button onclick={() => activeFilter = 'completed'} class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold active:scale-95 transition-all {activeFilter === 'completed' ? 'bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary'}">Completed</button>
+				<button onclick={() => activeFilter = 'groups'} class="shrink-0 h-11 px-5 rounded-full flex items-center justify-center text-label font-semibold active:scale-95 transition-all {activeFilter === 'groups' ? 'bg-text-primary dark:bg-surface-0 text-text-inverted dark:text-text-primary shadow-md shadow-text-primary/10' : 'bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 text-text-secondary dark:text-text-tertiary'}">Groups</button>
 			</div>
 		</nav>
 	</header>
@@ -129,14 +179,23 @@
 		{#if loading}
 			<LoadingSpinner text="Loading history..." />
 			<SkeletonLoader count={5} />
+		{:else if history.length === 0}
+			<!-- Empty State -->
+			<section class="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in">
+				<div class="w-20 h-20 rounded-3xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/20 flex items-center justify-center mb-5">
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-500"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+				</div>
+				<h2 class="text-subheading font-bold text-text-primary mb-2">No splits yet</h2>
+				<p class="text-label text-text-secondary max-w-[260px] mb-6">Create your first split to start tracking expenses with friends.</p>
+				<a href="/split" class="h-12 min-h-[44px] px-6 rounded-2xl bg-primary-500 shadow-md flex items-center justify-center gap-2 text-text-inverted font-semibold active:scale-[0.99] transition-transform hover:bg-primary-600">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+					Create First Split
+				</a>
+			</section>
 		{:else}
 			<!-- Currency Selector -->
 			<div class="flex justify-center mb-4">
-				<button class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-text-primary active:scale-95 transition-transform">
-					<span class="w-5 h-5 rounded-full bg-surface-100 dark:bg-surface-600 flex items-center justify-center text-[10px]">🇮🇩</span>
-					IDR
-					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m6 9 6 6 6-6"/></svg>
-				</button>
+				<CurrencySelector class="flex items-center gap-2 px-4 py-1.5 bg-surface-0 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-full shadow-sm text-sm font-semibold text-text-primary dark:text-text-primary active:scale-95 transition-transform" />
 			</div>
 
 			<!-- Monthly Spending Summary -->
@@ -151,11 +210,11 @@
 							<p class="text-primary-100 text-label font-medium">Total spending this month</p>
 							<span class="bg-surface-0/30 px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1">
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-								12.5%
+								{history.length} splits
 							</span>
 						</div>
-						<h2 class="text-heading font-bold tracking-tight mt-2 tabular-ns">IDR 4,250,000</h2>
-						<p class="text-caption text-primary-200 mt-1 opacity-80">+IDR 450,000 vs last month</p>
+						<h2 class="text-heading font-bold tracking-tight mt-2 tabular-ns">{formatAmount(monthlySpending())}</h2>
+						<p class="text-caption text-primary-200 mt-1 opacity-80">This month's splits</p>
 					</div>
 				</div>
 			</section>
@@ -169,7 +228,7 @@
 						</span>
 						<div>
 							<p class="text-caption uppercase tracking-wider text-text-tertiary font-bold leading-tight">People</p>
-							<p class="text-label font-bold text-text-primary">{peopleCount} Friends</p>
+							<p class="text-label font-bold text-text-primary">{peopleCount()} Friends</p>
 						</div>
 					</div>
 					<div class="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl pl-3 pr-4 py-2.5 flex items-center gap-3">
@@ -178,7 +237,7 @@
 						</span>
 						<div>
 							<p class="text-caption uppercase tracking-wider text-text-tertiary font-bold leading-tight">Pending</p>
-							<p class="text-label font-bold text-text-primary">{pendingCount} Splits</p>
+							<p class="text-label font-bold text-text-primary">{pendingCount()} Splits</p>
 						</div>
 					</div>
 				</div>
@@ -194,10 +253,10 @@
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><polyline points="10 14 21 3"/></svg>
 						</div>
 						<p class="text-caption text-error font-semibold uppercase tracking-wide">You Owe</p>
-						<p class="text-subheading font-bold text-error mt-1 tabular-ns">IDR 150k</p>
+						<p class="text-subheading font-bold text-error mt-1 tabular-ns">IDR 0</p>
 						<div class="mt-2 flex items-center gap-1.5">
 							<div class="w-5 h-5 rounded-full bg-error/30 dark:bg-error/70 border border-surface-0 dark:border-error-90 text-caption flex items-center justify-center font-bold text-error">S</div>
-							<p class="text-caption text-error font-medium truncate">to Sarah</p>
+							<p class="text-caption text-error font-medium truncate">unpaid</p>
 						</div>
 					</div>
 
@@ -207,10 +266,10 @@
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13v6a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v5"/><polyline points="9 3 3 9 9 15"/></svg>
 						</div>
 						<p class="text-caption text-success font-semibold uppercase tracking-wide">Owed to You</p>
-						<p class="text-subheading font-bold text-success mt-1 tabular-ns">IDR 320k</p>
+						<p class="text-subheading font-bold text-success mt-1 tabular-ns">{formatAmount(owedToYou())}</p>
 						<div class="mt-2 flex items-center gap-1.5">
 							<div class="w-5 h-5 rounded-full bg-success/30 dark:bg-success/70 border border-surface-0 dark:border-success/90 text-caption flex items-center justify-center font-bold text-success">M</div>
-							<p class="text-caption text-success font-medium truncate">from Mike</p>
+							<p class="text-caption text-success font-medium truncate">from others</p>
 						</div>
 					</div>
 				</div>
@@ -220,11 +279,22 @@
 			<section aria-label="Split list">
 				<div class="flex items-center justify-between mb-4">
 					<h2 class="text-subheading font-bold text-text-primary">Recent Activity</h2>
-					<a href="#all" class="h-8 px-3 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 inline-flex items-center justify-center text-caption font-semibold text-primary-600 transition-colors">View all</a>
+					{#if activeFilter !== 'all'}
+						<button onclick={() => activeFilter = 'all'} class="h-8 px-3 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 inline-flex items-center justify-center text-caption font-semibold text-primary-600 transition-colors">View all</button>
+					{/if}
 				</div>
 
+				{#if filteredHistory().length === 0}
+					<div class="flex flex-col items-center py-10 text-center">
+						<div class="w-14 h-14 rounded-2xl bg-surface-100 dark:bg-surface-700 flex items-center justify-center mb-3">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+						</div>
+						<p class="text-label font-semibold text-text-secondary">No {activeFilter} splits found</p>
+						<p class="text-caption text-text-tertiary mt-1">Try a different filter</p>
+					</div>
+				{:else}
 				<div class="space-y-4">
-					{#each history.slice(0, 10) as item, index}
+					{#each filteredHistory().slice(0, 10) as item, index}
 						<a href="/split/{item.id}" class="group block bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-card rounded-2xl p-4 active:scale-[0.99] transition-all relative overflow-hidden animate-slide-in-right hover:shadow-elevated" style="animation-delay: {Math.min(index * 50 + 300, 600)}ms;">
 							<!-- Status Line Indicator -->
 							<div class="absolute left-0 top-0 bottom-0 w-1" class:bg-warning={item.status === 'unpaid'} class:bg-success={item.status === 'completed'}></div>
@@ -274,6 +344,7 @@
 						</a>
 					{/each}
 				</div>
+				{/if}
 			</section>
 		{/if}
 	</main>

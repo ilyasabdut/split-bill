@@ -98,7 +98,10 @@ function createCurrencyStore() {
     async init() {
       update(s => ({ ...s, loading: true }));
       try {
-        const response = await fetch('/api/currency/rates');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const response = await fetch('/api/currency/rates?from_currency=USD&to_currency=IDR', { signal: controller.signal });
+        clearTimeout(timeout);
         if (!response.ok) throw new Error('Failed to load currency rates');
 
         const data = await response.json();

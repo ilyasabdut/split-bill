@@ -3,29 +3,65 @@
 
 	const groupId = $derived($page.params.id);
 
-	const group = {
+	let group = $state<any>({
 		id: groupId,
-		name: 'Roomies',
-		description: 'Monthly bills and shared expenses',
-		createdAt: Date.now() - 86400000 * 30,
-		members: [
-			{ id: '1', name: 'You', email: 'you@email.com', color: 'indigo', balance: 125000, role: 'admin' },
-			{ id: '2', name: 'Sarah', email: 'sarah@email.com', color: 'emerald', balance: -85000, role: 'member' },
-			{ id: '3', name: 'Mike', email: 'mike@email.com', color: 'rose', balance: -40000, role: 'member' },
-			{ id: '4', name: 'Alex', email: 'alex@email.com', color: 'amber', balance: 0, role: 'member' },
-		],
-		receipts: [
-			{ id: '1', title: 'Grocery Run', date: 'Feb 18', amount: 450000, status: 'settled', paidBy: 'You', splitBetween: 4 },
-			{ id: '2', title: 'Electricity Bill', date: 'Feb 15', amount: 320000, status: 'pending', paidBy: 'Sarah', splitBetween: 4 },
-			{ id: '3', title: 'Internet', date: 'Feb 10', amount: 150000, status: 'settled', paidBy: 'Mike', splitBetween: 4 },
-			{ id: '4', title: 'Water Bill', date: 'Feb 5', amount: 85000, status: 'settled', paidBy: 'You', splitBetween: 4 },
-		],
-		totalSpent: 1005000,
-		thisMonth: 450000,
-	};
+		name: 'Loading...',
+		description: '',
+		createdAt: Date.now(),
+		members: [],
+		receipts: [],
+		totalSpent: 0,
+		thisMonth: 0,
+	});
+	let loading = $state(true);
+	let error = $state('');
 
-	const totalOwed = group.members.filter(m => m.balance < 0).reduce((sum, m) => sum + Math.abs(m.balance), 0);
-	const totalOwing = group.members.filter(m => m.balance > 0).reduce((sum, m) => sum + m.balance, 0);
+	$effect(() => {
+		loadGroup();
+	});
+
+	async function loadGroup() {
+		loading = true;
+		try {
+			const [groupRes, membersRes] = await Promise.all([
+				fetch(`/api/groups/${groupId}`),
+				fetch(`/api/groups/${groupId}/members`).catch(() => null)
+			]);
+
+			if (!groupRes.ok) throw new Error('Group not found');
+			const data = await groupRes.json();
+
+			let members: any[] = [];
+			if (membersRes?.ok) members = await membersRes.json();
+
+			group = {
+				id: data.id,
+				name: data.name,
+				description: '',
+				createdAt: new Date(data.created_at).getTime(),
+				members: members.length > 0 ? members.map((m: any, i: number) => ({
+					id: String(m.user_id),
+					name: m.user_name || `Member ${i + 1}`,
+					email: m.user_email || '',
+					color: ['indigo', 'emerald', 'rose', 'amber'][i % 4],
+					balance: 0,
+					role: i === 0 ? 'admin' : 'member'
+				})) : [
+					{ id: '1', name: 'You', email: '', color: 'indigo', balance: 0, role: 'admin' }
+				],
+				receipts: [],
+				totalSpent: 0,
+				thisMonth: 0,
+			};
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to load group';
+		} finally {
+			loading = false;
+		}
+	}
+
+	const totalOwed = $derived(group.members.filter((m: any) => m.balance < 0).reduce((sum: number, m: any) => sum + Math.abs(m.balance), 0));
+	const totalOwing = $derived(group.members.filter((m: any) => m.balance > 0).reduce((sum: number, m: any) => sum + m.balance, 0));
 
 	function formatCurrency(amount: number): string {
 		return new Intl.NumberFormat('id-ID', {
@@ -165,7 +201,7 @@
 		<section>
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-sm font-bold text-text-primary">Recent Receipts</h2>
-				<a href="#" class="text-xs font-bold text-indigo-600">View all</a>
+				<button type="button" class="text-xs font-bold text-indigo-600">View all</button>
 			</div>
 
 			<div class="space-y-3">

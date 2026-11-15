@@ -13,7 +13,7 @@
 
 <OfflineBanner />
 <ErrorBoundary>
-  <AppShell>
+  <AppShell showHeader={false}>
     {@render children?.()}
   </AppShell>
 </ErrorBoundary>

@@ -1,526 +1,290 @@
-# Project TODO & Roadmap
+# Integration Audit & TODO
 
-## Overview
-
-This document tracks active development tasks, technical debt, and future roadmap for the Split Bill application.
-
-**Last Updated**: February 18, 2026
-**Current Phase**: Maintenance & Enhancement
-**Status**: Production Ready with SuperDesign UI
+**Last Updated**: 2026-05-17
+**Status**: Comprehensive audit of all endpoints, frontend integrations, buttons, and filters.
 
 ---
 
-## Quick Navigation
+## Legend
 
-- [Active Tasks](#active-tasks) - Currently in progress
-- [Completed](#completed) - Recently completed work
-- [Backlog](#backlog) - Prioritized upcoming work
-- [Technical Debt](#technical-debt) - Refactoring and improvements
-
----
-
-## Active Tasks
-
-### 🔥 High Priority
-
-- [ ] **TEST-001**: Expand test coverage to 90%+
-  - **Status**: In Progress
-  - **Current**: ~50% coverage
-  - **Target**: >90%
-
-### 📋 Medium Priority
-
-- [ ] **DOC-001**: Update architecture docs for SvelteKit frontend
-  - **Status**: Open
-  - **Details**: Reflect new PWA frontend architecture
-
-### 📝 Low Priority
-
-- [ ] **FEAT-001**: Add ProgressCircle component
-- [ ] **FEAT-002**: Add animation polish to UI transitions
+- [x] Working end-to-end
+- [~] Partially working (UI exists, logic incomplete or uses mock/hardcoded data)
+- [ ] Not connected (UI placeholder only, no backend integration)
 
 ---
 
-## Completed
+## 1. API Endpoints
 
-### February 2026
+### Core (in `api/src/main.py` — monolith)
 
-- [x] **SuperDesign UI Implementation**: All 6 pages complete (25/25 checks pass)
-  - Dashboard, History, Create Split, Receipt, Settings, Split Detail
-- [x] **Loading state fixes**: Resolved stuck loading in Receipt and Settings pages
-- [x] **UI Components**: LoadingSpinner, SkeletonLoader created
-- [x] **Documentation cleanup**: Removed outdated markdown files
+| Method | Endpoint | Rate Limit | Status | Notes |
+|--------|----------|-----------|--------|-------|
+| GET | `/` | — | [x] | Returns API info |
+| GET | `/health/` | — | [x] | Health check with cache/monitoring stats |
+| GET | `/metrics/` | — | [x] | Application metrics |
+| POST | `/receipts/upload` | 30/min | [x] | OCR via OpenRouter, returns parsed items |
+| POST | `/splits/calculate` | 30/min | [x] | Core split calculation with caching |
+| GET | `/splits/view/{split_id}` | 100/min | [~] | Returns mock data if not in cache |
 
-### January 2026
+### Modular Routers (in `api/src/routers/` — require PostgreSQL)
 
-- [x] **SvelteKit Migration**: Migrated from Streamlit to SvelteKit PWA
-- [x] **Offline-first architecture**: IndexedDB, Background Sync
-- [x] **Backend database**: PostgreSQL with SQLAlchemy
-- [x] **API extensions**: Currency, Groups, Templates, Payments, Analytics
+| Method | Endpoint | Status | Notes |
+|--------|----------|--------|-------|
+| **Groups** | | | |
+| POST | `/groups/` | [x] | Creates group with owner_id |
+| GET | `/groups/` | [x] | List groups (filter by owner_id) |
+| GET | `/groups/{id}` | [x] | Get single group |
+| PUT | `/groups/{id}` | [x] | Update group name |
+| DELETE | `/groups/{id}` | [x] | Delete group |
+| POST | `/groups/{id}/members` | [x] | Add member |
+| GET | `/groups/{id}/members` | [x] | List members |
+| DELETE | `/groups/{id}/members/{user_id}` | [x] | Remove member |
+| **Templates** | | | |
+| POST | `/templates/` | [x] | Creates template with user_id + config |
+| GET | `/templates/` | [x] | List (filter by user_id) |
+| GET | `/templates/{id}` | [x] | Get single |
+| PUT | `/templates/{id}` | [x] | Update |
+| DELETE | `/templates/{id}` | [x] | Delete |
+| **Payments** | | | |
+| POST | `/payments/` | [x] | Create payment record |
+| GET | `/payments/` | [x] | List (filter by split_id, status) |
+| GET | `/payments/{id}` | [x] | Get single |
+| PUT | `/payments/{id}` | [x] | Update status (unpaid→paid→confirmed) |
+| DELETE | `/payments/{id}` | [x] | Delete |
+| GET | `/payments/split/{split_id}/summary` | [x] | Payment summary for a split |
+| **Analytics** | | | |
+| GET | `/analytics/users/{user_id}/stats` | [x] | User statistics |
+| GET | `/analytics/overall` | [x] | App-wide statistics |
+| GET | `/analytics/currencies` | [x] | Currency usage (last N days) |
+| GET | `/analytics/trends` | [x] | Split creation trends |
+| **Currency** | | | |
+| GET | `/currency/rates` | [x] | Exchange rate lookup |
+| POST | `/currency/convert` | [x] | Currency conversion |
 
----
-
-## Backlog
-
-### Phase 10: Advanced Features 🚀
-
-#### Analytics & Business Intelligence
-
-- [ ] **FEAT-101**: Add usage analytics dashboard
-  - Track popular items, average split size, peak usage times
-  - Export data to CSV/JSON
-  - Visual charts and graphs
-
-- [ ] **FEAT-102**: Implement receipt history
-  - Store processed receipts per user (if auth added)
-  - Search and filter past splits
-  - Re-run calculations on historical data
-
-#### Advanced OCR & AI Features
-
-- [ ] **FEAT-201**: Support multiple receipt formats
-  - Restaurant receipts
-  - Grocery receipts
-  - Gas station receipts
-  - International receipts (different currencies)
-
-- [ ] **FEAT-202**: Manual receipt correction UI
-  - Allow users to edit OCR mistakes
-  - Add missing items
-  - Adjust extracted prices
-  - Save corrections for ML training
-
-- [ ] **FEAT-203**: Multi-language OCR support
-  - Spanish receipts
-  - French receipts
-  - Chinese receipts
-  - Configurable language per request
-
-- [ ] **FEAT-204**: Item categorization
-  - Auto-categorize items (Food, Drinks, Tax, etc.)
-  - Spending insights by category
-  - Category-based splitting rules
-
-#### Social & Collaboration Features
-
-- [ ] **FEAT-301**: Real-time collaboration
-  - WebSocket support for live updates
-  - Multiple users editing same split
-  - Conflict resolution
-
-- [ ] **FEAT-302**: Comments on splits
-  - Add notes to shared splits
-  - @mentions for people
-  - Notification system
-
-- [ ] **FEAT-303**: Payment integration
-  - Venmo integration
-  - PayPal integration
-  - Generate payment links
-  - Track payment status
-
-#### User Experience
-
-- [ ] **FEAT-401**: Mobile app (React Native/Flutter)
-  - Native mobile experience
-  - Camera integration for quick capture
-  - Push notifications
-
-- [ ] **FEAT-402**: Offline mode
-  - Process receipts without internet
-  - Queue for later upload
-  - Local storage of splits
-
-- [ ] **FEAT-403**: Dark/light theme toggle
-  - User preference persistence
-  - System theme detection
-  - Smooth transitions
-
-- [ ] **FEAT-404**: Keyboard shortcuts
-  - Quick navigation between steps
-  - Hotkeys for common actions
-  - Accessibility improvements
-
-#### Enterprise Features
-
-- [ ] **FEAT-501**: Multi-currency support
-  - Currency detection from receipt
-  - Real-time exchange rates
-  - Multi-currency splits
-
-- [ ] **FEAT-502**: User accounts and authentication
-  - JWT-based auth
-  - OAuth (Google, Apple)
-  - User profiles
-  - Split history per user
-
-- [ ] **FEAT-503**: Groups and recurring splits
-  - Create friend groups
-  - Save group configurations
-  - Recurring bill templates
-  - Group expense reports
-
-- [ ] **FEAT-504**: Webhook integrations
-  - Zapier integration
-  - Custom webhooks
-  - Event notifications
-
-### Phase 11: Performance & Scale ⚡
-
-- [ ] **PERF-101**: Implement distributed rate limiting
-  - Move from in-memory to Redis-based
-  - Support horizontal scaling
-
-- [ ] **PERF-102**: Add database layer
-  - PostgreSQL for structured data
-  - Migrate from MinIO JSON to proper DB
-  - Query optimization
-
-- [ ] **PERF-103**: CDN integration
-  - CloudFlare or AWS CloudFront
-  - Image optimization
-  - Global edge caching
-
-- [ ] **PERF-104**: Background job processing
-  - Celery for async tasks
-  - OCR queue management
-  - Retry logic for failed jobs
-
-### Phase 12: Security & Compliance 🔒
-
-- [ ] **SEC-101**: Implement proper user authentication
-  - JWT with refresh tokens
-  - Password hashing (bcrypt)
-  - Session management
-
-- [ ] **SEC-102**: Add audit logging
-  - Track all data access
-  - Immutable audit trail
-  - Compliance reporting
-
-- [ ] **SEC-103**: Data retention policies
-  - Automatic data deletion
-  - GDPR compliance
-  - User data export
-
-- [ ] **SEC-104**: Penetration testing
-  - Security audit
-  - Vulnerability assessment
-  - Fix critical issues
+**Key Finding**: Groups, Templates, Payments, Analytics, and Currency routers all depend on `src.db.deps.get_db` (PostgreSQL via SQLAlchemy async). These routers will fail at runtime without a running PostgreSQL instance and completed migrations.
 
 ---
 
-## Technical Debt
+## 2. Frontend Pages
 
-### Code Quality
+### Dashboard (`/` — `web/src/routes/(app)/+page.svelte`)
 
-- [ ] **DEBT-001**: Fix LSP/type errors
-  - **File**: api/src/main.py
-  - **Issues**:
-    - Line 559: bytes | None type mismatch
-    - Line 565: bytes | None type mismatch
-  - **Priority**: High
-  - **Effort**: Small
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| Currency pill (IDR selector) | Button | [x] | Opens CurrencyConverter modal, API with fallback |
+| "New Split" button | Link | [x] | Navigates to `/split` |
+| "Scan Receipt" button | Link | [x] | Navigates to `/receipt` |
+| Saved Templates (Lunch, Rent, Trip) | Buttons | [x] | Loaded from API, navigate to /split |
+| "Edit" templates button | Button | [x] | Navigates to /split page |
+| "Add" template button | Button | [x] | Navigates to /split page (use Save as Template) |
+| Quick Stats (This month, Settled, Pending) | Display | [x] | Derived from IndexedDB |
+| Spending Insights chart | Display | [x] | Dynamic chart from IndexedDB data |
+| Split count badge | Link | [x] | Shows real count, links to `/history` |
+| Your Groups (Roomies, Game Crew, Hikers) | Cards | [x] | Loaded from API, dynamic rendering |
+| "+ Create Group" link | Link | [x] | Navigates to `/groups/new` |
+| Activity Feed | Display | [x] | Populated from IndexedDB splits |
+| Recent Splits | Cards | [x] | Real data from IndexedDB with dynamic initials |
+| "View all" recent splits | Link | [x] | Navigates to `/history` |
+| "Details" button on split cards | Link | [x] | Navigates to `/split/{id}` |
+| Notifications bell | Button | [x] | Navigates to `/send-reminder` |
+| Profile button | Button | [x] | Navigates to `/settings` |
+| Scanning Tips card | Display | [x] | Static content |
 
-- [ ] **DEBT-002**: Add comprehensive type hints
-  - **Scope**: All service files
-  - **Priority**: Medium
-  - **Effort**: Medium
-  - **Details**: Currently partial typing in some modules
+### Receipt Page (`/receipt`)
 
-- [ ] **DEBT-003**: Refactor large functions
-  - **File**: api/src/main.py
-  - **Functions**:
-    - calculate_split_endpoint (lines 400-497)
-    - upload_receipt (lines 527-583)
-  - **Priority**: Medium
-  - **Effort**: Medium
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| File upload (scan receipt) | Input | [x] | Calls `/receipts/upload` API with error handling |
+| Camera button | Button | [x] | Requests camera permission, calls OCR API |
+| Item list (add/edit/remove) | Form | [x] | Full CRUD with validation, works locally |
+| Tax toggle | Switch | [x] | Toggles `taxEnabled` state, reflects in UI |
+| "Edit Rate" button | Button | [x] | Inline edit for tax percentage |
+| "Share" button | Button | [x] | Uses Web Share API / clipboard fallback |
+| "Confirm" button | Button | [x] | Validates items, stores in `receiptStore`, navigates to `/split` |
+| Back arrow | Link | [x] | Navigates to `/` |
 
-### Testing
+### Split Page (`/split`)
 
-- [ ] **DEBT-101**: Achieve >80% test coverage
-  - **Current**: ~5% (only test_sample.py)
-  - **Target**: >80%
-  - **Priority**: High
-  - **Effort**: Large
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| Bill amount input | Input | [x] | `bind:value={billAmount}` — updates state |
+| Tax input | Input | [x] | Bound to `tax` state |
+| Tip input | Input | [x] | Bound to `tip` state |
+| Quick tip buttons (15%, 18%, 20%) | Buttons | [x] | Updates tip based on percentage |
+| "Custom" tip button | Button | [x] | Shows custom tip amount input |
+| Currency selector | Button | [x] | CurrencySelector component with real options |
+| "Auto-detect" tax button | Button | [x] | Sets tax to 11% PPN |
+| Smart Rounding (Down/Exact/Up) | Toggle | [x] | Applied in calculation via `applyRounding()` |
+| Split Method (Equal/% Split/By Item) | Toggle | [x] | All three methods work with full calculation logic |
+| People manager (add/remove/rename) | Form | [x] | Full CRUD with validation |
+| "Assign Items" button per person | Button | [x] | Switches to "By Item" split method |
+| "Calculate Split" button | Button | [x] | Calls `splitsService.calculate()` API, navigates to `/split/{id}` |
+| "Save as Template" button | Button | [x] | Saves to API with IndexedDB fallback |
+| Back arrow | Link | [x] | Navigates to `/` |
 
-- [ ] **DEBT-102**: Add integration tests
-  - API endpoint testing
-  - OCR service mocking
-  - Redis integration tests
-  - MinIO integration tests
+### Split Detail (`/split/[id]`)
 
-- [ ] **DEBT-103**: Add end-to-end tests
-  - Full user workflow
-  - Browser automation (Playwright)
-  - Critical path testing
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| Split results display | Display | [x] | Loads from IndexedDB, shows real data |
+| Settlement graph | Display | [x] | Computed from split results |
+| Share functionality | Button | [x] | Web Share API / clipboard fallback |
+| Payment status | Display | [x] | Persists to IndexedDB, survives reload |
+| Mark as Paid | Button | [x] | Updates IndexedDB, updates UI |
+| Dynamic title | Display | [x] | Shows merchant or people names |
+| Total receivable | Display | [x] | Computed from split results |
 
-### Infrastructure
+### History Page (`/history`)
 
-- [ ] **DEBT-201**: Improve error handling
-  - Custom exception classes
-  - Consistent error responses
-  - Better error messages
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| Split list from IndexedDB | Display | [x] | Loads from local IndexedDB, sorts by date |
+| Filter tabs (All/Unpaid/Completed/Groups) | Tabs | [x] | Functional filtering with derived state |
+| Search button | Button | [x] | Toggles search input, filters by name/title |
+| Currency selector | Button | [x] | CurrencySelector component |
+| Monthly Spending Summary | Display | [x] | Derived from IndexedDB (current month) |
+| Split count badge | Display | [x] | Shows total split count |
+| Summary Chips (People, Pending) | Display | [x] | Derived from IndexedDB data |
+| Settlement Summary (Owed to You) | Cards | [x] | Computed from unpaid splits |
+| Split card links | Links | [x] | Navigate to `/split/{id}` |
+| Loading skeleton | Display | [x] | Shows while IndexedDB loads |
 
-- [ ] **DEBT-202**: Add logging correlation IDs
-  - Request tracing
-  - Distributed logging
-  - Debug support
+### Settings Page (`/settings`)
 
-- [ ] **DEBT-203**: Optimize Docker images
-  - Multi-stage builds
-  - Smaller image sizes
-  - Security scanning
+| Element | Type | Status | Notes |
+|---------|------|--------|-------|
+| Dark mode toggle | Switch | [x] | Persists to localStorage, toggles `dark` class |
+| Notifications toggle | Switch | [~] | Persists to localStorage, no notification system |
+| Sound effects toggle | Switch | [~] | Persists to localStorage, no sound system |
+| Currency initialization | Logic | [x] | Calls `currencyStore.init()` |
+| Copy API Key | Button | [x] | Copies to clipboard with feedback |
+| Clear data | Button | [x] | Deletes correct IndexedDB (`split-bill-db`) |
 
----
+### Groups Pages
 
-## Phase History
+| Page | Status | Notes |
+|------|--------|-------|
+| `/groups/new` | [x] | Form creates group via API |
+| `/groups/[id]` | [x] | Detail view loads from API |
 
-### ✅ Phase 1: Modular Architecture & Code Quality
+### Send Reminder (`/send-reminder`)
 
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Created modular architecture with clear separation of concerns
-- [x] Implemented pre-commit hooks
-- [x] Enhanced Makefile with development commands
-- [x] Fixed duplicate functions
-- [x] Improved code organization
-
-**Outcome**: Professional, maintainable codebase
-
-### ✅ Phase 2: Security Hardening
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] API Key authentication with Bearer tokens
-- [x] Comprehensive rate limiting (10/30/100 requests per minute)
-- [x] Security headers (CSP, XSS Protection, Frame Options)
-- [x] Input validation middleware (10MB request limit)
-
-**Outcome**: Enterprise-grade security
-
-### ✅ Phase 3: Performance & Caching
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Redis caching integration
-- [x] Intelligent cache strategies (1hr/30min/24hr TTL)
-- [x] Graceful Redis fallbacks
-- [x] 3-5x performance improvement
-
-**Outcome**: 70-90% cache hit rates
-
-### ✅ Phase 4: Production Integration
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Unified API architecture
-- [x] Modern FastAPI patterns (APIRouter)
-- [x] Docker and Makefile updates
-- [x] Comprehensive documentation
-
-**Outcome**: Production-ready application
-
-### ✅ Phase 5: Frontend Integration & Testing
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Streamlit frontend integration
-- [x] End-to-end workflow testing
-- [x] Error handling improvements
-- [x] Production testing validation
-
-**Outcome**: Full frontend-backend integration
-
-### ✅ Phase 6: Testing & Quality Assurance
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Test framework setup (pytest)
-- [x] Sample tests created
-- [x] Code quality tools (Black, isort, Ruff, MyPy)
-- [x] Pre-commit hooks
-
-**Outcome**: Automated quality gates
-
-### ✅ Phase 7: Monitoring & Observability
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Health check endpoints
-- [x] Metrics collection
-- [x] Structured logging
-- [x] Monitoring data tracking
-
-**Outcome**: Production observability
-
-### ✅ Phase 8: User Experience Enhancements
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Mobile-responsive design
-- [x] Accessibility compliance (WCAG 2.1 AA)
-- [x] Dark theme
-- [x] Keyboard navigation
-- [x] Error handling improvements
-
-**Outcome**: Enterprise-grade UX
-
-### ✅ Phase 9: Recent Fixes & Improvements
-
-**Status**: Complete
-**Date**: Completed
-
-**Deliverables**:
-- [x] Fixed Streamlit configuration issues
-- [x] Fixed API endpoint 404 errors
-- [x] Streamlined UI (removed light mode toggle)
-- [x] Enhanced API router structure
-
-**Outcome**: Stable, polished application
+| Page | Status | Notes |
+|------|--------|-------|
+| `/send-reminder` | [x] | Member selection, custom message, simulated send (no notification backend) |
 
 ---
 
-## Roadmap
+## 3. Stores & Services Integration Map
 
-### Short Term (Next 3 Months)
-
-**Focus**: Stability and core improvements
-
-1. **Fix technical debt**
-   - Resolve type errors
-   - Achieve 80% test coverage
-   - Improve error handling
-
-2. **Documentation**
-   - Complete all architecture docs
-   - API versioning strategy
-   - Deployment runbooks
-
-3. **Monitoring**
-   - Prometheus metrics
-   - Alerting setup
-   - Performance dashboards
-
-### Medium Term (3-6 Months)
-
-**Focus**: Feature expansion
-
-1. **Core features**
-   - Manual receipt correction
-   - Receipt history
-   - Multi-currency support
-
-2. **User experience**
-   - Mobile app (MVP)
-   - Offline mode
-   - Payment integration (Venmo)
-
-3. **Scale**
-   - Database migration
-   - Distributed rate limiting
-   - Background jobs
-
-### Long Term (6-12 Months)
-
-**Focus**: Platform and enterprise
-
-1. **Platform**
-   - User accounts and auth
-   - Groups and recurring splits
-   - Webhook integrations
-
-2. **Enterprise**
-   - Team management
-   - Advanced analytics
-   - Compliance features
-
-3. **AI/ML**
-   - Improved OCR accuracy
-   - Auto-categorization
-   - Spending insights
+| Store | Initialized By | API Service Used | Status |
+|-------|---------------|-----------------|--------|
+| `currencyStore` | Dashboard, Receipt, Split, History, Settings | `currency` service | [x] Init works, API returns live rates |
+| `analyticsStore` | Dashboard, History | `analytics` service | [x] Calls `/analytics/overall`, graceful failure |
+| `receiptStore` | Receipt → Split | None (local state) | [x] Passes data between pages |
+| `splitStore` | Split page | `splitsService` | [x] Calculate endpoint works |
+| `groupsStore` | Dashboard, Split page | `groups` service | [x] `loadGroups()` fetches from API |
+| `templatesStore` | Dashboard, Split page | `templates` service | [x] `loadTemplates()` fetches from API |
+| `offlineStore` | Split page | None (IndexedDB) | [x] Local offline queue |
 
 ---
 
-## Task Template
+## 4. Critical Integration Gaps
 
-When adding new tasks, use this format:
+### High Priority (Core Flow Broken)
 
-```markdown
-- [ ] **TASK-ID**: Brief description
-  - **Assigned**: @username or TBD
-  - **Status**: Open | In Progress | Blocked | Complete
-  - **Priority**: Critical | High | Medium | Low
-  - **Effort**: Small | Medium | Large
-  - **Impact**: Description of business/technical impact
-  - **Dependencies**: List of blocking tasks
-  - **Details**: Detailed description
-  - **Acceptance Criteria**:
-    - [ ] Criterion 1
-    - [ ] Criterion 2
-```
+1. ~~**Receipt OCR not connected**~~ — **FIXED**: Receipt page calls `/receipts/upload` API with proper error handling.
 
----
+2. ~~**Bill amount input not bound**~~ — **FIXED**: Already has `bind:value={billAmount}`.
 
-## Contributing
+3. ~~**Filter tabs on History are dead**~~ — **FIXED**: Functional filter buttons with derived state.
 
-### How to Pick Up Tasks
+### Medium Priority (Features Incomplete)
 
-1. Comment on the task with "Taking this"
-2. Update status to "In Progress"
-3. Create a feature branch: `git checkout -b feature/TASK-ID`
-4. Work on the task
-5. Run quality checks: `make check-all`
-6. Submit PR with task ID in title: "[TASK-001] Fix type errors"
+4. ~~**"By Item" split method**~~ — **FIXED**: Item assignment UI with per-person toggle buttons, proportional tax/tip distribution.
 
-### Task Priority Guide
+5. ~~**Smart Rounding not applied**~~ — **FIXED**: Applied in calculation via `applyRounding()`.
 
-- **Critical**: Blocking production, security issue, or data loss risk
-- **High**: Significant user impact or technical debt
-- **Medium**: Nice to have, improvements
-- **Low**: Future ideas, exploratory
+6. **Templates functional** — "Save as Template" saves to API. Dashboard loads templates from API.
 
-### Definition of Done
+7. **Groups functional** — Dashboard loads groups from API. Create group page calls API. Detail page loads from API.
 
-- [ ] Code implemented and tested
-- [ ] All quality checks pass (`make check-all`)
-- [ ] Documentation updated
-- [ ] PR reviewed and approved
-- [ ] Deployed to staging
-- [ ] Tested in staging environment
+8. ~~**Payment tracking missing**~~ — **FIXED**: IndexedDB-based payment tracking with persistence.
+
+9. ~~**Currency conversion not connected**~~ — **FIXED**: CurrencyConverter calls API with 3s timeout and hardcoded fallback.
+
+### Low Priority (Polish/Enhancement)
+
+10. ~~**Dead links**~~ — **FIXED**: All `href="#..."` links removed or replaced with real navigation.
+
+11. ~~**Notifications/Profile buttons**~~ — **FIXED**: Navigate to `/send-reminder` and `/settings`.
+
+12. ~~**Analytics data hardcoded**~~ — **FIXED**: Dashboard and history derive stats from IndexedDB.
+
+13. ~~**Send Reminder page**~~ — **FIXED**: Functional with member selection and simulated send.
 
 ---
 
-## Recent Updates
+## 5. Database Dependency
 
-### February 2026
+Features requiring PostgreSQL with migrations:
 
-- **Added**: Comprehensive documentation (ARCHITECTURE.md, API.md, TODO.md, etc.)
-- **Identified**: Type errors in main.py (API-001)
-- **Identified**: Need for expanded test coverage (TEST-001)
+- Groups CRUD
+- Templates CRUD
+- Payments CRUD
+- Analytics queries
+- User management
+
+**Current state**: The monolith `main.py` gracefully handles missing routers via try/except imports. The modular routers in `api/src/routers/` import from `src.db.deps` and `src.db.models` which require a running PostgreSQL instance.
+
+---
+
+## 6. Recommended Next Steps
+
+### ~~Phase 1: Fix Core Flow (Receipt → Split → Result)~~ DONE
+1. ~~Connect receipt page to `/receipts/upload` API~~
+2. ~~Fix bill amount input binding on split page~~
+3. ~~Verify split detail page displays results correctly~~
+4. ~~Store split results in IndexedDB for history~~
+
+### ~~Phase 2: Make Existing UI Functional~~ DONE
+5. ~~Implement history filter tabs (filter by status from IndexedDB)~~
+6. ~~Implement "% Split" and "By Item" split methods~~
+7. ~~Apply smart rounding to calculations~~
+8. ~~Connect currency converter to API~~
+
+### Phase 3: Backend Features (Requires PostgreSQL) — DONE
+9. ~~Verify PostgreSQL + migrations work with docker-compose~~ — PostgreSQL running locally, all tables exist
+10. ~~Connect groups UI to groups API~~ — Dashboard, create, detail pages all use API
+11. ~~Connect templates UI to templates API~~ — Dashboard loads from API, Save as Template uses API
+12. ~~Connect payments API for server-side tracking~~ — Payments endpoints working
+
+### ~~Phase 4: Polish~~ DONE
+13. ~~Replace all `href="#..."` dead links with real navigation or remove~~
+14. ~~Replace hardcoded dashboard data with real analytics~~
+15. ~~Implement notifications system (send-reminder page)~~
+16. ~~Add search, currency selectors, custom tip, tax edit~~
+
+---
+
+## Completed Phases (Historical)
+
+- Phase 1: Modular Architecture & Code Quality
+- Phase 2: Security Hardening (API Key auth, rate limiting, security headers)
+- Phase 3: Performance & Caching (Redis integration)
+- Phase 4: Production Integration (FastAPI routers, Docker)
+- Phase 5: Frontend Integration (Streamlit → SvelteKit migration)
+- Phase 6: Testing & QA (pytest framework, code quality tools)
+- Phase 7: Monitoring & Observability (health, metrics, structured logging)
+- Phase 8: UX Enhancements (mobile-responsive, accessibility, dark theme)
+- Phase 9: SuperDesign UI Implementation (all 6 pages)
 
 ---
 
 ## Related Documents
 
-- [Architecture Overview](ARCHITECTURE.md) - System architecture
-- [API Documentation](API.md) - API reference
-- [Development Guide](DEVELOPMENT.md) - Development setup
-- [Operations Guide](OPERATIONS.md) - Deployment and monitoring
-- [Architecture Decisions](ADR/) - Design decision records
+- [Architecture Overview](ARCHITECTURE.md)
+- [API Documentation](API.md)
+- [Development Guide](DEVELOPMENT.md)
+- [Operations Guide](OPERATIONS.md)
+- [Architecture Decisions](ADR/)

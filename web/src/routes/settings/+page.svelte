@@ -109,7 +109,7 @@
 		try {
 			// Clear IndexedDB
 			await new Promise<void>((resolve, reject) => {
-				const request = indexedDB.deleteDatabase('split-bill-offline');
+				const request = indexedDB.deleteDatabase('split-bill-db');
 				request.onsuccess = () => resolve();
 				request.onerror = () => reject(request.error);
 			});

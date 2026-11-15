@@ -36,7 +36,7 @@
   const groupedSettlements = $derived(() => {
     const groups = new Map<string, Settlement[]>();
 
-    settlements.forEach(settlement => {
+    (settlements || []).forEach(settlement => {
       const key = `${settlement.from}-${settlement.to}`;
       if (!groups.has(key)) {
         groups.set(key, []);

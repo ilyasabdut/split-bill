@@ -1,44 +1,145 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { currencyStore, analyticsStore } from '$lib/stores';
+	import { groupsStore } from '$lib/stores/groups';
+	import { templatesStore } from '$lib/stores/templates';
 	import { goto } from '$app/navigation';
+	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 	import CurrencyConverter from '$lib/components/ui/CurrencyConverter.svelte';
+	import { onMount } from 'svelte';
 
-	let monthlySpending = $state(3850000);
-	let settledCount = $state(5);
-	let totalCount = $state(7);
-	let pendingCount = $state(2);
+	let monthlySpending = $state(0);
+	let settledCount = $state(0);
+	let totalCount = $state(0);
+	let pendingCount = $state(0);
 	let showCurrencyConverter = $state(false);
+	let monthlyChart = $state<{ label: string; amount: number; isCurrent: boolean }[]>([]);
 
-	const groups = [
-		{ id: 'roomies', name: 'Roomies', icon: 'sofa', color: 'violet', members: 4, lastActivity: '2d ago' },
-		{ id: 'gamecrew', name: 'Game Crew', icon: 'gamepad-2', color: 'pink', members: 6, lastActivity: 'Yesterday' },
-		{ id: 'hikers', name: 'Hikers', icon: 'mountain', color: 'emerald', members: 12, lastActivity: '1w ago' },
-	];
+	let groups = $state<{ id: string; name: string; icon: string; color: string; members: number; lastActivity: string }[]>([]);
 
-	const activities = [
-		{ person: 'Maya', personColor: 'sky', action: 'marked', target: 'Sushi Night', type: 'paid', time: '2h' },
-		{ person: 'Jordan', personColor: 'emerald', action: 'joined', target: 'Road Trip', type: 'split', time: '5h' },
-	];
+	const activities = $state<{ person: string; personColor: string; action: string; target: string; type: string; time: string }[]>([]);
 
-	const recentSplits = [
-		{ id: '1', title: 'Sushi Night', date: 'Feb 9', people: 4, amount: 'Rp 1.350k', status: 'Unpaid', icon: 'utensils', color: 'primary' },
-		{ id: '2', title: 'Road Trip Gas', date: 'Feb 6', people: 3, amount: 'Rp 815k', status: 'Paid', icon: 'car', color: 'emerald' },
-		{ id: '3', title: 'Movie Snacks', date: 'Feb 2', people: 2, amount: 'Rp 295k', status: 'Unpaid', icon: 'popcorn', color: 'amber' },
-	];
+	let recentSplits = $state<{ id: string; title: string; date: string; people: number; amount: string; status: string; icon: string; color: string; initials: string[] }[]>([]);
 
-	const templates = [
-		{ id: 'lunch', name: 'Lunch', count: 3, icon: 'utensils', color: 'orange' },
-		{ id: 'rent', name: 'Rent', count: 0, icon: 'home', color: 'emerald' },
-		{ id: 'trip', name: 'Trip', count: 0, icon: 'plane', color: 'sky' },
-	];
+	let templates = $state<{ id: string; name: string; count: number; icon: string; color: string }[]>([]);
 
-	onMount(async () => {
-		await Promise.all([
-			currencyStore.init(),
-			analyticsStore.loadAnalytics()
-		]);
+	function formatRelativeTime(timestamp: number): string {
+		const diff = Date.now() - timestamp;
+		const minutes = Math.floor(diff / 60000);
+		const hours = Math.floor(diff / 3600000);
+		const days = Math.floor(diff / 86400000);
+		if (minutes < 1) return 'now';
+		if (minutes < 60) return `${minutes}m`;
+		if (hours < 24) return `${hours}h`;
+		if (days < 7) return `${days}d`;
+		return `${Math.floor(days / 7)}w`;
+	}
+
+	onMount(() => {
+		loadDashboard();
 	});
+
+	const groupColors = ['violet', 'pink', 'emerald', 'sky', 'orange'];
+	const templateIcons: Record<string, string> = { lunch: 'utensils', rent: 'home', trip: 'plane', dinner: 'utensils', groceries: 'car' };
+	const templateColors: Record<string, string> = { lunch: 'orange', rent: 'emerald', trip: 'sky', dinner: 'orange', groceries: 'pink' };
+
+	async function loadDashboard() {
+		currencyStore.init();
+		analyticsStore.loadAnalytics().catch(() => {});
+
+		Promise.all([
+			groupsStore.loadGroups(),
+			templatesStore.loadTemplates()
+		]).then(() => {
+			const g = get(groupsStore.groups);
+			groups = g.map((group, i) => ({
+				id: String(group.id),
+				name: group.name,
+				icon: 'sofa',
+				color: groupColors[i % groupColors.length],
+				members: group.members?.length || 0,
+				lastActivity: group.created_at ? formatRelativeTime(new Date(group.created_at).getTime()) : ''
+			}));
+
+			const t = get(templatesStore.templates);
+			templates = t.map((tmpl) => ({
+				id: String(tmpl.id),
+				name: tmpl.name,
+				count: 0,
+				icon: templateIcons[tmpl.name.toLowerCase()] || 'utensils',
+				color: templateColors[tmpl.name.toLowerCase()] || 'orange'
+			}));
+		}).catch(() => {});
+
+		try {
+			const indexedDB = await getIndexedDB();
+			const items = await indexedDB.getAll<any>(STORES.SPLITS);
+
+			const sorted = items
+				.filter((item: any) => item.createdAt)
+				.sort((a: any, b: any) => b.createdAt - a.createdAt);
+
+			totalCount = sorted.length;
+			settledCount = sorted.filter((item: any) => item.status === 'completed').length;
+			pendingCount = sorted.filter((item: any) => item.status !== 'completed').length;
+
+			const now = new Date();
+			const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+			monthlySpending = sorted
+				.filter((item: any) => item.createdAt >= monthStart)
+				.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
+
+			// Build last 4 months chart
+			const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+			monthlyChart = [];
+			for (let i = 3; i >= 0; i--) {
+				const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+				const mStart = d.getTime();
+				const mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
+				const amount = sorted
+					.filter((item: any) => item.createdAt >= mStart && item.createdAt < mEnd)
+					.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
+				monthlyChart.push({ label: monthNames[d.getMonth()], amount, isCurrent: i === 0 });
+			}
+
+			recentSplits = sorted.slice(0, 3).map((item: any) => {
+				const names = item.people || Object.keys(item.results || {});
+				const people = names.length;
+				const total = item.total || 0;
+				const date = new Date(item.createdAt);
+				const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+				return {
+					id: String(item.id),
+					title: names.join(', ') || 'Split',
+					date: `${months[date.getMonth()]} ${date.getDate()}`,
+					people,
+					amount: total >= 1000000 ? `Rp ${(total / 1000000).toFixed(1)}M` : `Rp ${(total / 1000).toFixed(0)}k`,
+					status: item.status === 'completed' ? 'Paid' : 'Unpaid',
+					icon: 'utensils',
+					color: item.status === 'completed' ? 'emerald' : 'primary',
+					initials: names.slice(0, 3).map((n: string) => n.charAt(0).toUpperCase())
+				};
+			});
+
+			// Populate activity feed from recent splits
+			const colors = ['sky', 'emerald', 'amber'];
+			activities.length = 0;
+			sorted.slice(0, 5).forEach((item: any, i: number) => {
+				const names = item.people || Object.keys(item.results || {});
+				const person = names[0] || 'Someone';
+				activities.push({
+					person,
+					personColor: colors[i % colors.length],
+					action: 'created a split with',
+					target: names.slice(1).join(', ') || 'others',
+					type: 'split',
+					time: formatRelativeTime(item.createdAt)
+				});
+			});
+		} catch (err) {
+			console.error('Failed to load dashboard data:', err);
+		}
+	}
 
 	// Color utility to return complete Tailwind class strings using semantic tokens
 	function getColorClasses(color: string, type: 'bg' | 'text' | 'border'): string {
@@ -102,10 +203,10 @@
 				</div>
 			</div>
 			<div class="flex items-center gap-2">
-				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Notifications">
+				<button type="button" onclick={() => goto('/send-reminder')} class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Notifications">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
 				</button>
-				<button type="button" class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Profile">
+				<button type="button" onclick={() => goto('/settings')} class="h-11 w-11 rounded-2xl bg-surface-0 shadow-md border border-surface-200 flex items-center justify-center active:scale-[0.99] hover:bg-surface-50 focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors" aria-label="Profile and Settings">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 				</button>
 			</div>
@@ -151,18 +252,18 @@
 			<div class="mb-6">
 				<div class="flex items-center justify-between mb-3">
 					<h2 class="text-caption font-bold text-text-tertiary uppercase tracking-wider">Saved Templates</h2>
-					<button class="text-primary-600 text-caption font-semibold active:opacity-70 focus-visible:ring-2 focus-visible:ring-primary-500/50">Edit</button>
+					<a href="/split" class="text-primary-600 text-caption font-semibold active:opacity-70 focus-visible:ring-2 focus-visible:ring-primary-500/50">Edit</a>
 				</div>
 				<div class="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
 					{#each templates as template}
-						<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
+						<button onclick={() => goto('/split')} class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
 							<div class="{getColorClasses(template.color, 'bg')} border {getColorClasses(template.color, 'border')} {getColorClasses(template.color, 'text')} h-[52px] w-[52px] rounded-2xl flex items-center justify-center group-active:scale-95 transition-transform">
 								{@html getIcon(template.icon)}
 							</div>
 							<span class="text-caption font-medium text-text-secondary text-center leading-tight">{template.name}{template.count > 0 ? ` (${template.count})` : ''}</span>
 						</button>
 					{/each}
-					<button class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
+					<button onclick={() => goto('/split')} class="shrink-0 flex flex-col items-center gap-2 w-[72px] group focus-visible:ring-2 focus-visible:ring-primary-500/50">
 						<div class="h-[52px] w-[52px] rounded-2xl bg-surface-50 dark:bg-surface-700 border border-surface-100 dark:border-surface-600 text-text-tertiary flex items-center justify-center group-active:scale-95 transition-transform">
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 						</div>
@@ -175,7 +276,7 @@
 			<div class="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 no-scrollbar">
 				<div class="flex-1 min-w-[100px] shrink-0 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-500/15 px-3 py-2">
 					<p class="text-caption text-text-secondary">This month</p>
-					<p class="text-label font-bold text-text-primary">Rp 3.850k</p>
+					<p class="text-label font-bold text-text-primary">{monthlySpending >= 1000000 ? `Rp ${(monthlySpending / 1000000).toFixed(1)}M` : monthlySpending >= 1000 ? `Rp ${(monthlySpending / 1000).toFixed(0)}k` : `Rp ${monthlySpending}`}</p>
 				</div>
 				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-success/10 dark:bg-success/20 border border-success/20 px-3 py-2">
 					<p class="text-caption text-text-secondary">Settled</p>
@@ -184,6 +285,39 @@
 				<div class="flex-1 min-w-[90px] shrink-0 rounded-2xl bg-warning/10 dark:bg-warning/20 border border-warning/20 px-3 py-2">
 					<p class="text-caption text-text-secondary">Pending</p>
 					<p class="text-label font-bold text-text-primary">{pendingCount} splits</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Spending Insights -->
+		<section aria-label="Spending insights">
+			<div class="rounded-3xl bg-primary-600 dark:bg-primary-900 text-text-inverted p-6 shadow-xl relative overflow-hidden">
+				<!-- Decorative circles -->
+				<div class="absolute top-0 right-0 w-32 h-32 bg-surface-0/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+				<div class="absolute bottom-0 left-0 w-24 h-24 bg-surface-0/5 rounded-full -ml-8 -mb-8 blur-xl"></div>
+
+				<div class="relative z-10">
+					<div class="flex items-start justify-between">
+						<p class="text-primary-100 text-label font-medium">Total spending this month</p>
+						<a href="/history" class="bg-surface-0/20 px-2.5 py-1 rounded-lg text-caption font-semibold text-text-inverted flex items-center gap-1 hover:bg-surface-0/30 transition-colors">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+							{totalCount} splits
+						</a>
+					</div>
+					<h2 class="text-heading font-bold tracking-tight mt-2 tabular-nums">{monthlySpending > 0 ? `Rp ${monthlySpending.toLocaleString('id-ID')}` : 'Rp 0'}</h2>
+					<p class="text-caption text-primary-200 mt-1 opacity-80">This month's total</p>
+				</div>
+
+				<!-- Simple Bar Chart -->
+				<div class="relative z-10 mt-6 flex items-end justify-between gap-2 h-20 px-1">
+					{#each monthlyChart as month}
+						{@const maxAmount = Math.max(...monthlyChart.map(m => m.amount), 1)}
+						{@const height = month.amount > 0 ? Math.max(10, (month.amount / maxAmount) * 100) : 5}
+						<div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
+							<div class="w-full rounded-t-lg transition-colors {month.isCurrent ? 'bg-surface-0 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'bg-surface-0/20 group-hover:bg-surface-0/40'}" style="height: {height}%"></div>
+							<span class="text-caption text-center {month.isCurrent ? 'text-text-inverted font-bold' : 'text-primary-200'}">{month.label}</span>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</section>
@@ -218,48 +352,13 @@
 			<div class="space-y-2">
 				{#each activities as activity}
 					<div class="flex items-center gap-3 p-3 rounded-2xl bg-surface-0 dark:bg-surface-800 border border-surface-100 dark:border-surface-700">
-						<div class="h-8 w-8 rounded-full {activity.personColor === 'sky' ? 'bg-info/10' : activity.personColor === 'emerald' ? 'bg-success/10' : 'bg-surface-200'} border border-surface-0 dark:border-surface-700 flex items-center justify-center shrink-0">
-							<span class="text-caption font-bold text-text-primary dark:text-text-primary">{activity.person[0]}</span>
+						<div class="h-8 w-8 rounded-full {activity.personColor === 'sky' ? 'bg-info/20' : activity.personColor === 'emerald' ? 'bg-success/20' : 'bg-surface-200'} border border-surface-0 dark:border-surface-700 flex items-center justify-center shrink-0">
+							<span class="text-caption font-bold {activity.personColor === 'sky' ? 'text-info' : activity.personColor === 'emerald' ? 'text-success' : 'text-text-primary'}">{activity.person[0]}</span>
 						</div>
 						<p class="text-caption text-text-primary leading-snug flex-1"><span class="font-bold text-text-primary">{activity.person}</span> {activity.action} <span class="font-semibold">{activity.target}</span>.</p>
 						<span class="text-caption text-text-tertiary">{activity.time}</span>
 					</div>
 				{/each}
-			</div>
-		</section>
-
-		<!-- Spending Insights -->
-		<section aria-label="Spending insights">
-			<div class="rounded-3xl bg-text-primary text-text-inverted p-5 shadow-lg relative overflow-hidden">
-				<div class="relative z-10 flex items-start justify-between">
-					<div>
-						<p class="text-caption font-medium text-text-tertiary mb-1">Total Spent (Feb)</p>
-						<h2 class="text-heading font-bold">Rp 3.850k</h2>
-					</div>
-					<a href="#insights" class="px-3 py-1.5 rounded-xl bg-surface-800 text-caption font-medium text-text-secondary hover:bg-surface-700 transition-colors inline-block">
-						Insights
-					</a>
-				</div>
-
-				<!-- Simple Bar Chart -->
-				<div class="mt-6 flex items-end justify-between gap-2 h-24 px-1">
-					<div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
-						<div class="w-full bg-surface-800 rounded-t-lg h-[40%] group-hover:bg-primary-500 transition-colors"></div>
-						<span class="text-caption text-text-tertiary text-center">Dec</span>
-					</div>
-					<div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
-						<div class="w-full bg-surface-800 rounded-t-lg h-[65%] group-hover:bg-primary-500 transition-colors"></div>
-						<span class="text-caption text-text-tertiary text-center">Jan</span>
-					</div>
-					<div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
-						<div class="w-full bg-primary-500 rounded-t-lg h-[85%] relative shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>
-						<span class="text-caption text-text-inverted font-bold text-center">Feb</span>
-					</div>
-					<div class="w-full flex flex-col justify-end gap-1 group cursor-pointer">
-						<div class="w-full bg-surface-800/50 border border-surface-700 border-dashed rounded-t-lg h-[60%]" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.05) 5px, rgba(255,255,255,0.05) 10px);"></div>
-						<span class="text-caption text-text-tertiary text-center">Mar</span>
-					</div>
-				</div>
 			</div>
 		</section>
 
@@ -294,9 +393,9 @@
 					</div>
 					<div class="mt-3 flex items-center justify-between gap-3 pl-[60px]">
 						<div class="flex -space-x-2">
-							<div class="h-7 w-7 rounded-full bg-surface-200 dark:bg-surface-700 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">A</div>
-							<div class="h-7 w-7 rounded-full bg-info/10 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">M</div>
-							<div class="h-7 w-7 rounded-full bg-success/10 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">J</div>
+							{#each split.initials as initial}
+								<div class="h-7 w-7 rounded-full bg-surface-200 dark:bg-surface-700 border-2 border-surface-0 dark:border-surface-800 flex items-center justify-center text-caption font-bold text-text-secondary dark:text-text-tertiary">{initial}</div>
+							{/each}
 						</div>
 						<a href="/split/{split.id}" class="px-4 py-2 rounded-xl bg-surface-100 dark:bg-surface-700 text-text-primary dark:text-text-inverted text-caption font-bold shadow-sm active:scale-95 transition-transform">
 							Details

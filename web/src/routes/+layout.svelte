@@ -28,7 +28,7 @@
     Skip to content
   </a>
   <div class="w-full max-w-[430px] min-h-screen flex flex-col relative">
-    <main id="main-content" class="flex-1">
+    <main id="main-content" class="flex-1 pb-nav">
       {@render children?.()}
     </main>
   </div>

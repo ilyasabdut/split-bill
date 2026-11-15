@@ -5,7 +5,7 @@ export const ssr = false;
 
 export const load: LayoutLoad = async () => {
   const apiConfig = {
-    baseURL: import.meta.env.VITE_FASTAPI_API_URL || 'http://localhost:18000',
+    baseURL: import.meta.env.VITE_FASTAPI_API_URL || '/api',
     apiKey: import.meta.env.VITE_API_KEY || '',
     timeout: 30000,
   };

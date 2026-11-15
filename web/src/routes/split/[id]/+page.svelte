@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import SettlementGraph from '$lib/components/SettlementGraph.svelte';
@@ -8,9 +8,10 @@
   import QRCodeShare from '$lib/components/QRCodeShare.svelte';
   import ActivityFeedItem from '$lib/components/ActivityFeedItem.svelte';
   import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
-  import { splitsService, paymentsService } from '$lib/services/api';
+  import { splitsService } from '$lib/services/api';
   import { currencyStore } from '$lib/stores/currency';
-  import type { SplitResults } from '$lib/types/split';
+  import type { CurrencyCode } from '$lib/stores/currency';
+  import type { SplitResults, PersonSplit } from '$lib/types/split';
   import type { Activity } from '$lib/components/ActivityFeedItem.svelte';
 
   let splitData = $state<{
@@ -29,64 +30,54 @@
 
   const splitId = $derived($page.params.id);
 
-  onMount(async () => {
+  let dataLoaded = $state(false);
+
+  $effect(() => {
+    if (splitId && !dataLoaded) {
+      dataLoaded = true;
+      loadSplitData();
+    }
+  });
+
+  async function loadSplitData() {
+    const id = $page.params.id;
+    if (!id) {
+      error = 'Invalid split link';
+      loading = false;
+      return;
+    }
+
+    currencyStore.init();
+
     try {
-      await currencyStore.init();
+      const db = await getIndexedDB();
+      const localData = await db.get<any>(STORES.SPLITS, id);
 
-      // First try to get from server
-      const response = await splitsService.getShared(splitId);
+      if (localData) {
+        const total = Object.values(localData.results).reduce((sum: number, person: any) => sum + person.total, 0);
+        splitData = {
+          results: localData.results,
+          createdAt: localData.createdAt,
+          people: Object.keys(localData.results),
+          total,
+          receiptData: localData.receipt_data
+        };
 
-      // Load payment status
-      try {
-        const payments = await paymentsService.getPaymentsBySplit(splitId);
-        const status: Record<string, 'pending' | 'paid' | 'partial'> = {};
-        payments.forEach(payment => {
-          status[payment.payee_id] = payment.status;
-        });
-        paymentStatus = status;
-      } catch (paymentErr) {
-        console.error('Failed to load payments:', paymentErr);
-      }
-
-      // Calculate total
-      const total = Object.values(response.split_results).reduce((sum: number, person: any) => sum + person.total, 0);
-
-      splitData = {
-        results: response.split_results,
-        createdAt: new Date(response.created_at).getTime(),
-        people: Object.keys(response.split_results),
-        total,
-        receiptData: response.receipt_data
-      };
-
-      // Generate mock activity feed
-      generateActivityFeed();
-    } catch (err) {
-      // If server fails, try local storage
-      try {
-        const indexedDB = await getIndexedDB();
-        const localData = await indexedDB.get<any>(STORES.SPLITS, splitId);
-
-        if (localData) {
-          const total = Object.values(localData.results).reduce((sum: number, person: any) => sum + person.total, 0);
-          splitData = {
-            results: localData.results,
-            createdAt: localData.createdAt,
-            people: Object.keys(localData.results),
-            total,
-            receiptData: localData.receipt_data
-          };
-          generateActivityFeed();
-        } else {
-          error = 'Split not found';
+        // Restore saved payment status
+        if (localData.payments) {
+          paymentStatus = { ...localData.payments };
         }
-      } catch (localErr) {
-        error = 'Failed to load split data';
+
+        generateActivityFeed();
+      } else {
+        error = 'Split not found. It may have expired or the link is invalid.';
       }
+    } catch (err) {
+      error = 'Failed to load split data';
     } finally {
       loading = false;
     }
-  });
+  }
 
   function generateActivityFeed() {
     // Generate mock activity feed data
@@ -102,7 +93,7 @@
         id: '2',
         type: 'payment_made',
         user: { id: 2, name: splitData?.people[0] || 'Someone' },
-        data: { amount: currencyStore.formatCurrency(splitData?.results?.[splitData?.people[0]]?.total || 0), currency: 'USD' },
+        data: { amount: formatCurrency(splitData?.results?.[splitData?.people[0]]?.total || 0), currency: 'USD' },
         created_at: new Date((splitData?.createdAt || Date.now()) + 3600000).toISOString()
       },
       {
@@ -117,29 +108,30 @@
 
   async function markAsPaid(personName: string) {
     try {
-      await paymentsService.createPayment({
-        split_id: splitId,
-        payer_id: 'current_user', // This would come from auth
-        payee_id: personName,
-        amount: splitData.results[personName].total,
-        status: 'paid'
-      });
       paymentStatus[personName] = 'paid';
       paymentStatus = { ...paymentStatus };
 
-      // Add to activity feed
+      // Persist to IndexedDB
+      const db = await getIndexedDB();
+      const localData = await db.get<any>(STORES.SPLITS, splitId);
+      if (localData) {
+        localData.payments = { ...(localData.payments || {}), [personName]: 'paid' };
+        await db.put(STORES.SPLITS, localData);
+      }
+
       activityFeed = [
         {
           id: Date.now().toString(),
           type: 'payment_made',
           user: { id: 1, name: 'You' },
-          data: { amount: currencyStore.formatCurrency(splitData.results[personName].total), currency: 'USD' },
+          data: { amount: formatCurrency(splitData!.results[personName].total), currency: 'IDR' },
           created_at: new Date().toISOString()
         },
         ...activityFeed
       ];
     } catch (err) {
-      alert('Failed to record payment');
+      paymentStatus[personName] = 'pending';
+      paymentStatus = { ...paymentStatus };
     }
   }
 
@@ -203,6 +195,67 @@
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   }
+
+  function computeSettlements(): { from: string; to: string; amount: number; currency: string }[] {
+    if (!splitData) return [];
+    const people = Object.keys(splitData.results);
+    if (people.length < 2) return [];
+
+    const payer = people[0];
+    const settlements: { from: string; to: string; amount: number; currency: string }[] = [];
+
+    for (const person of people) {
+      if (person === payer) continue;
+      const personData = splitData.results[person];
+      if (personData.total > 0) {
+        settlements.push({
+          from: person,
+          to: payer,
+          amount: personData.total,
+          currency: 'IDR'
+        });
+      }
+    }
+
+    return settlements;
+  }
+
+  const settlements = $derived(computeSettlements());
+
+  const totalReceivable = $derived(() => {
+    if (!splitData) return 0;
+    const people = Object.keys(splitData.results);
+    const payer = people[0];
+    return people
+      .filter(p => p !== payer)
+      .reduce((sum, p) => sum + splitData!.results[p].total, 0);
+  });
+
+  const totalItemCount = $derived(() => {
+    if (!splitData) return 0;
+    return Object.values(splitData.results).reduce((sum, p) => sum + p.items.length, 0);
+  });
+
+  const shownItemCount = $derived(() => {
+    if (!splitData) return 0;
+    return Object.values(splitData.results).reduce((sum, p) => sum + Math.min(2, p.items.length), 0);
+  });
+
+  function formatCurrency(amount: number): string {
+    const symbols: Record<string, string> = {
+      'IDR': 'Rp', 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'NZD': '$'
+    };
+    let code: CurrencyCode = 'IDR';
+    currencyStore.subscribe(s => { code = s.selected; })();
+    const symbol = symbols[code] || 'Rp';
+    const hasDecimals = code !== 'JPY' && code !== 'IDR';
+    const formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: hasDecimals ? 2 : 0,
+      maximumFractionDigits: hasDecimals ? 2 : 0
+    });
+    if (amount < 0) return `-${symbol}${formatter.format(Math.abs(amount))}`;
+    return `${symbol}${formatter.format(amount)}`;
+  }
 </script>
 
 <svelte:head>
@@ -244,7 +297,7 @@
           </span>
           <p class="text-xs font-semibold text-brand-700">Split Detail</p>
         </div>
-        <h1 class="mt-1 text-lg font-semibold leading-tight truncate">Dinner at Nori House</h1>
+        <h1 class="mt-1 text-lg font-semibold leading-tight truncate">{splitData?.receiptData?.merchant || splitData?.people.join(', ') || 'Bill Split'}</h1>
       </div>
 
       <button type="button" class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-surface-0 shadow-md border border-surface-200 active:scale-[0.99]" aria-label="More actions">
@@ -260,10 +313,9 @@
         <div class="min-w-0">
           <p class="text-xs font-medium text-text-secondary">Total bill</p>
           <div class="mt-1 flex items-baseline gap-1">
-            <p class="text-3xl font-semibold tracking-tight">{$currencyStore.formatCurrency(splitData.total)}</p>
-            <span class="text-sm font-medium text-text-tertiary">USD</span>
+            <p class="text-3xl font-semibold tracking-tight">{formatCurrency(splitData.total)}</p>
+            <span class="text-sm font-medium text-text-tertiary">IDR</span>
           </div>
-          <p class="text-xs text-text-tertiary font-medium">≈ €{($currencyStore.formatCurrency(splitData.total) as string).replace('$', '')} EUR</p>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-semibold border border-brand-100">
@@ -295,8 +347,9 @@
       <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Settlement</h2>
       <Card class="shadow-md">
         <div class="p-4 grid gap-4">
-          {#each Object.entries(splitData.results) as [name, data]}
-            {#if name !== 'Ava (You)'}
+          {#each Object.entries(splitData.results) as [name, data] (name)}
+                {@const personData = data as PersonSplit}
+            {#if name !== splitData.people[0]}
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class={`w-8 h-8 rounded-full ${getPersonColor(name)} flex items-center justify-center text-xs font-bold`}>
@@ -307,7 +360,7 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold text-text-primary">{$currencyStore.formatCurrency(data.total)}</span>
+                  <span class="text-sm font-bold text-text-primary">{formatCurrency(personData.total)}</span>
                   <svg class="w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -317,7 +370,7 @@
           {/each}
         </div>
         <div class="bg-surface-50 px-4 py-2 border-t border-surface-200 text-center">
-           <p class="text-xs text-text-secondary">Total receivable: <span class="font-semibold text-text-primary">$42.30</span></p>
+           <p class="text-xs text-text-secondary">Total receivable: <span class="font-semibold text-text-primary">{formatCurrency(totalReceivable())}</span></p>
         </div>
       </Card>
     </section>
@@ -327,7 +380,7 @@
       <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Settlement Graph</h2>
       <Card class="shadow-md">
         <div class="p-4">
-          <SettlementGraph results={splitData.results} />
+          <SettlementGraph {settlements} />
         </div>
       </Card>
     </section>
@@ -339,8 +392,9 @@
          <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Items</h2>
          <Card class="shadow-md">
             <div class="divide-y divide-slate-100">
-              {#each Object.entries(splitData.results) as [name, data]}
-                {#each data.items as item, index}
+              {#each Object.entries(splitData.results) as [name, data] (name)}
+                {@const personData = data as PersonSplit}
+                {#each personData.items as item, index}
                   {#if index < 2}
                     <div class="p-3 flex items-center justify-between">
                       <div class="flex items-center gap-3">
@@ -354,22 +408,24 @@
                           <p class="text-xs text-text-secondary">{name}</p>
                         </div>
                       </div>
-                      <span class="text-sm font-semibold text-text-primary">{$currencyStore.formatCurrency(item.price)}</span>
+                      <span class="text-sm font-semibold text-text-primary">{formatCurrency(item.price)}</span>
                     </div>
                   {/if}
                 {/each}
               {/each}
 
-              <div class="p-3 flex items-center justify-between bg-surface-50/50">
-                <div class="pl-11">
-                  <p class="text-xs font-medium text-text-secondary">+ 4 more items</p>
+              {#if totalItemCount() > shownItemCount()}
+                <div class="p-3 flex items-center justify-between bg-surface-50/50">
+                  <div class="pl-11">
+                    <p class="text-xs font-medium text-text-secondary">+ {totalItemCount() - shownItemCount()} more items</p>
+                  </div>
+                  <button class="text-xs font-semibold text-brand-600 flex items-center gap-1">
+                    View all <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                 </div>
-                <button class="text-xs font-semibold text-brand-600 flex items-center gap-1">
-                  View all <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
+              {/if}
             </div>
          </Card>
       </div>
@@ -378,9 +434,9 @@
       <Card class="shadow-md">
         <div class="flex items-center justify-between mb-3 p-4">
           <h2 class="text-sm font-semibold">Receipt</h2>
-          <a href="#" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-surface-100 text-xs font-semibold text-text-primary hover:bg-surface-200 transition-colors">
+          <button type="button" class="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-surface-100 text-xs font-semibold text-text-primary hover:bg-surface-200 transition-colors">
             Full View
-          </a>
+          </button>
         </div>
         <button type="button" class="w-full rounded-xl border border-surface-200 bg-surface-50 overflow-hidden active:scale-[0.99] transition-transform">
           <div class="relative h-24 bg-surface-100 flex items-center justify-center">
@@ -418,7 +474,8 @@
       </div>
 
       <div class="divide-y divide-slate-100">
-        {#each Object.entries(splitData.results) as [name, data]}
+        {#each Object.entries(splitData.results) as [name, data] (name)}
+                {@const personData = data as PersonSplit}
           <div class="p-4">
             <div class="flex items-start gap-3">
               <div class={`shrink-0 w-10 h-10 rounded-full ${getPersonColor(name)} flex items-center justify-center font-bold text-sm`}>
@@ -430,10 +487,10 @@
                     <p class="text-sm font-semibold text-text-primary">{name}</p>
                     <PaymentBadge status={paymentStatus[name] || 'pending'} />
                   </div>
-                  <p class="text-sm font-bold text-text-primary">{$currencyStore.formatCurrency(data.total)}</p>
+                  <p class="text-sm font-bold text-text-primary">{formatCurrency(personData.total)}</p>
                 </div>
                 <div class="mt-1 flex items-center justify-between">
-                   <span class="text-xs text-text-secondary">25% share</span>
+                   <span class="text-xs text-text-secondary">{Math.round((personData.total / splitData.total) * 100)}% share</span>
                    {#if paymentStatus[name] === 'paid'}
                      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-bold border border-emerald-100 uppercase tracking-wide">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

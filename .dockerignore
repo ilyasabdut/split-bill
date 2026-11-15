@@ -1,104 +1,85 @@
-# Python cache and compiled files
-__pycache__
+# Version control
+.git
+.gitignore
+.gitattributes
+.github
+
+# Python artifacts
+__pycache__/
 *.py[cod]
-*.pyc
-*.pyo
 *.pyd
 *.egg-info/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.tox/
+.nox/
 
-# Virtual environments
-venv
-.venv
-ENV
-env
+# Node artifacts
+node_modules/
+web/.svelte-kit/
+web/build/
 
-# Cache directories
-.mypy_cache
-.pytest_cache
-.ruff_cache
-.uv-cache
-.python-version
-
-# IDE and editor files
-.vscode
-.idea
+# IDE and editor
+.vscode/
+.idea/
 *.swp
 *.swo
 
 # Environment files
 .env
 .env.*
-
-# Testing and coverage
-.coverage
-.pytest_cache
-.tox
-.nox
-
-# Jupyter notebooks
-*.ipynb
-.ipynb_checkpoints
-
-# Documentation build
-docs/_build
-documentation/_build
-
-# Build artifacts
-build/
-dist/
-*.egg-info/
-
-# Logs and temporary files
-*.log
-logs
-*.tmp
-*.temp
+!.env.example
 
 # OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Git files
-.git
-.gitignore
-.gitattributes
+# Docker (don't send Dockerfiles into context)
+docker-compose*.yml
+Dockerfile*
+.dockerignore
 
-# CI/CD files
-.github
+# Development tools and one-off scripts
+.aider*
+.agent/
+.agents/
+.sisyphus/
+.claude/
+.kiro/
+.superdesign/
+scripts/
+docs/
+lightpanda
+dark-screenshots.js
+visual-qa.js
+session-*.md
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# Documentation (not needed in containers)
+*.md
+!api/README.md
+
+# CI/CD
 .gitlab-ci.yml
 .travis.yml
 .circleci
 
-# Docker files (except needed ones)
-docker-compose.yml
-docker-compose.prod.yml
-Dockerfile*
-.dockerignore
+# Testing artifacts
+.ipynb_checkpoints/
 
-# Documentation files
-*.md
-docs/
-documentation/
+# Build artifacts
+dist/
+build/
 
-# Scripts and demos
-scripts/
-demos/
-
-# Makefile and project files
+# Makefile and config (not needed in containers)
 Makefile
 .pre-commit-config.yaml
-
-# Web artifacts
-node_modules/
-web/node_modules/
-web/build/
-web/.svelte-kit/
-
-# Development tools
-.aider*
-aider.log
+.python-version
+uv.lock

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { receiptStore, currencyStore } from '$lib/stores';
+	import { receiptsService } from '$lib/services/api';
 	import ErrorMessage from '$lib/components/ui/ErrorMessage.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
@@ -24,6 +25,7 @@
 
 	let taxDetected = $state(10);
 	let taxEnabled = $state(true);
+	let editingTax = $state(false);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
 	let validationErrors = $state<ValidationError[]>([]);
@@ -98,22 +100,28 @@
 		clearError();
 
 		try {
-			// Simulate OCR processing
-			await new Promise(resolve => setTimeout(resolve, 2000));
+			const response = await receiptsService.upload({ file });
 
-			// Demo: Add scanned items
-			items = [
-				...items,
-				{ id: Date.now(), name: 'Scanned Item', price: 15.00 }
-			];
+			if (response.parsed_data && response.parsed_data.items) {
+				items = response.parsed_data.items.map((item: { item: string; price: number }, idx: number) => ({
+					id: Date.now() + idx,
+					name: item.item || '',
+					price: item.price || 0
+				}));
+
+				if (response.parsed_data.tax && response.parsed_data.tax > 0) {
+					taxDetected = Math.round((response.parsed_data.tax / (response.parsed_data.subtotal || 1)) * 100);
+				}
+			}
 
 			scanStatus = 'success';
 		} catch (err) {
-			setError('Failed to scan receipt. Please try again or enter items manually.');
+			const message = err instanceof Error ? err.message : 'Failed to scan receipt';
+			setError(`${message}. Please try again or enter items manually.`);
 			scanStatus = 'error';
 		} finally {
 			loading = false;
-			input.value = ''; // Reset input
+			input.value = '';
 		}
 	}
 
@@ -122,21 +130,53 @@
 		clearError();
 
 		try {
-			// Check if camera is available
 			const stream = await navigator.mediaDevices.getUserMedia({
 				video: { facingMode: 'environment' }
 			});
 
-			// Stop stream immediately (demo)
+			// Create a video element to capture a frame
+			const video = document.createElement('video');
+			video.srcObject = stream;
+			await video.play();
+
+			// Wait for video to be ready
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+			// Capture frame to canvas
+			const canvas = document.createElement('canvas');
+			canvas.width = video.videoWidth;
+			canvas.height = video.videoHeight;
+			const ctx = canvas.getContext('2d');
+			ctx?.drawImage(video, 0, 0);
+
+			// Stop camera
 			stream.getTracks().forEach(track => track.stop());
+
+			// Convert canvas to file
+			const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+			if (!blob) {
+				setError('Failed to capture image from camera.');
+				scanStatus = 'error';
+				return;
+			}
+
+			const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
 
 			scanStatus = 'scanning';
 
-			// Simulate camera scan
-			await new Promise(resolve => setTimeout(resolve, 2000));
+			const response = await receiptsService.upload({ file });
 
-			// Demo: Add scanned item
-			items = [...items, { id: Date.now(), name: 'Camera Scan Item', price: 12.50 }];
+			if (response.parsed_data && response.parsed_data.items) {
+				items = response.parsed_data.items.map((item: { item: string; price: number }, idx: number) => ({
+					id: Date.now() + idx,
+					name: item.item || '',
+					price: item.price || 0
+				}));
+
+				if (response.parsed_data.tax && response.parsed_data.tax > 0) {
+					taxDetected = Math.round((response.parsed_data.tax / (response.parsed_data.subtotal || 1)) * 100);
+				}
+			}
 
 			scanStatus = 'success';
 		} catch (err) {
@@ -145,7 +185,8 @@
 			} else if (err instanceof Error && err.name === 'NotFoundError') {
 				setError('No camera found on this device. Please upload an image instead.');
 			} else {
-				setError('Failed to open camera. Please try again or upload an image.');
+				const message = err instanceof Error ? err.message : 'Failed to process camera capture';
+				setError(`${message}. Please try again or upload an image.`);
 			}
 			scanStatus = 'error';
 		} finally {
@@ -311,9 +352,9 @@
 				<p class="text-body font-semibold">Scan Receipt</p>
 			</div>
 
-			<a href="#help" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors" aria-label="Get help">
+			<button type="button" class="h-11 w-11 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-surface-0 dark:bg-surface-800 shadow-card border border-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors" aria-label="Get help">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 12h.01"/></svg>
-			</a>
+			</button>
 		</div>
 	</header>
 
@@ -489,12 +530,27 @@
 								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 1 0 7h5a3.5 3.5 0 0 1 0 7H17"/></svg>
 							</div>
 							<div class="leading-none">
-								<p class="text-caption font-bold text-text-primary">Tax Detected: {taxDetected}%</p>
-								<button class="text-caption font-medium text-primary-500 dark:text-primary-400 underline decoration-primary-200 dark:decoration-primary-800 underline-offset-2 mt-0.5">Edit Rate</button>
+								{#if editingTax}
+									<div class="flex items-center gap-1">
+										<input
+											type="number"
+											bind:value={taxDetected}
+											min="0"
+											max="100"
+											step="0.5"
+											class="w-14 h-6 text-caption font-bold text-text-primary bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded px-1 focus:ring-1 focus:ring-primary-500"
+										/>
+										<span class="text-caption font-bold text-text-primary">%</span>
+										<button class="text-caption font-medium text-primary-500 dark:text-primary-400 ml-1" onclick={() => editingTax = false}>Done</button>
+									</div>
+								{:else}
+									<p class="text-caption font-bold text-text-primary">Tax Detected: {taxDetected}%</p>
+									<button class="text-caption font-medium text-primary-500 dark:text-primary-400 underline decoration-primary-200 dark:decoration-primary-800 underline-offset-2 mt-0.5" onclick={() => editingTax = true}>Edit Rate</button>
+								{/if}
 							</div>
 						</div>
-						<button type="button" class="relative h-6 w-10 rounded-full bg-primary-500 dark:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2" role="switch" aria-checked="true" aria-label="Toggle tax">
-							<span class="absolute right-1 top-1 h-4 w-4 rounded-full bg-surface-0"></span>
+						<button type="button" class="relative h-6 w-10 rounded-full {taxEnabled ? 'bg-primary-500 dark:bg-primary-600' : 'bg-surface-300 dark:bg-surface-600'} focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 transition-colors" role="switch" aria-checked={taxEnabled} aria-label="Toggle tax" onclick={() => taxEnabled = !taxEnabled}>
+							<span class="absolute top-1 h-4 w-4 rounded-full bg-surface-0 transition-all {taxEnabled ? 'right-1' : 'left-1'}"></span>
 						</button>
 					</div>
 
@@ -572,12 +628,12 @@
 							</li>
 						</ul>
 						<div class="mt-4 flex gap-component">
-							<a href="#learn-more" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-surface-700 border border-primary-200 dark:border-primary-800 text-label font-semibold text-primary-600 dark:text-primary-300 shadow-md">
+							<button type="button" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-surface-0 dark:bg-surface-700 border border-primary-200 dark:border-primary-800 text-label font-semibold text-primary-600 dark:text-primary-300 shadow-md">
 								Learn more
-							</a>
-							<a href="#troubleshoot" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-primary-500 dark:bg-primary-600 text-label font-semibold text-text-inverted shadow-md">
+							</button>
+							<button type="button" class="h-11 px-4 inline-flex items-center justify-center rounded-2xl bg-primary-500 dark:bg-primary-600 text-label font-semibold text-text-inverted shadow-md">
 								Troubleshoot
-							</a>
+							</button>
 						</div>
 					</div>
 				</div>

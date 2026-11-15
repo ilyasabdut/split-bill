@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { currencyService } from '$lib/services/api/currency';
 
 	interface Props {
 		amount?: number;
@@ -9,7 +11,7 @@
 
 	let { amount = 100000, fromCurrency = 'IDR', onClose }: Props = $props();
 
-	const currencies = [
+	const defaultCurrencies = [
 		{ code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', flag: '🇮🇩', rate: 1 },
 		{ code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸', rate: 0.000064 },
 		{ code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺', rate: 0.000059 },
@@ -20,11 +22,28 @@
 		{ code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧', rate: 0.000051 },
 	];
 
+	let currencies = $state(defaultCurrencies);
 	let sourceAmount = $state(amount);
 	let sourceCurrency = $state(fromCurrency);
 	let targetCurrency = $state('USD');
 	let showSourceDropdown = $state(false);
 	let showTargetDropdown = $state(false);
+	let ratesLoading = $state(false);
+
+	onMount(async () => {
+		ratesLoading = true;
+		try {
+			const response = await currencyService.getRates('IDR');
+			currencies = defaultCurrencies.map(c => ({
+				...c,
+				rate: response.rates[c.code] ?? c.rate
+			}));
+		} catch {
+			// Use hardcoded fallback rates
+		} finally {
+			ratesLoading = false;
+		}
+	});
 
 	function getCurrency(code: string) {
 		return currencies.find(c => c.code === code) || currencies[0];

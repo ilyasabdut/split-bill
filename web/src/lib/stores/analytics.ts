@@ -51,14 +51,21 @@ function createAnalyticsStore() {
     async loadAnalytics() {
       update(s => ({ ...s, loading: true }));
       try {
-        const response = await fetch('/api/analytics/splits?range=month');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const response = await fetch('/api/analytics/overall', { signal: controller.signal });
+        clearTimeout(timeout);
         if (!response.ok) throw new Error('Failed to load analytics');
 
         const data = await response.json();
         update(s => ({
           ...s,
-          spending: data.spending || [],
-          trends: data.trends || null,
+          spending: [],
+          trends: {
+            months: [],
+            current_month_total: data.total_amount_processed || 0,
+            previous_month_total: 0
+          },
           loading: false
         }));
       } catch (err) {

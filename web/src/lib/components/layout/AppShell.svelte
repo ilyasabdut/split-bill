@@ -26,7 +26,6 @@
 
   <main
     class={cn('flex-1 w-full px-safe', className)}
-    style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);"
   >
     <div class="max-w-[430px] mx-auto py-4">
       {#if children}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SplitResults } from '$lib/types/split';
+  import type { SplitResults, PersonSplit } from '$lib/types/split';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { cn } from '$lib/utils';
@@ -17,7 +17,7 @@
     await navigator.clipboard.writeText(shareUrl);
   }
 
-  const totalAmount = $derived(Object.values(results).reduce((sum, r) => sum + r.total, 0));
+  const totalAmount = $derived(Object.values(results).reduce((sum, r) => sum + (r as PersonSplit).total, 0));
 </script>
 
 <Card>
@@ -31,14 +31,15 @@
 
     <!-- Per-Person Breakdown -->
     <div class="space-y-2">
-      {#each Object.entries(results) as [name, data]}
+      {#each Object.entries(results) as [name, data] (name)}
+        {@const person = data as PersonSplit}
         <div class="p-3 bg-surface-50 rounded-lg">
           <div class="flex justify-between items-center mb-2">
             <h3 class="font-semibold text-balance">{name}</h3>
-            <span class="text-lg font-bold tabular-nums">${data.total.toFixed(2)}</span>
+            <span class="text-lg font-bold tabular-nums">${person.total.toFixed(2)}</span>
           </div>
           <p class="text-sm text-text-secondary tabular-nums">
-            {data.items.length} items · Tax: ${data.tax_share.toFixed(2)} · Tip: ${data.tip_share.toFixed(2)}
+            {person.items.length} items · Tax: ${person.tax_share.toFixed(2)} · Tip: ${person.tip_share.toFixed(2)}
           </p>
         </div>
       {/each}
