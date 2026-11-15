@@ -9,6 +9,9 @@
 		color: 'indigo' | 'emerald' | 'rose' | 'amber' | 'sky' | 'violet' | 'slate';
 	}
 
+	// ponytail: no identity yet, everyone is user 1; replace when the auth/anonymous-link decision lands
+	const PLACEHOLDER_USER_ID = 1;
+
 	let groupName = $state('');
 	let groupDescription = $state('');
 	let members = $state<Member[]>([
@@ -83,7 +86,7 @@
 			const response = await fetch('/api/groups', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: groupName.trim(), owner_id: 1 })
+				body: JSON.stringify({ name: groupName.trim(), owner_id: PLACEHOLDER_USER_ID })
 			});
 
 			if (!response.ok) {
@@ -98,7 +101,7 @@
 				.map(m => fetch(`/api/groups/${group.id}/members`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ user_id: 1 })
+					body: JSON.stringify({ user_id: PLACEHOLDER_USER_ID })
 				}).catch(() => null));
 
 			await Promise.all(memberAdds);

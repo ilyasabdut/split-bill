@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { receiptStore, currencyStore } from '$lib/stores';
 	import { receiptsService } from '$lib/services/api';
+	import type { OcrReceiptData } from '$lib/types/api';
 	import ErrorMessage from '$lib/components/ui/ErrorMessage.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
@@ -102,17 +103,7 @@
 		try {
 			const response = await receiptsService.upload({ file });
 
-			if (response.parsed_data && response.parsed_data.items) {
-				items = response.parsed_data.items.map((item: { item: string; price: number }, idx: number) => ({
-					id: Date.now() + idx,
-					name: item.item || '',
-					price: item.price || 0
-				}));
-
-				if (response.parsed_data.tax && response.parsed_data.tax > 0) {
-					taxDetected = Math.round((response.parsed_data.tax / (response.parsed_data.subtotal || 1)) * 100);
-				}
-			}
+			applyScan(response.parsed_data);
 
 			scanStatus = 'success';
 		} catch (err) {
@@ -122,6 +113,21 @@
 		} finally {
 			loading = false;
 			input.value = '';
+		}
+	}
+
+	function applyScan(parsed: OcrReceiptData) {
+		if (!parsed?.line_items?.length) return;
+
+		items = parsed.line_items.map((item, idx) => ({
+			id: Date.now() + idx,
+			name: item.item_description || '',
+			price: item.item_total_price || 0
+		}));
+
+		const scannedTax = (parsed.tax_details ?? []).reduce((sum, t) => sum + t.tax_amount, 0);
+		if (scannedTax > 0 && parsed.subtotal) {
+			taxDetected = Math.round((scannedTax / parsed.subtotal) * 100);
 		}
 	}
 
@@ -166,17 +172,7 @@
 
 			const response = await receiptsService.upload({ file });
 
-			if (response.parsed_data && response.parsed_data.items) {
-				items = response.parsed_data.items.map((item: { item: string; price: number }, idx: number) => ({
-					id: Date.now() + idx,
-					name: item.item || '',
-					price: item.price || 0
-				}));
-
-				if (response.parsed_data.tax && response.parsed_data.tax > 0) {
-					taxDetected = Math.round((response.parsed_data.tax / (response.parsed_data.subtotal || 1)) * 100);
-				}
-			}
+			applyScan(response.parsed_data);
 
 			scanStatus = 'success';
 		} catch (err) {

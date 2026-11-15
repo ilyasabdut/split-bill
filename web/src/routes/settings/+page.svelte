@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { currencyStore } from '$lib/stores';
+	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 	import ErrorMessage from '$lib/components/ui/ErrorMessage.svelte';
 
 	let darkMode = $state(false);
-	let notifications = $state(true);
-	let soundEffects = $state(true);
 	let selectedCurrency = $state('IDR');
 	let storageError = $state<string | null>(null);
-	let copySuccess = $state(false);
 	let clearSuccess = $state(false);
 
 	// Safe localStorage operations with error handling
@@ -46,22 +44,10 @@
 		saveToStorage('darkMode', String(darkMode));
 	});
 
-	$effect(() => {
-		saveToStorage('notifications', String(notifications));
-	});
-
-	$effect(() => {
-		saveToStorage('soundEffects', String(soundEffects));
-	});
-
 	onMount(() => {
 		const savedDarkMode = loadFromStorage('darkMode');
-		const savedNotifications = loadFromStorage('notifications');
-		const savedSoundEffects = loadFromStorage('soundEffects');
 
 		if (savedDarkMode !== null) darkMode = savedDarkMode === 'true';
-		if (savedNotifications !== null) notifications = savedNotifications === 'true';
-		if (savedSoundEffects !== null) soundEffects = savedSoundEffects === 'true';
 
 		// Apply dark mode from saved state
 		if (darkMode) document.documentElement.classList.add('dark');
@@ -71,23 +57,11 @@
 		});
 	});
 
-	async function copyAPIKey() {
-		const apiKey = 'sb_live_24x9••••••••••••••••••••R7';
-
-		try {
-			await navigator.clipboard.writeText(apiKey);
-			copySuccess = true;
-			setTimeout(() => copySuccess = false, 2000);
-		} catch (err) {
-			storageError = 'Failed to copy API key. Please copy manually.';
-		}
-	}
-
 	async function handleExport() {
 		try {
-			// Simulate export - in real app, this would generate CSV/JSON
+			const db = await getIndexedDB();
 			const data = JSON.stringify({
-				settings: { darkMode, notifications, soundEffects },
+				splits: await db.getAll(STORES.SPLITS),
 				exportDate: new Date().toISOString()
 			}, null, 2);
 
@@ -204,7 +178,7 @@
 		<section aria-label="Preferences" class="mb-section animate-slide-up animate-delay-100">
 			<div class="flex items-center justify-between px-1">
 				<h2 class="text-caption font-bold tracking-wider text-text-tertiary uppercase">Preferences</h2>
-				<span class="text-caption text-text-tertiary">Appearance & alerts</span>
+				<span class="text-caption text-text-tertiary">Appearance</span>
 			</div>
 
 			<div class="mt-2 rounded-3xl bg-surface-0 shadow-card border border-surface-100 overflow-hidden">
@@ -227,47 +201,6 @@
 					</label>
 				</div>
 
-				<div class="h-px bg-surface-100 mx-4"></div>
-
-				<!-- Notifications -->
-				<div class="px-4 py-4 flex items-center justify-between gap-4">
-					<div class="flex items-center gap-3 min-w-0">
-						<div class="h-11 w-11 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-						</div>
-						<div class="min-w-0">
-							<p class="text-label font-semibold">Notifications</p>
-							<p class="text-caption text-text-secondary">Get reminders for unpaid splits.</p>
-						</div>
-					</div>
-					<label class="shrink-0 inline-flex items-center justify-center h-11" aria-label="Toggle notifications">
-						<input type="checkbox" class="peer sr-only" bind:checked={notifications} />
-						<span class="relative inline-flex h-7 w-12 items-center rounded-full bg-surface-200 transition-colors peer-checked:bg-primary-500">
-							<span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-surface-0 shadow-md transition-transform peer-checked:translate-x-5"></span>
-						</span>
-					</label>
-				</div>
-
-				<div class="h-px bg-surface-100 mx-4"></div>
-
-				<!-- Sound -->
-				<div class="px-4 py-4 flex items-center justify-between gap-4">
-					<div class="flex items-center gap-3 min-w-0">
-						<div class="h-11 w-11 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4l5 4V5Z"/><path d="m15.54 8.46 5-5"/><path d="M20.5 13.5 16 9"/></svg>
-						</div>
-						<div class="min-w-0">
-							<p class="text-label font-semibold">Sound effects</p>
-							<p class="text-caption text-text-secondary">Play sounds on interactions.</p>
-						</div>
-					</div>
-					<label class="shrink-0 inline-flex items-center justify-center h-11" aria-label="Toggle sound">
-						<input type="checkbox" class="peer sr-only" bind:checked={soundEffects} />
-						<span class="relative inline-flex h-7 w-12 items-center rounded-full bg-surface-200 transition-colors peer-checked:bg-primary-500">
-							<span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-surface-0 shadow-md transition-transform peer-checked:translate-x-5"></span>
-						</span>
-					</label>
-				</div>
 			</div>
 		</section>
 
@@ -366,7 +299,7 @@
 
 				<div class="h-px bg-surface-100 mx-4"></div>
 
-				<!-- Export CSV -->
+				<!-- Export JSON -->
 				<div class="px-4 py-4">
 					<div class="flex items-start justify-between gap-4">
 						<div class="flex items-center gap-3 min-w-0">
@@ -374,7 +307,7 @@
 								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 							</div>
 							<div class="min-w-0">
-								<p class="text-sm font-semibold">Export CSV</p>
+								<p class="text-sm font-semibold">Export JSON</p>
 								<p class="text-xs text-text-secondary">Download your split history.</p>
 							</div>
 						</div>
@@ -395,7 +328,7 @@
 							</div>
 							<div class="min-w-0">
 								<p class="text-sm font-semibold">Clear cache</p>
-								<p class="text-xs text-text-secondary">Frees space (keeps splits).</p>
+								<p class="text-xs text-text-secondary">Deletes splits saved on this device.</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2">
@@ -432,46 +365,6 @@
 					</div>
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-tertiary"><path d="m9 18 6-6"/><path d="m15 18-6-6"/></svg>
 				</button>
-
-				<div class="h-px bg-surface-100 mx-4"></div>
-
-				<!-- API key -->
-				<div class="px-4 py-4">
-					<div class="flex items-center gap-3">
-						<div class="h-11 w-11 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a3 3 0 0 1 3-3h4a2 2 0 0 0 2-2V9a1 1 0 0 1 1-1h3a2 2 0 0 0 2 2v6a2 2 0 0 0 2 2h4a3 3 0 0 1 3 3v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1Z"/><circle cx="8" cy="5" r="1"/><circle cx="18" cy="5" r="1"/></svg>
-						</div>
-						<div class="min-w-0">
-							<p class="text-sm font-semibold">API key</p>
-							<p class="text-xs text-text-secondary">Used for receipt scanning integrations.</p>
-						</div>
-					</div>
-
-					<div class="mt-3">
-						<label class="block text-xs font-semibold text-text-secondary mb-2" for="api-key">Key</label>
-						<div class="flex items-stretch gap-2">
-							<input
-								id="api-key"
-								type="text"
-								readonly
-								value="sb_live_24x9•••••••••••••R7"
-								class="h-11 w-full rounded-2xl bg-surface-50 px-3 text-sm text-text-secondary ring-1 ring-surface-200 focus-visible:outline-none focus:ring-2 focus:ring-primary-500/20"
-							/>
-							<button
-								type="button"
-								onclick={copyAPIKey}
-								class="h-11 min-w-[44px] rounded-2xl {copySuccess ? 'bg-success text-white animate-pulse-success' : 'bg-surface-0 ring-1 ring-surface-200 hover:bg-surface-50'} ring-1 ring-surface-200 shadow-sm flex items-center justify-center active:scale-[0.99] transition-all duration-200"
-								aria-label="Copy API key"
-							>
-								{#if copySuccess}
-									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-								{:else}
-									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"/></svg>
-								{/if}
-							</button>
-						</div>
-					</div>
-				</div>
 
 				<div class="h-px bg-surface-100 mx-4"></div>
 

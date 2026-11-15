@@ -3,12 +3,12 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { splitsService, templatesService } from '$lib/services/api';
-	import { receiptStore, splitStore, currencyStore, templatesStore, groupsStore } from '$lib/stores';
-	import { calculateSplit } from '$lib/services/offline';
+	import { receiptStore, currencyStore, templatesStore, groupsStore } from '$lib/stores';
+	import type { CurrencyCode } from '$lib/stores/currency';
+	import type { SplitResults } from '$lib/types/split';
+	import { calculateSplit } from '$lib/services/offline/calc';
 	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
-	import { offlineStore } from '$lib/stores/offline';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
 	import CurrencySelector from '$lib/components/CurrencySelector.svelte';
 
 	interface Person {
@@ -27,7 +27,7 @@
 	let selectedTip = $state<number | 'custom'>(20);
 	let roundingMode = $state<'down' | 'exact' | 'up'>('exact');
 	let splitMethod = $state<'equal' | 'percentage' | 'item'>('equal');
-	let selectedCurrency = $state('IDR');
+	let selectedCurrency = $state<CurrencyCode>('IDR');
 	let errors = $state<Record<string, string>>({});
 	let percentages = $state<number[]>([50, 50]);
 	let receiptItems = $state<{ name: string; price: number; assignedTo: number[] }[]>([]);
@@ -118,37 +118,17 @@
 
 	const estimatedTotal = $derived(billAmount + tax + tip);
 
-	function applyRounding(amount: number): number {
-		if (roundingMode === 'exact') return Math.round(amount);
-		const unit = 1000;
-		if (roundingMode === 'up') return Math.ceil(amount / unit) * unit;
-		return Math.floor(amount / unit) * unit;
-	}
-
-	const personShare = $derived.by(() => {
-		if (splitMethod === 'percentage') {
-			return percentages.map(p => applyRounding(estimatedTotal * p / 100));
-		}
-		if (splitMethod === 'item' && receiptItems.length > 0) {
-			const shares = people.map(() => 0);
-			for (const item of receiptItems) {
-				if (item.assignedTo.length > 0) {
-					const perPerson = item.price / item.assignedTo.length;
-					for (const idx of item.assignedTo) {
-						shares[idx] += perPerson;
-					}
-				}
-			}
-			// Add tax and tip proportionally
-			const itemTotal = shares.reduce((s, v) => s + v, 0);
-			if (itemTotal > 0) {
-				const extras = tax + tip;
-				return shares.map(s => applyRounding(s + (s / itemTotal) * extras));
-			}
-			return shares.map(s => applyRounding(s));
-		}
-		return people.map(() => applyRounding(estimatedTotal / people.length));
-	});
+	// Single source of split math: the preview and the saved split both use this
+	const shares = $derived(calculateSplit({
+		peopleCount: people.length,
+		billAmount,
+		tax,
+		tip,
+		method: splitMethod,
+		percentages,
+		items: receiptItems,
+		rounding: roundingMode
+	}));
 	const percentageTotal = $derived(percentages.reduce((s, p) => s + p, 0));
 
 	function validateForm(): boolean {
@@ -199,6 +179,10 @@
 		calculating = true;
 
 		try {
+			const results: SplitResults = Object.fromEntries(
+				people.map((person, i) => [person.name, shares[i]])
+			);
+
 			const splitData = {
 				person_names: people.map(p => p.name),
 				item_assignments: [],
@@ -206,33 +190,16 @@
 				tip_amount_input: tip,
 				split_evenly: splitMethod === 'equal',
 				total_amount: billAmount,
-				percentages: splitMethod === 'percentage' ? percentages : undefined
+				percentages: splitMethod === 'percentage' ? percentages : undefined,
+				client_results: results
 			};
 
+			// The API only persists the split for sharing; offline it stays on this device
 			let splitId: string;
-			let results: Record<string, any>;
-
 			try {
-				const response = await splitsService.calculate(splitData);
-				splitId = response.split_id;
-				results = response.split_results;
+				splitId = (await splitsService.calculate(splitData)).split_id;
 			} catch {
 				splitId = crypto.randomUUID();
-				results = {};
-				const taxPerPerson = tax / people.length;
-				const tipPerPerson = tip / people.length;
-
-				people.forEach((person, i) => {
-					const share = splitMethod === 'percentage'
-						? applyRounding(billAmount * percentages[i] / 100)
-						: applyRounding(billAmount / people.length);
-					results[person.name] = {
-						total: share + Math.round(taxPerPerson) + Math.round(tipPerPerson),
-						items: [],
-						tax_share: Math.round(taxPerPerson),
-						tip_share: Math.round(tipPerPerson)
-					};
-				});
 			}
 
 			const indexedDB = await getIndexedDB();
@@ -652,7 +619,7 @@
 								Assign Items
 							</button>
 							<div class="px-3 h-10 rounded-xl bg-surface-0 dark:bg-surface-600 border border-surface-200 dark:border-surface-500 flex items-center justify-center text-sm font-black text-text-primary dark:text-text-inverted shadow-sm min-w-[90px] tabular-nums">
-								{formatCurrency(personShare[index])}
+								{formatCurrency(shares[index].total)}
 							</div>
 						</div>
 					</div>

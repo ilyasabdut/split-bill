@@ -11,10 +11,17 @@ export interface ApiError {
   detail: string;
 }
 
+/** OCR result, as returned by the API (api/src/services/openrouter_ocr.py ReceiptData) */
+export interface OcrReceiptData {
+  line_items: { item_description: string; quantity: number; item_total_price: number }[];
+  tax_details: { tax_label: string; tax_amount: number }[];
+  subtotal?: number | null;
+  total_amount?: number | null;
+}
+
 /** Receipt upload response */
 export interface UploadReceiptResponse {
-  parsed_data: ReceiptData;
-  receipt_id: string;
+  parsed_data: OcrReceiptData;
 }
 
 /** Split calculation request */
@@ -24,6 +31,8 @@ export interface CalculateSplitRequest {
   tax_amount_input: number;
   tip_amount_input: number;
   split_evenly: boolean;
+  /** Results computed on this device; the share link shows exactly these */
+  client_results?: SplitResults;
 }
 
 /** Split calculation response */
@@ -34,9 +43,11 @@ export interface CalculateSplitResponse {
 
 /** Shared split data response */
 export interface SharedSplitDataResponse {
-  split_results: SplitResults;
-  receipt_data: ReceiptData;
-  created_at: string;
+  split_id: string;
+  person_names: string[];
+  calculated_split_results: SplitResults;
+  /** Epoch seconds */
+  creation_timestamp: number;
 }
 
 /** Health check response */

@@ -6,13 +6,11 @@
   import SettlementGraph from '$lib/components/SettlementGraph.svelte';
   import PaymentBadge from '$lib/components/PaymentBadge.svelte';
   import QRCodeShare from '$lib/components/QRCodeShare.svelte';
-  import ActivityFeedItem from '$lib/components/ActivityFeedItem.svelte';
   import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
   import { splitsService } from '$lib/services/api';
   import { currencyStore } from '$lib/stores/currency';
-  import type { CurrencyCode } from '$lib/stores/currency';
+  import { get } from 'svelte/store';
   import type { SplitResults, PersonSplit } from '$lib/types/split';
-  import type { Activity } from '$lib/components/ActivityFeedItem.svelte';
 
   let splitData = $state<{
     results: SplitResults;
@@ -25,8 +23,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let showQRCode = $state(false);
-  let paymentStatus = $state<Record<string, 'pending' | 'paid' | 'partial'>>({});
-  let activityFeed = $state<Activity[]>([]);
+  let paymentStatus = $state<Record<string, 'pending' | 'paid'>>({});
 
   const splitId = $derived($page.params.id);
 
@@ -67,46 +64,26 @@
         if (localData.payments) {
           paymentStatus = { ...localData.payments };
         }
-
-        generateActivityFeed();
       } else {
-        error = 'Split not found. It may have expired or the link is invalid.';
+        // Not created on this device: it is a shared link, load it from the server
+        const shared = await splitsService.getShared(id);
+        const results = shared.calculated_split_results as SplitResults;
+        splitData = {
+          results,
+          createdAt: shared.creation_timestamp * 1000,
+          people: shared.person_names,
+          total: Object.values(results).reduce((sum, person) => sum + person.total, 0)
+        };
       }
     } catch (err) {
-      error = 'Failed to load split data';
+      error = 'Split not found. It may have expired or the link is invalid.';
     } finally {
       loading = false;
     }
   }
 
-  function generateActivityFeed() {
-    // Generate mock activity feed data
-    activityFeed = [
-      {
-        id: '1',
-        type: 'split_created',
-        user: { id: 1, name: 'You' },
-        data: { split_name: splitData?.people.join(', ') || 'Bill Split' },
-        created_at: new Date(splitData?.createdAt || Date.now()).toISOString()
-      },
-      {
-        id: '2',
-        type: 'payment_made',
-        user: { id: 2, name: splitData?.people[0] || 'Someone' },
-        data: { amount: formatCurrency(splitData?.results?.[splitData?.people[0]]?.total || 0), currency: 'USD' },
-        created_at: new Date((splitData?.createdAt || Date.now()) + 3600000).toISOString()
-      },
-      {
-        id: '3',
-        type: 'split_completed',
-        user: { id: 1, name: 'You' },
-        data: { split_name: splitData?.people.join(', ') || 'Bill Split' },
-        created_at: new Date((splitData?.createdAt || Date.now()) + 7200000).toISOString()
-      }
-    ];
-  }
-
   async function markAsPaid(personName: string) {
+    if (!splitId) return;
     try {
       paymentStatus[personName] = 'paid';
       paymentStatus = { ...paymentStatus };
@@ -119,16 +96,6 @@
         await db.put(STORES.SPLITS, localData);
       }
 
-      activityFeed = [
-        {
-          id: Date.now().toString(),
-          type: 'payment_made',
-          user: { id: 1, name: 'You' },
-          data: { amount: formatCurrency(splitData!.results[personName].total), currency: 'IDR' },
-          created_at: new Date().toISOString()
-        },
-        ...activityFeed
-      ];
     } catch (err) {
       paymentStatus[personName] = 'pending';
       paymentStatus = { ...paymentStatus };
@@ -245,8 +212,7 @@
     const symbols: Record<string, string> = {
       'IDR': 'Rp', 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'NZD': '$'
     };
-    let code: CurrencyCode = 'IDR';
-    currencyStore.subscribe(s => { code = s.selected; })();
+    const code = get(currencyStore).selected;
     const symbol = symbols[code] || 'Rp';
     const hasDecimals = code !== 'JPY' && code !== 'IDR';
     const formatter = new Intl.NumberFormat('en-US', {
@@ -522,16 +488,6 @@
       </div>
     </Card>
 
-     <!-- Activity Timeline -->
-     <section aria-live="polite">
-      <h2 class="text-sm font-semibold text-text-primary mb-3 px-1">Activity</h2>
-      <div class="ml-2 pl-4 border-l-2 border-surface-200 space-y-6 relative">
-        {#each activityFeed as activity}
-          <ActivityFeedItem activity={activity} />
-        {/each}
-      </div>
-    </section>
-
     <!-- Enhanced Actions -->
     <section>
       <h2 class="text-sm font-semibold text-text-primary mb-3">Actions</h2>
@@ -631,9 +587,8 @@
               </Button>
             </div>
             <QRCodeShare
-              url={window.location.href}
+              data={window.location.href}
               title="Split Bill"
-              description={`Split with ${splitData.people.join(', ')}`}
             />
             <div class="mt-4">
               <Button variant="secondary" onclick={copyShareLink} class="w-full">
