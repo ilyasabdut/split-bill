@@ -124,7 +124,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # Local imports
-from services.openrouter_ocr import extract_receipt_data
+from services.openrouter_ocr import extract_receipt_data_async
 ```
 
 `make format` (ruff) fixes import order.
@@ -376,7 +376,7 @@ def test_ocr_with_mock():
         "total": 10.00
     }
 
-    with patch('services.openrouter_ocr.extract_receipt_data') as mock_ocr:
+    with patch('services.openrouter_ocr.extract_receipt_data_async') as mock_ocr:
         mock_ocr.return_value = mock_response
 
         result = process_receipt(b"fake_image_data")

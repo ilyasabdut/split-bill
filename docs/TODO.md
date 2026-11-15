@@ -8,9 +8,7 @@ What is still open after the 2026-11 cleanup. Background and evidence for each i
 - [ ] **Real login.** Device identity is lost when site data is cleared or on another device, and the shared API key still ships in the bundle. Upgrade path: sign-in that links device ids to an account.
 - [ ] **Group members are name-only.** People added to a group become `users` rows with no device id; they cannot open the group themselves. Needs invite links or login.
 - [ ] **Real reminders / notifications.** "Send reminder" is a fake success message; the notification and sound toggles are stored but nothing reads them.
-- [ ] **Server-side payments.** `api/src/routers/payments.py` works, but the frontend keeps payment state in IndexedDB only.
 - [ ] **Multi-device sync.** Splits and history live in one browser's IndexedDB.
-- [ ] **E2E tests.** None exist.
 
 ## Infra follow-ups
 

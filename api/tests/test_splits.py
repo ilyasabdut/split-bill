@@ -148,3 +148,55 @@ async def test_calculate_records_owner_from_device_id(
         res.json()["split_id"]: test_user.id,
         anon.json()["split_id"]: None,
     }
+
+
+async def test_owner_marks_person_paid_and_view_shows_it(
+    async_client, test_user, auth_headers
+):
+    body = {"person_names": ["Alice", "Bob"], "split_evenly": True}
+    split_id = (
+        await async_client.post("/splits/calculate", json=body, headers=auth_headers)
+    ).json()["split_id"]
+    url = f"/splits/{split_id}/payments/Alice"
+
+    res = await async_client.put(url, json={"paid": True}, headers=auth_headers)
+    assert res.status_code == 200
+    view = await async_client.get(f"/splits/view/{split_id}")
+    assert view.json()["payments"] == {"Alice": "paid"}
+
+    res = await async_client.put(url, json={"paid": False}, headers=auth_headers)
+    assert res.status_code == 200
+    view = await async_client.get(f"/splits/view/{split_id}")
+    assert view.json()["payments"] == {}
+
+    other = {**auth_headers, "X-Device-Id": "00000000-0000-4000-8000-000000000001"}
+    res = await async_client.put(url, json={"paid": True}, headers=other)
+    assert res.status_code == 404
+    missing = f"/splits/{'0' * 32}/payments/Alice"
+    res = await async_client.put(missing, json={"paid": True}, headers=auth_headers)
+    assert res.status_code == 404
+
+    res = await async_client.put(
+        f"/splits/{split_id}/payments/Mallory",
+        json={"paid": True},
+        headers=auth_headers,
+    )
+    assert res.status_code == 422
+
+
+def test_receipt_upload_awaits_ocr(client, monkeypatch):
+    """Regression: the endpoint called a sync wrapper that re-entered the running loop."""
+    import src.main as main
+
+    async def fake_ocr(image_bytes):
+        return {"line_items": [{"item_description": "Ramen", "item_total_price": 20}]}
+
+    monkeypatch.setattr(main, "compress_image", lambda b: b)
+    monkeypatch.setattr(main, "extract_receipt_data_async", fake_ocr)
+    res = client.post(
+        "/receipts/upload",
+        files={"file": ("r.jpg", b"x", "image/jpeg")},
+        headers={"Authorization": f"Bearer {API_KEY}"},
+    )
+    assert res.status_code == 200
+    assert res.json()["parsed_data"]["line_items"][0]["item_description"] == "Ramen"

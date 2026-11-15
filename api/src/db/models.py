@@ -58,6 +58,9 @@ class Split(Base):
     split_results: Mapped[dict] = mapped_column(JSON)
     currency: Mapped[str] = mapped_column(String(10), default="IDR")
     status: Mapped[str] = mapped_column(String(50), default="pending")
+    # {person_name: "paid"}; friends on the share link have no user id, so this
+    # lives on the split rather than in the payments table
+    paid_status: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     group: Mapped[Optional["Group"]] = relationship(back_populates="splits")

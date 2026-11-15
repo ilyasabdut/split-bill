@@ -48,6 +48,8 @@ export interface SharedSplitDataResponse {
   calculated_split_results: SplitResults;
   /** Epoch seconds */
   creation_timestamp: number;
+  /** person_name -> 'paid' */
+  payments: Record<string, 'paid'>;
 }
 
 /** Health check response */

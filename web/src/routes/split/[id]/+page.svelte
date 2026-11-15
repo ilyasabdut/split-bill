@@ -24,6 +24,8 @@
   let error = $state<string | null>(null);
   let showQRCode = $state(false);
   let paymentStatus = $state<Record<string, 'pending' | 'paid'>>({});
+  // creator = the split was made on this device; only they can mark payments
+  let isCreator = $state(false);
 
   const splitId = $derived($page.params.id);
 
@@ -64,6 +66,12 @@
         if (localData.payments) {
           paymentStatus = { ...localData.payments };
         }
+        isCreator = true;
+        // Server map wins when reachable (it may have been updated elsewhere)
+        splitsService
+          .getShared(id)
+          .then((shared) => (paymentStatus = { ...paymentStatus, ...shared.payments }))
+          .catch(() => {});
       } else {
         // Not created on this device: it is a shared link, load it from the server
         const shared = await splitsService.getShared(id);
@@ -74,6 +82,7 @@
           people: shared.person_names,
           total: Object.values(results).reduce((sum, person) => sum + person.total, 0)
         };
+        paymentStatus = { ...shared.payments };
       }
     } catch (err) {
       error = 'Split not found. It may have expired or the link is invalid.';
@@ -95,7 +104,8 @@
         localData.payments = { ...(localData.payments || {}), [personName]: 'paid' };
         await db.put(STORES.SPLITS, localData);
       }
-
+      // Local state stays if the API is unreachable (offline): no error shown
+      splitsService.setPaid(splitId, personName, true).catch(() => {});
     } catch (err) {
       paymentStatus[personName] = 'pending';
       paymentStatus = { ...paymentStatus };
@@ -473,7 +483,7 @@
                 </div>
               </div>
             </div>
-            {#if paymentStatus[name] !== 'paid'}
+            {#if isCreator && paymentStatus[name] !== 'paid'}
               <Button
                 variant="outline"
                 size="sm"

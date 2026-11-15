@@ -7,10 +7,10 @@ services:
         # Baked into the static bundle at build time
         - VITE_FASTAPI_API_URL=${VITE_FASTAPI_API_URL:-http://localhost:18000}
         - VITE_API_KEY=${API_KEY}
-    image: registry.ilyasabdut.loseyourip.com/split-bill-web:latest
-    container_name: split-bill-web
+    image: ${WEB_IMAGE:-registry.ilyasabdut.loseyourip.com/split-bill-web:latest}
+    container_name: ${CONTAINER_PREFIX:-split-bill}-web
     ports:
-      - "15173:3000"
+      - "${WEB_PORT:-15173}:3000"
     restart: unless-stopped
     depends_on:
       - api
@@ -19,10 +19,10 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
-    image: registry.ilyasabdut.loseyourip.com/split-bill-api:latest
-    container_name: split-bill-api
+    image: ${API_IMAGE:-registry.ilyasabdut.loseyourip.com/split-bill-api:latest}
+    container_name: ${CONTAINER_PREFIX:-split-bill}-api
     ports:
-      - "18000:18000"
+      - "${API_PORT:-18000}:18000"
     environment:
       - API_KEY=${API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
@@ -36,13 +36,13 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: split-bill-postgres
+    container_name: ${CONTAINER_PREFIX:-split-bill}-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-splitbill}
     ports:
-      - "15432:5432"
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

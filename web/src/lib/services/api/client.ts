@@ -111,6 +111,13 @@ export class ApiClient {
     });
   }
 
+  async put<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async postForm<T>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${this.config.baseURL}${endpoint}`;
     const response = await fetch(url, {

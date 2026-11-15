@@ -604,24 +604,3 @@ def classify_image_as_receipt(image_bytes: bytes) -> bool:
         asyncio.set_event_loop(loop)
 
     return loop.run_until_complete(classify_image_as_receipt_async(image_bytes))
-
-
-def extract_receipt_data(image_bytes: bytes) -> Dict[str, Any]:
-    """Extract receipt data from an image (sync wrapper).
-
-    Note: For production use, prefer the async version (extract_receipt_data_async)
-    for better concurrency handling.
-    """
-    import asyncio
-
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    return loop.run_until_complete(extract_receipt_data_async(image_bytes))
-
-
-# Backwards compatibility export for callers expecting the old name
-extract_receipt_data_with_openrouter = extract_receipt_data

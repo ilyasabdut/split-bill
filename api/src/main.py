@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_api_key, get_db, get_optional_user
+from src.db.deps import get_api_key, get_current_user, get_db, get_optional_user
 from src.db.models import Split, User
 from src.routers.analytics import analytics_router
 from src.routers.currency import currency_router
@@ -34,7 +34,7 @@ from src.routers.groups import groups_router
 from src.routers.payments import payments_router
 from src.routers.templates import templates_router
 from src.services.image_service import compress_image
-from src.services.openrouter_ocr import extract_receipt_data
+from src.services.openrouter_ocr import extract_receipt_data_async
 from starlette.responses import JSONResponse
 
 load_dotenv()
@@ -149,6 +149,11 @@ class SharedSplitDataResponse(BaseModel):
     user_adjusted_tip: float
     calculated_split_results: Dict[str, Any]
     creation_timestamp: float
+    payments: Dict[str, str] = {}
+
+
+class PaidRequest(BaseModel):
+    paid: bool
 
 
 # =============================================================================
@@ -334,7 +339,33 @@ async def view_split(
         user_adjusted_tip=req["tip_amount_input"],
         calculated_split_results=split.split_results,
         creation_timestamp=split.created_at.timestamp(),
+        payments=split.paid_status or {},
     )
+
+
+@splits_router.put("/{split_id}/payments/{person_name}")
+async def set_paid(
+    split_id: str,
+    person_name: str,
+    body: PaidRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Owner marks one person on their split as paid or unpaid."""
+    split = await db.scalar(
+        select(Split).where(Split.share_id == split_id, Split.owner_id == user.id)
+    )
+    if split is None:
+        raise HTTPException(status_code=404, detail="Split not found")
+    if person_name not in split.receipt_data["person_names"]:
+        raise HTTPException(status_code=422, detail="Unknown person")
+    # new dict so SQLAlchemy sees the JSON change
+    paid = {k: v for k, v in (split.paid_status or {}).items() if k != person_name}
+    if body.paid:
+        paid[person_name] = "paid"
+    split.paid_status = paid
+    await db.commit()
+    return {"split_id": split_id, "payments": paid}
 
 
 @receipts_router.post("/upload")
@@ -363,7 +394,7 @@ async def upload_receipt(
             )
 
         # Perform OCR
-        parsed_data = extract_receipt_data(compressed_image_bytes)
+        parsed_data = await extract_receipt_data_async(compressed_image_bytes)
 
         if "Error" in parsed_data:
             error_msg = parsed_data.get("message", "OCR processing failed")

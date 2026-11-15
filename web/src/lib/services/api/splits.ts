@@ -18,6 +18,12 @@ export class SplitsService {
     const apiClient = getApiClient();
     return apiClient.get<SharedSplitDataResponse>(`/splits/view/${splitId}`);
   }
+
+  /** Owner only: mark one person on the split as paid or unpaid */
+  async setPaid(splitId: string, personName: string, paid: boolean): Promise<unknown> {
+    const apiClient = getApiClient();
+    return apiClient.put(`/splits/${splitId}/payments/${encodeURIComponent(personName)}`, { paid });
+  }
 }
 
 export const splitsService = new SplitsService();

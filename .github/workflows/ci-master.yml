@@ -33,6 +33,18 @@ jobs:
           bun run test
           bun run build
 
+  smoke:
+    name: End-to-end Smoke Test
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run smoke test
+        run: bash scripts/smoke.sh
+
   build-and-push-images:
     name: Build and Push Bill Splitter Images
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

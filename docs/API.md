@@ -566,7 +566,8 @@ print(response.json())
             "total": 5.87
         }
     },
-    "creation_timestamp": 1735689600.0
+    "creation_timestamp": 1735689600.0,
+    "payments": {"Alice": "paid"}
 }
 ```
 
@@ -584,6 +585,7 @@ print(response.json())
 | user_adjusted_tip | number | Tip amount used |
 | calculated_split_results | object | Split calculation per person |
 | creation_timestamp | float | Unix timestamp of creation |
+| payments | object | `{person_name: "paid"}` for people the owner marked paid (empty if none) |
 
 #### Error Responses
 
@@ -608,6 +610,36 @@ print(response.json())
     }
 }
 ```
+
+---
+
+### Mark Person Paid
+
+Set one person's paid status on a split. Only the split's owner (the device that created it) may call this.
+
+**Endpoint**: `PUT /splits/{split_id}/payments/{person_name}`
+
+**Authentication**: API key + `X-Device-Id` (required)
+
+#### Request Body
+
+```json
+{"paid": true}
+```
+
+`false` removes the person from the map.
+
+#### Success Response (200)
+
+```json
+{"split_id": "a1b2c3d4e5f6", "payments": {"Alice": "paid"}}
+```
+
+#### Error Responses
+
+- **401** - missing/invalid API key or `X-Device-Id`
+- **404** - split does not exist or is not owned by the caller
+- **422** - `person_name` is not one of the split's `person_names`
 
 ---
 

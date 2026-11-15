@@ -1,4 +1,4 @@
-.PHONY: all help up down logs clean install start build rebuild-web check lint format test test-web web-check infra-up ps
+.PHONY: all help up down logs clean install start build rebuild-web check lint format test test-web web-check infra-up ps smoke
 
 COMPOSE = docker compose --env-file .env -f docker/docker-compose.yml
 
@@ -115,3 +115,7 @@ web-check:
 # Run web tests
 test-web:
 	cd web && bun run test
+
+# End-to-end smoke test against a throwaway docker stack
+smoke:
+	bash scripts/smoke.sh
