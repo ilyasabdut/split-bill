@@ -3,12 +3,14 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.web
+      args:
+        # Baked into the static bundle at build time
+        - VITE_FASTAPI_API_URL=${VITE_FASTAPI_API_URL:-http://localhost:18000}
+        - VITE_API_KEY=${API_KEY}
     image: registry.ilyasabdut.loseyourip.com/split-bill-web:latest
     container_name: split-bill-web
     ports:
       - "15173:3000"
-    environment:
-      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:18000}
     restart: unless-stopped
     depends_on:
       - api
@@ -25,48 +27,12 @@ services:
       - API_KEY=${API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL_NAME=${OPENROUTER_MODEL_NAME:-mistralai/mistral-small-3.2-24b-instruct:free}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-garage:3900}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-garage}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-garage_key}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-split-bill}
-      - MINIO_USE_SSL=${MINIO_USE_SSL:-False}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:15173}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/splitbill}
     restart: unless-stopped
     depends_on:
-      - redis
-      - postgres
-
-  redis:
-    image: valkey/valkey:alpine3.23
-    container_name: split-bill-redis
-    ports:
-      - "16379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
-
-  garage:
-    image: dxflrs/garage:v2.2.0
-    container_name: split-bill-garage
-    ports:
-      - "3900:3900"
-      - "3902:3902"
-    environment:
-      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-c0d584e45dff2e64535da511ce5ee2755e602093a7cf59fc8206fd1a7aff5d44}
-      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-admin_token_change_me}
-      GARAGE_S3_API_REGION: garage
-    volumes:
-      - ./garage/config.toml:/etc/garage/config.toml:ro
-      - garage_data:/data
-      - garage_meta:/meta
-    command: >
-      /garage
-      --config /etc/garage/config.toml
-      server
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
@@ -79,10 +45,12 @@ services:
       - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
 volumes:
-  redis_data:
-  garage_data:
-  garage_meta:
   postgres_data:

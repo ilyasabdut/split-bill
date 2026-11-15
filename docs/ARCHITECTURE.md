@@ -2,97 +2,13 @@
 
 ## Overview
 
-Split Bill is a production-ready receipt splitting application with OCR capabilities, built using a modern microservices-inspired architecture. The system separates concerns between a Streamlit frontend for user interaction and a FastAPI backend for business logic, with Redis for caching and Garage for object storage.
-
-**Version**: 2.0.0
-**Last Updated**: February 2026
-
----
-
-## High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT LAYER                                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                        │
-│  │   Browser    │  │ Mobile App   │  │   API Client │                        │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                        │
-└─────────┼─────────────────┼─────────────────┼───────────────────────────────┘
-          │                 │                 │
-          ▼                 ▼                 ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PROXY LAYER (Optional)                            │
-│  ┌────────────────────────────────────────────────────────────────────┐    │
-│  │                    Nginx / Traefik                                  │    │
-│  │         (SSL Termination, Load Balancing, Rate Limiting)            │    │
-│  └────────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           APPLICATION LAYER                                 │
-│                                                                             │
-│  ┌─────────────────────────┐        ┌─────────────────────────┐            │
-│  │   Streamlit Frontend    │◄──────►│    FastAPI Backend      │            │
-│  │      (Port 8501)        │  HTTP  │      (Port 8000)        │            │
-│  │                         │        │                         │            │
-│  │  • UI Components        │        │  • REST API             │            │
-│  │  • State Management     │        │  • Authentication       │            │
-│  │  • API Client           │        │  • Business Logic       │            │
-│  └─────────────────────────┘        └───────────┬─────────────┘            │
-│                                                 │                          │
-└─────────────────────────────────────────────────┼──────────────────────────┘
-                                                  │
-          ┌───────────────────────────────────────┼───────────────────┐
-          │                                       │                   │
-          ▼                                       ▼                   ▼
-┌─────────────────────┐    ┌────────────────────────────┐    ┌──────────────────┐
-│    Redis Cache      │    │      MinIO / S3            │    │   OpenRouter     │
-│   (Port 6379)       │    │    Object Storage          │    │   AI Service     │
-│                     │    │                            │    │                  │
-│  • Split Results    │    │  • Receipt Images          │    │  • OCR Processing│
-│  • OCR Results      │    │  • Metadata JSON           │    │  • Receipt Parsing│
-│  • Session Data     │    │  • Share Links             │    │                  │
-└─────────────────────┘    └────────────────────────────┘    └──────────────────┘
-```
+Split Bill is a receipt splitting application with OCR. Three containers: a SvelteKit static PWA (`web/`), a FastAPI backend (`api/`) and Postgres. See [PROJECT_AUDIT.md](PROJECT_AUDIT.md) for what is and is not implemented.
 
 ---
 
 ## Component Details
 
-### 1. Frontend (Streamlit)
-
-**Location**: `app/src/main.py`
-
-**Responsibilities**:
-- User interface rendering
-- Form handling and validation
-- Session state management
-- API communication
-- File upload handling
-
-**Key Components**:
-```
-app/src/
-├── main.py                    # Entry point
-├── state.py                   # Session state management
-├── constants.py               # UI constants
-├── components/
-│   ├── steps/                 # Step-by-step wizard
-│   │   ├── step_0_upload.py   # Receipt upload
-│   │   ├── step_1_people.py   # Add participants
-│   │   ├── step_2_assign_items.py  # Item assignment
-│   │   ├── step_3_tax_tip.py  # Tax/tip adjustment
-│   │   └── step_4_results.py  # Results display
-│   └── ui.py                  # Shared UI components
-└── utils/
-    ├── api.py                 # API client
-    └── ui.py                  # UI utilities
-```
-
-**Design Pattern**: Step-by-step wizard with state persistence
-
-### 2. Backend (FastAPI)
+### Backend (FastAPI)
 
 **Location**: `api/src/main.py`
 
@@ -103,74 +19,9 @@ app/src/
 - Business logic orchestration
 - External service integration
 
-**Architecture Pattern**: Modular router-based structure
+**Layout**: `api/src/main.py` (app, splits, receipts), `api/src/routers/` (currency, groups, templates, payments, analytics), `api/src/services/` (OCR, image, currency), `api/src/db/` (SQLAlchemy models; migrations in `api/alembic/`).
 
-```
-api/src/
-├── main.py                    # Main application (integrated API)
-├── core/                      # Core utilities
-│   ├── config.py             # Configuration management
-│   ├── security.py           # Security utilities
-│   ├── cache.py              # Redis caching service
-│   ├── logging.py            # Structured logging
-│   ├── metrics.py            # Prometheus metrics
-│   └── monitoring.py         # Health checks
-├── models/
-│   └── schemas.py            # Pydantic models
-├── routers/                   # API route handlers
-│   ├── monitoring.py         # Health/metrics endpoints
-│   └── __init__.py
-├── services/                  # Business logic
-│   ├── openrouter_ocr.py     # OCR service
-│   ├── split_logic.py        # Split calculation
-│   ├── minio_utils.py        # Storage operations
-│   └── image_service.py      # Image processing
-└── utils/
-    └── imports.py            # Import utilities
-```
-
-### 3. Cache Layer (Redis)
-
-**Purpose**: High-performance caching for frequently accessed data
-
-**Cache Strategies**:
-
-| Data Type | TTL | Purpose |
-|-----------|-----|---------|
-| Split Results | 1 hour | Fast recalculation of same splits |
-| OCR Results | 30 minutes | Avoid re-processing same receipts |
-| Share Data | 24 hours | Quick access to shared splits |
-| Health Check | 5 minutes | Cache connectivity verification |
-
-**Implementation**: Located in `api/src/core/cache.py`
-
-**Features**:
-- Connection pooling (20 concurrent connections)
-- Graceful fallback when Redis unavailable
-- Async/await support
-- Retry logic with exponential backoff
-
-### 4. Storage Layer (Garage S3)
-
-**Purpose**: Object storage for receipt images and metadata
-
-**Data Structure**:
-```
-bucket: split-bill
-├── receipts/
-│   └── {split_id}.jpg        # Original/compressed receipt images
-└── metadata/
-    └── {split_id}.json       # Split calculation data
-```
-
-**Implementation**: Located in `api/src/services/storage_utils.py`
-
-**Features**:
-- Automatic bucket creation
-- Presigned URLs for secure access
-- Idempotent uploads (SHA256-based deduplication)
-
-### 5. AI Service (OpenRouter)
+### AI Service (OpenRouter)
 
 **Purpose**: OCR and receipt data extraction
 
@@ -183,96 +34,6 @@ bucket: split-bill
 4. Extract: items, prices, subtotal, tax, discounts
 
 **Implementation**: Located in `api/src/services/openrouter_ocr.py`
-
----
-
-## Data Flow Diagrams
-
-### 1. Receipt Upload & OCR Flow
-
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  User    │────►│  Streamlit   │────►│   FastAPI    │────►│   Redis      │
-│ Uploads  │     │   Frontend   │     │     API      │     │   (Check)    │
-└──────────┘     └──────────────┘     └──────┬───────┘     └──────┬───────┘
-                                             │                    │
-                                             │ Cache Miss         │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │ Image Service│           │
-                                      │• Compression │           │
-                                      │• Validation  │           │
-                                      └──────┬───────┘           │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐            │
-                                      │  OpenRouter  │            │
-                                      │     OCR      │            │
-                                      └──────┬───────┘            │
-                                             │                     │
-                                             ▼                     │
-                                      ┌──────────────┐             │
-                                      │   Response   │─────────────┘
-                                      │   + Cache    │
-                                      └──────────────┘
-```
-
-### 2. Split Calculation Flow
-
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  User    │────►│  Streamlit   │────►│   FastAPI    │────►│   Redis      │
-│ Submits  │     │   Frontend   │     │     API      │     │   (Check)    │
-│  Split   │     │              │     │              │     │              │
-└──────────┘     └──────────────┘     └──────┬───────┘     └──────┬───────┘
-                                             │                    │
-                                             │ Cache Miss         │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │ Split Logic  │           │
-                                      │• Calculate   │           │
-                                      │• Distribute  │           │
-                                      │  Tax/Tip     │           │
-                                      └──────┬───────┘           │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │   Generate   │           │
-                                      │   Share Link │           │
-                                      └──────┬───────┘           │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │   Response   │────────────┘
-                                      │   + Cache    │
-                                      └──────────────┘
-```
-
-### 3. View Shared Split Flow
-
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  User    │────►│   Browser    │────►│   FastAPI    │────►│   Redis      │
-│ Opens    │     │   (Direct)   │     │     API      │     │   (Check)    │
-│  Link    │     │              │     │ /splits/view │     │              │
-└──────────┘     └──────────────┘     └──────┬───────┘     └──────┬───────┘
-                                             │                    │
-                                             │ Cache Miss         │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │    MinIO     │           │
-                                      │   Get JSON   │           │
-                                      └──────┬───────┘           │
-                                             │                    │
-                                             ▼                    │
-                                      ┌──────────────┐           │
-                                      │   Response   │────────────┘
-                                      │   + Cache    │
-                                      └──────────────┘
-```
 
 ---
 
@@ -347,56 +108,6 @@ allow_origins=["*"]  # Development
 
 ---
 
-## Caching Strategy
-
-### Cache Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        Cache Architecture                             │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐              │
-│   │   Client    │───►│   FastAPI   │───►│    Redis    │              │
-│   └─────────────┘    └──────┬──────┘    └──────┬──────┘              │
-│                             │                  │                     │
-│                        Cache Key Generation    │                     │
-│                        • SHA256 hash          │                     │
-│                        • Deterministic        │                     │
-│                        • Idempotent          │                     │
-│                                                                       │
-│   Cache Strategies:                                                   │
-│   ├─ Split Results: TTL 1 hour (frequent recalculation)              │
-│   ├─ OCR Results: TTL 30 minutes (expensive operation)               │
-│   ├─ Share Data: TTL 24 hours (persistent sharing)                   │
-│   └─ Health Check: TTL 5 minutes (monitoring)                        │
-│                                                                       │
-│   Fallback: If Redis unavailable, direct processing                  │
-│                                                                       │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Cache Key Generation
-
-**Split Calculation**:
-```python
-idempotency_key_material = {
-    "people": sorted(person_names),
-    "assignments": sorted([...], key=lambda x: x["item"]),
-    "tax": tax_amount,
-    "tip": tip_amount,
-    "split_evenly": split_evenly,
-}
-key = SHA256(json.dumps(idempotency_key_material, sort_keys=True)).hexdigest()[:12]
-```
-
-**Benefits**:
-- Same inputs = Same cache key
-- Order-independent (sorted)
-- Deterministic across requests
-
----
-
 ## Data Models
 
 ### Core Models
@@ -451,16 +162,12 @@ key = SHA256(json.dumps(idempotency_key_material, sort_keys=True)).hexdigest()[:
 
 ```
 Exception
-├── HTTPException (FastAPI)
-│   ├── 400 Bad Request (Invalid input)
-│   ├── 401 Unauthorized (Invalid API key)
-│   ├── 413 Payload Too Large (File size)
-│   ├── 429 Too Many Requests (Rate limit)
-│   └── 500 Internal Server Error (Unexpected)
-└── Service Exceptions
-    ├── OCRProcessingError
-    ├── CacheConnectionError
-    └── StorageError
+└── HTTPException (FastAPI)
+    ├── 400 Bad Request (Invalid input)
+    ├── 401 Unauthorized (Invalid API key)
+    ├── 413 Payload Too Large (File size)
+    ├── 429 Too Many Requests (Rate limit)
+    └── 500 Internal Server Error (Unexpected)
 ```
 
 ### Error Response Format
@@ -483,98 +190,14 @@ Located in `api/src/main.py`:
 
 ---
 
-## Monitoring & Observability
-
-### Health Checks
-
-**Endpoint**: `GET /health`
-
-```json
-{
-    "status": "healthy",
-    "timestamp": 1735689600.0,
-    "version": "2.0.0",
-    "security": "enabled",
-    "caching": "enabled",
-    "monitoring": {
-        "uptime_seconds": 3600,
-        "requests_total": 150,
-        "errors_total": 2,
-        "splits_calculated": 50
-    },
-    "cache": "connected"
-}
-```
-
-### Metrics
-
-**Endpoint**: `GET /metrics`
-
-Collected metrics:
-- Request count (total, by endpoint)
-- Error rate
-- Cache hit/miss ratio
-- OCR processing time
-- Split calculation count
-- Uptime
-
-### Logging
-
-**Structured Logging** with correlation IDs:
-```python
-{
-    "timestamp": "2026-02-11T10:30:00Z",
-    "level": "INFO",
-    "logger": "main",
-    "message": "Processing split calculation",
-    "request_id": "uuid",
-    "user_agent": "...",
-    "endpoint": "/splits/calculate"
-}
-```
-
----
-
-## Scalability Considerations
-
-### Current Architecture Limits
-
-| Component | Limit | Notes |
-|-----------|-------|-------|
-| Rate Limiting | Per-instance | Memory-based, not distributed |
-| Cache | Single Redis | No clustering |
-| Storage | Single MinIO | No multi-region |
-| OCR | OpenRouter API | External dependency |
-
-### Horizontal Scaling Path
-
-1. **Rate Limiting**: Replace with Redis-based distributed rate limiting
-2. **Cache**: Redis Cluster or Valkey
-3. **Storage**: Multi-region MinIO or cloud S3
-4. **API**: Stateless, can run multiple instances behind load balancer
-5. **Frontend**: Streamlit can run multiple instances
-
-### Performance Targets
-
-| Metric | Target | Notes |
-|--------|--------|-------|
-| API Response (cached) | < 200ms | P95 |
-| API Response (OCR) | < 2s | P95 |
-| Cache Hit Rate | 70-90% | Based on usage patterns |
-| Error Rate | < 5% | Includes OCR failures |
-| Uptime | 99.9% | Includes maintenance windows |
-
----
-
 ## Technology Stack
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| Frontend | Streamlit | 1.45.0 | UI Framework |
+| Frontend | SvelteKit (static PWA) | 2.x | UI Framework |
 | Backend | FastAPI | 0.115.12 | API Framework |
 | Server | Uvicorn | 0.34.3 | ASGI Server |
-| Cache | Redis | 7.x | Caching |
-| Storage | MinIO | Latest | Object Storage |
+| Database | PostgreSQL | 16 | Groups, templates, payments |
 | OCR | OpenRouter | API v1 | AI Service |
 | Language | Python | 3.12+ | Runtime |
 | Container | Docker | 24.x | Containerization |
@@ -586,6 +209,6 @@ Collected metrics:
 
 - [API Documentation](API.md) - Detailed API reference
 - [Development Guide](DEVELOPMENT.md) - Setup and contribution
-- [Operations Guide](OPERATIONS.md) - Deployment and monitoring
+- [Operations Guide](OPERATIONS.md) - Deployment
 - [TODO/Roadmap](TODO.md) - Active development items
 - [Architecture Decisions](ADR/) - Design decision records

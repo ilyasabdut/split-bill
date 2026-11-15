@@ -45,8 +45,9 @@ class Split(Base):
     __tablename__ = "splits"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    share_id: Mapped[Optional[str]] = mapped_column(String(32), unique=True)
     group_id: Mapped[Optional[int]] = mapped_column(ForeignKey("groups.id"))
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
     receipt_data: Mapped[dict] = mapped_column(JSON)
     split_results: Mapped[dict] = mapped_column(JSON)
     currency: Mapped[str] = mapped_column(String(10), default="IDR")

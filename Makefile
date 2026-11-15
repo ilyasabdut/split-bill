@@ -1,4 +1,6 @@
-.PHONY: all build up down logs clean rebuild-web install start help
+.PHONY: all help up down logs clean install start build rebuild-web check lint format test test-web web-check infra-up ps
+
+COMPOSE = docker compose --env-file .env -f docker/docker-compose.yml
 
 # Default target: show help
 all: help
@@ -7,56 +9,64 @@ help:
 	@echo "🧾 Split Bill - Development Commands"
 	@echo "====================================="
 	@echo ""
-	@echo "Quick Start:"
-	@echo "  make up              - Build & start all services"
+	@echo "Docker:"
+	@echo "  make up              - Build & start web, api, postgres"
 	@echo "  make down            - Stop all services"
 	@echo "  make logs            - View logs (Ctrl+C to exit)"
+	@echo "  make ps              - Show running containers"
+	@echo "  make infra-up        - Start postgres only"
+	@echo "  make rebuild-web     - Rebuild & restart web container"
+	@echo "  make clean           - Remove build artifacts and volumes"
 	@echo ""
 	@echo "Development:"
 	@echo "  make install         - Install dependencies"
-	@echo "  make start          - Start dev server locally"
-	@echo "  make build          - Build for production"
+	@echo "  make start           - Start dev servers locally"
+	@echo "  make build           - Build web for production"
 	@echo ""
-	@echo "Utilities:"
-	@echo "  make clean          - Clean all build artifacts"
-	@echo "  make rebuild-web    - Rebuild & restart web container"
-	@echo "  make check          - Run quality checks"
-	@echo ""
-	@echo "Run 'make help' for all available commands"
+	@echo "Quality:"
+	@echo "  make check           - Lint + API tests + web check + web tests"
+	@echo "  make lint            - Ruff"
+	@echo "  make format          - Ruff --fix + prettier"
+	@echo "  make test            - API tests"
+	@echo "  make test-web        - Web tests"
+	@echo "  make web-check       - svelte-check"
 
 # ====================================
-# Quick Commands
+# Docker
 # ====================================
 
 # Build and start all services
 up:
-	@echo "🏗️  Building and starting all services..."
-	cd web && bun run build
-	docker-compose -f docker/docker-compose.yml up --build -d
+	$(COMPOSE) up --build -d
 	@echo ""
 	@echo "✅ Services started!"
 	@echo "   Web: http://localhost:15173"
-	@echo "   API:  http://localhost:18000"
-	@echo ""
-	@echo "Run 'make logs' to follow logs"
+	@echo "   API: http://localhost:18000"
 
 # Stop all services
 down:
-	@echo "🛑 Stopping all services..."
-	docker-compose -f docker/docker-compose.yml down
-	@echo "✅ Services stopped"
+	$(COMPOSE) down
 
 # View logs
 logs:
-	@echo "📋 Following logs (Ctrl+C to exit)..."
-	docker-compose -f docker/docker-compose.yml logs -f
+	$(COMPOSE) logs -f
 
-# Clean everything
+# Show running containers
+ps:
+	$(COMPOSE) ps
+
+# Start postgres only (for local dev servers)
+infra-up:
+	$(COMPOSE) up -d postgres
+
+# Rebuild web container and restart
+rebuild-web:
+	$(COMPOSE) up -d --build web
+
+# Clean everything (including the postgres volume)
 clean:
-	@echo "🧹 Cleaning build artifacts..."
 	rm -rf web/node_modules web/build web/.svelte-kit
-	docker-compose -f docker-compose.yml down -v
-	@echo "✅ Clean complete"
+	$(COMPOSE) down -v
 
 # ====================================
 # Development
@@ -64,94 +74,44 @@ clean:
 
 # Install all dependencies
 install:
-	@echo "📦 Installing dependencies..."
+	uv sync
 	cd web && bun install
 
 # Start local dev servers (not Docker)
 start:
-	@echo "🚀 Starting dev servers..."
 	@# Start API in background
 	cd api && uv run python -m dotenv -f ../.env run uvicorn src.main:app --host 0.0.0.0 --port 18000 --reload &
 	cd web && bun run dev
 
 # Build for production
 build:
-	@echo "🏗️  Building web application..."
 	cd web && bun run build
-	@echo "✅ Build complete!"
-
-# Rebuild web container and restart
-rebuild-web:
-	@echo "🔄 Rebuilding web container..."
-	cd web && bun run build
-	docker-compose -f docker/docker-compose.yml up -d --build web
-	@echo "✅ Web container rebuilt and restarted"
 
 # ====================================
 # Quality Checks
 # ====================================
 
 # Run all quality checks
-check: lint web-check
+check: lint test web-check test-web
 	@echo "✅ All checks passed!"
 
 # Lint code
 lint:
-	@echo "🔍 Running linter..."
-	uv run ruff check .
+	uv run ruff check api
 
 # Format code
 format:
-	@echo "✨ Formatting code..."
-	uv run ruff check --fix .
-	cd web && bun x prettier --write . || true
+	uv run ruff check --fix api
+	cd web && bun x prettier --write .
 
-# Run tests
+# Run API tests
 test:
-	@echo "🧪 Running tests..."
-	cd api && python -m pytest tests/ -v || true
+	uv run pytest api/tests -q
 
 # Check web
 web-check:
-	@echo "🔍 Checking web..."
 	cd web && bun run check
 
 # Run web tests
 test-web:
-	@echo "🧪 Running web tests..."
-	cd web && bun test
-
-# Run E2E tests
-test-e2e:
-	@echo "🧪 Running E2E tests..."
-	cd web && bun run test:e2e
-
-# Start Lightpanda browser
-lightpanda-start:
-	@echo "🌐 Starting Lightpanda browser..."
-	cd web && bun run lightpanda:start
-
-# Fetch Lightpanda binaries
-lightpanda-fetch:
-	@echo "📥 Fetching Lightpanda binaries..."
-	cd web && bun run lightpanda:fetch
-
-# ====================================
-# Infrastructure
-# ====================================
-
-# Start infrastructure only
-infra-up:
-	@echo "🔧 Starting infrastructure..."
-	docker-compose -f docker/docker-compose.yml up -d redis garage postgres
-	@echo "✅ Infrastructure started"
-
-# Stop infrastructure
-infra-down:
-	@echo "🛑 Stopping infrastructure..."
-	docker-compose -f docker/docker-compose.yml down
-	@echo "✅ Infrastructure stopped"
-
-# Show running containers
-ps:
-	docker-compose -f docker/docker-compose.yml ps
+	cd web && bun run test

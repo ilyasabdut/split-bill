@@ -4,9 +4,7 @@
 
 The Split Bill API provides RESTful endpoints for receipt OCR processing and bill splitting calculations. All endpoints require authentication via API key.
 
-**Base URL**: `http://localhost:8000` (development)
-**Version**: 2.0.0
-**Last Updated**: February 2026
+**Base URL**: `http://localhost:18000` (development)
 
 ---
 
@@ -34,7 +32,7 @@ Authorization: Bearer YOUR_API_KEY
 
 ```bash
 curl -H "Authorization: Bearer my-secret-api-key" \
-     http://localhost:8000/health
+     http://localhost:18000/health
 ```
 
 ### Security Notes
@@ -63,7 +61,7 @@ curl -H "Authorization: Bearer my-secret-api-key" \
 
 ### Health Check
 
-Check API health status and view system metrics.
+Check API health status.
 
 **Endpoint**: `GET /health`
 
@@ -77,36 +75,8 @@ Authorization: Bearer YOUR_API_KEY
 #### Success Response (200)
 
 ```json
-{
-    "status": "healthy",
-    "timestamp": 1735689600.0,
-    "version": "2.0.0",
-    "security": "enabled",
-    "caching": "enabled",
-    "monitoring": {
-        "uptime_seconds": 3600.5,
-        "requests_total": 150,
-        "errors_total": 2,
-        "splits_calculated": 50
-    },
-    "cache": "connected"
-}
+{"status": "healthy"}
 ```
-
-**Response Fields**:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| status | string | "healthy" or "unhealthy" |
-| timestamp | float | Unix timestamp |
-| version | string | API version |
-| security | string | Security status |
-| caching | string | Caching status |
-| monitoring.uptime_seconds | float | Server uptime |
-| monitoring.requests_total | int | Total requests handled |
-| monitoring.errors_total | int | Total errors |
-| monitoring.splits_calculated | int | Total splits calculated |
-| cache | string | Cache connection status |
 
 #### Error Response (401)
 
@@ -119,62 +89,6 @@ Authorization: Bearer YOUR_API_KEY
     }
 }
 ```
-
----
-
-### Get Metrics
-
-Retrieve detailed application metrics.
-
-**Endpoint**: `GET /metrics`
-
-**Rate Limit**: None
-
-**Headers**:
-```http
-Authorization: Bearer YOUR_API_KEY
-```
-
-#### Success Response (200)
-
-```json
-{
-    "application": {
-        "version": "2.0.0",
-        "uptime_seconds": 3600.5,
-        "status": "running"
-    },
-    "requests": {
-        "total": 150,
-        "errors": 2,
-        "error_rate": 0.013
-    },
-    "business": {
-        "splits_calculated": 50
-    },
-    "cache": {
-        "hits": 85,
-        "misses": 15,
-        "hit_rate": 0.85
-    },
-    "timestamp": 1735689600.0
-}
-```
-
-**Response Fields**:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| application.version | string | API version |
-| application.uptime_seconds | float | Server uptime |
-| application.status | string | Application status |
-| requests.total | int | Total requests |
-| requests.errors | int | Total errors |
-| requests.error_rate | float | Error rate (0-1) |
-| business.splits_calculated | int | Total splits calculated |
-| cache.hits | int | Cache hits |
-| cache.misses | int | Cache misses |
-| cache.hit_rate | float | Cache hit rate (0-1) |
 
 ---
 
@@ -206,7 +120,7 @@ Content-Type: multipart/form-data
 curl -X POST \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F "file=@receipt.jpg" \
-  http://localhost:8000/receipts/upload
+  http://localhost:18000/receipts/upload
 ```
 
 #### Python Example
@@ -214,7 +128,7 @@ curl -X POST \
 ```python
 import requests
 
-url = "http://localhost:8000/receipts/upload"
+url = "http://localhost:18000/receipts/upload"
 headers = {"Authorization": "Bearer YOUR_API_KEY"}
 
 with open("receipt.jpg", "rb") as f:
@@ -395,7 +309,7 @@ curl -X POST \
     "tax_amount_input": 1.80,
     "tip_amount_input": 4.00
   }' \
-  http://localhost:8000/splits/calculate
+  http://localhost:18000/splits/calculate
 ```
 
 #### Python Example
@@ -403,7 +317,7 @@ curl -X POST \
 ```python
 import requests
 
-url = "http://localhost:8000/splits/calculate"
+url = "http://localhost:18000/splits/calculate"
 headers = {"Authorization": "Bearer YOUR_API_KEY"}
 payload = {
     "person_names": ["Alice", "Bob"],
@@ -457,7 +371,7 @@ print(response.json())
             ]
         }
     },
-    "share_link": "http://localhost:8501/splits/view/a1b2c3d4e5f6",
+    "share_link": "http://localhost:15173/splits/view/a1b2c3d4e5f6",
     "split_id": "a1b2c3d4e5f6"
 }
 ```
@@ -516,7 +430,7 @@ Response:
             "items": []
         }
     },
-    "share_link": "http://localhost:8501/splits/view/a1b2c3d4e5f6",
+    "share_link": "http://localhost:15173/splits/view/a1b2c3d4e5f6",
     "split_id": "a1b2c3d4e5f6"
 }
 ```
@@ -581,7 +495,7 @@ Authorization: Bearer YOUR_API_KEY
 
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     http://localhost:8000/splits/view/a1b2c3d4e5f6
+     http://localhost:18000/splits/view/a1b2c3d4e5f6
 ```
 
 #### Python Example
@@ -589,7 +503,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ```python
 import requests
 
-url = "http://localhost:8000/splits/view/a1b2c3d4e5f6"
+url = "http://localhost:18000/splits/view/a1b2c3d4e5f6"
 headers = {"Authorization": "Bearer YOUR_API_KEY"}
 
 response = requests.get(url, headers=headers)
@@ -720,7 +634,6 @@ Retry-After: 45
 
 1. **Implement client-side rate limiting** - Track your request rate
 2. **Handle 429 responses gracefully** - Implement exponential backoff
-3. **Cache results** - Avoid recalculating identical splits
 4. **Batch operations** - Group related requests when possible
 
 ---
@@ -766,7 +679,7 @@ All errors follow a consistent format:
 ```python
 import requests
 
-url = "http://localhost:8000/splits/calculate"
+url = "http://localhost:18000/splits/calculate"
 headers = {"Authorization": "Bearer YOUR_API_KEY"}
 payload = {"person_names": ["Alice"], "item_assignments": []}
 
@@ -787,7 +700,7 @@ else:
 #### JavaScript Example
 
 ```javascript
-const response = await fetch('http://localhost:8000/splits/calculate', {
+const response = await fetch('http://localhost:18000/splits/calculate', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY',
@@ -820,7 +733,7 @@ if (response.ok) {
 
 ```bash
 curl -H "Authorization: Bearer secret123" \
-     http://localhost:8000/health
+     http://localhost:18000/health
 ```
 
 #### 2. Upload Receipt
@@ -829,7 +742,7 @@ curl -H "Authorization: Bearer secret123" \
 curl -X POST \
   -H "Authorization: Bearer secret123" \
   -F "file=@dinner_receipt.jpg" \
-  http://localhost:8000/receipts/upload
+  http://localhost:18000/receipts/upload
 ```
 
 Response:
@@ -877,7 +790,7 @@ curl -X POST \
     "tax_amount_input": 4.23,
     "tip_amount_input": 8.00
   }' \
-  http://localhost:8000/splits/calculate
+  http://localhost:18000/splits/calculate
 ```
 
 Response:
@@ -905,7 +818,7 @@ Response:
             ]
         }
     },
-    "share_link": "http://localhost:8501/splits/view/abc123def456",
+    "share_link": "http://localhost:15173/splits/view/abc123def456",
     "split_id": "abc123def456"
 }
 ```
@@ -914,7 +827,7 @@ Response:
 
 ```bash
 curl -H "Authorization: Bearer secret123" \
-     http://localhost:8000/splits/view/abc123def456
+     http://localhost:18000/splits/view/abc123def456
 ```
 
 ---
@@ -923,11 +836,11 @@ curl -H "Authorization: Bearer secret123" \
 
 The API provides an interactive Swagger UI for testing:
 
-**URL**: `http://localhost:8000/docs`
+**URL**: `http://localhost:18000/docs`
 
 The OpenAPI schema is available at:
 
-**URL**: `http://localhost:8000/openapi.json`
+**URL**: `http://localhost:18000/openapi.json`
 
 ---
 
@@ -979,7 +892,7 @@ class SplitBillAPI:
         return response.json()
 
 # Usage
-api = SplitBillAPI("http://localhost:8000", "your-api-key")
+api = SplitBillAPI("http://localhost:18000", "your-api-key")
 result = api.calculate_split(
     person_names=["Alice", "Bob"],
     item_assignments=[...],

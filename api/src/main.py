@@ -1,19 +1,13 @@
 """
-Production Split Bill API
-Single entry point with modular architecture, security, and caching.
+Split Bill API: single entry point.
 """
 
 import base64
-import hashlib
-import json
 import logging
 import os
-import sys
 import time
 import uuid
 from collections import defaultdict
-from contextlib import asynccontextmanager
-from contextvars import ContextVar
 from functools import wraps
 from typing import Any, Dict, List, Optional
 
@@ -30,119 +24,27 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.db.deps import get_db
+from src.db.models import Split
+from src.routers.analytics import analytics_router
+from src.routers.currency import currency_router
+from src.routers.groups import groups_router
+from src.routers.payments import payments_router
+from src.routers.templates import templates_router
+from src.services.image_service import compress_image
+from src.services.openrouter_ocr import extract_receipt_data
 from starlette.responses import JSONResponse
 
-# Ensure proper Python path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# Load environment variables
 load_dotenv()
 
-# =============================================================================
-# STRUCTURED LOGGING WITH CORRELATION IDS
-# =============================================================================
-
-# Context variable for correlation ID
-correlation_id_ctx: ContextVar[Optional[str]] = ContextVar(
-    "correlation_id", default=None
-)
-
-
-def get_correlation_id() -> Optional[str]:
-    """Get the current correlation ID from context."""
-    return correlation_id_ctx.get()
-
-
-def generate_correlation_id() -> str:
-    """Generate a new correlation ID."""
-    return str(uuid.uuid4())[:8]
-
-
-class StructuredLogger:
-    """Logger that includes correlation ID and structured output."""
-
-    def __init__(self, name: str):
-        self.logger = logging.getLogger(name)
-
-    def _log_with_ctx(self, level: int, message: str, **kwargs: Any):
-        """Log with correlation ID context."""
-        corr_id = get_correlation_id() or "no-corr-id"
-        extra = {
-            "correlation_id": corr_id,
-            "structured_data": kwargs,
-        }
-        self.logger.log(level, f"[corr_id={corr_id}] {message}", extra=extra)
-
-    def debug(self, message: str, **kwargs: Any):
-        self._log_with_ctx(logging.DEBUG, message, **kwargs)
-
-    def info(self, message: str, **kwargs: Any):
-        self._log_with_ctx(logging.INFO, message, **kwargs)
-
-    def warning(self, message: str, **kwargs: Any):
-        self._log_with_ctx(logging.WARNING, message, **kwargs)
-
-    def error(self, message: str, **kwargs: Any):
-        self._log_with_ctx(logging.ERROR, message, **kwargs)
-
-    def exception(self, message: str, exc_info: Any = True, **kwargs: Any):
-        self._log_with_ctx(logging.ERROR, message, exc_info=exc_info, **kwargs)
-
-
-# Create module logger
-logger = StructuredLogger(__name__)
-
-
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
+logger = logging.getLogger(__name__)
 
 # API Configuration
 API_KEY = os.environ.get("API_KEY", "default-dev-key-123")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8000")
-
-# Cache Configuration
-CACHE_AVAILABLE = False
-CACHE_SERVICE = None
-
-# Simple monitoring data
-MONITORING_DATA = {
-    "request_count": 0,
-    "error_count": 0,
-    "splits_calculated": 0,
-    "cache_hits": 0,
-    "cache_misses": 0,
-    "start_time": time.time(),
-}
-
-
-# Lazy import for cache service
-def get_cache_service():
-    """Lazy import cache service."""
-    global CACHE_SERVICE, CACHE_AVAILABLE
-    if not CACHE_AVAILABLE:
-        try:
-            cache_module = __import__("core.cache", fromlist=["cache_service"])
-            CACHE_SERVICE = getattr(cache_module, "cache_service")
-            CACHE_AVAILABLE = True
-            logger.info("Cache service available")
-        except (ImportError, AttributeError) as e:
-            logger.warning(f"Cache service not available: {e}")
-    return CACHE_SERVICE
-
-
-# Import monitoring router
-try:
-    # Use sys.path for consistent import pattern
-    monitoring_module = __import__("routers.monitoring", fromlist=["monitoring_router"])
-    monitoring_router = getattr(monitoring_module, "monitoring_router")
-    MONITORING_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Monitoring router not available: {e}")
-    MONITORING_AVAILABLE = False
-    monitoring_router = None
-
 
 # =============================================================================
 # SECURITY COMPONENTS
@@ -223,37 +125,13 @@ def rate_limit(requests_per_minute: int):
 
 
 # =============================================================================
-# CACHING COMPONENTS
-# =============================================================================
-
-
-async def get_cached_split(split_id: str) -> Optional[Dict[str, Any]]:
-    """Get cached split result."""
-    cache_service = get_cache_service()
-    if not cache_service:
-        return None
-    try:
-        return await cache_service.get_split_result(split_id)
-    except Exception as e:
-        logger.error(f"Cache get error: {e}")
-        return None
-
-
-async def cache_split_result(split_id: str, result: Dict[str, Any]) -> bool:
-    """Cache split result."""
-    cache_service = get_cache_service()
-    if not cache_service:
-        return False
-    try:
-        return await cache_service.set_split_result(split_id, result)
-    except Exception as e:
-        logger.error(f"Cache set error: {e}")
-        return False
-
-
-# =============================================================================
 # DATA MODELS
 # =============================================================================
+
+
+class ClientPersonResult(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    total: float = Field(ge=0)
 
 
 class CalculateSplitRequest(BaseModel):
@@ -264,6 +142,9 @@ class CalculateSplitRequest(BaseModel):
     split_evenly: bool = False
     extracted_subtotal_from_gemini: Optional[float] = None
     extracted_total_discount: float = 0.0
+    # The web app does the math (rounding, % and by-item modes) on the device;
+    # when it sends its results the share link shows exactly those numbers.
+    client_results: Optional[Dict[str, ClientPersonResult]] = None
 
 
 class CalculateSplitResponse(BaseModel):
@@ -378,74 +259,14 @@ def calculate_split(
 # API ROUTERS
 # =============================================================================
 
-# Health Router
 health_router = APIRouter(prefix="/health", tags=["health"])
 
 
 @health_router.get("/")
 async def health_check():
-    """Enhanced health check with monitoring."""
-    health_status = {
-        "status": "healthy",
-        "timestamp": time.time(),
-        "version": "2.0.0",
-        "security": "enabled",
-        "caching": "enabled" if get_cache_service() else "disabled",
-        "monitoring": {
-            "uptime_seconds": time.time() - MONITORING_DATA["start_time"],
-            "requests_total": MONITORING_DATA["request_count"],
-            "errors_total": MONITORING_DATA["error_count"],
-            "splits_calculated": MONITORING_DATA["splits_calculated"],
-        },
-    }
-
-    cache_service = get_cache_service()
-    if cache_service:
-        try:
-            await cache_service.get("health_check")
-            health_status["cache"] = "connected"
-        except Exception as e:
-            health_status["cache"] = f"error: {e}"
-
-    return health_status
+    return {"status": "healthy"}
 
 
-# Metrics Router
-metrics_router = APIRouter(prefix="/metrics", tags=["metrics"])
-
-
-@metrics_router.get("/")
-async def get_metrics():
-    """Get application metrics."""
-    uptime = time.time() - MONITORING_DATA["start_time"]
-    cache_hit_rate = 0
-    total_cache_ops = MONITORING_DATA["cache_hits"] + MONITORING_DATA["cache_misses"]
-    if total_cache_ops > 0:
-        cache_hit_rate = MONITORING_DATA["cache_hits"] / total_cache_ops
-
-    return {
-        "application": {
-            "version": "2.0.0",
-            "uptime_seconds": uptime,
-            "status": "running",
-        },
-        "requests": {
-            "total": MONITORING_DATA["request_count"],
-            "errors": MONITORING_DATA["error_count"],
-            "error_rate": MONITORING_DATA["error_count"]
-            / max(MONITORING_DATA["request_count"], 1),
-        },
-        "business": {"splits_calculated": MONITORING_DATA["splits_calculated"]},
-        "cache": {
-            "hits": MONITORING_DATA["cache_hits"],
-            "misses": MONITORING_DATA["cache_misses"],
-            "hit_rate": cache_hit_rate,
-        },
-        "timestamp": time.time(),
-    }
-
-
-# Split Router
 splits_router = APIRouter(prefix="/splits", tags=["splits"])
 receipts_router = APIRouter(prefix="/receipts", tags=["receipts"])
 
@@ -456,125 +277,77 @@ async def calculate_split_endpoint(
     request: Request,
     split_request: CalculateSplitRequest,
     api_key: str = Depends(get_api_key),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Calculate bill split with caching and security."""
-    global MONITORING_DATA
-
-    MONITORING_DATA["request_count"] += 1
-
-    try:
-        logger.info(
-            f"Processing split calculation for {len(split_request.person_names)} people"
-        )
-
-        # Generate split ID
-        idempotency_key_material = {
-            "people": sorted(split_request.person_names),
-            "assignments": sorted(
-                [
-                    {
-                        "item": a.get("item_details", {}).get("item", ""),
-                        "price": a.get("item_details", {}).get("price", ""),
-                        "assigned_to": sorted(a.get("assigned_to", [])),
-                    }
-                    for a in split_request.item_assignments
-                ],
-                key=lambda x: x["item"],
-            ),
-            "tax": split_request.tax_amount_input,
-            "tip": split_request.tip_amount_input,
-            "split_evenly": split_request.split_evenly,
-        }
-
-        id_hasher = hashlib.sha256()
-        id_hasher.update(
-            json.dumps(idempotency_key_material, sort_keys=True).encode("utf-8")
-        )
-        split_id = id_hasher.hexdigest()[:12]
-
-        logger.info(f"Generated split ID: {split_id}")
-
-        # Check cache first
-        cached_result = await get_cached_split(split_id)
-        if cached_result:
-            logger.info(f"Using cached result for split ID: {split_id}")
-            MONITORING_DATA["cache_hits"] += 1
-            share_link = f"{APP_BASE_URL}/splits/view/{split_id}"
-            return CalculateSplitResponse(
-                split_results=cached_result,
-                share_link=share_link,
-                split_id=split_id,
+    """Calculate a bill split and persist it behind an unguessable share id."""
+    if split_request.client_results is not None:
+        if set(split_request.client_results) != set(split_request.person_names):
+            raise HTTPException(
+                status_code=422, detail="client_results must have one entry per person"
             )
-        else:
-            MONITORING_DATA["cache_misses"] += 1
-
-        # Calculate split
-        logger.info("Calculating split...")
-        subtotal_for_even = split_request.extracted_subtotal_from_gemini or 0.0
-
+        calculated_split = {
+            name: result.model_dump()
+            for name, result in split_request.client_results.items()
+        }
+    else:
         calculated_split = calculate_split(
             split_request.item_assignments,
             str(split_request.tax_amount_input),
             str(split_request.tip_amount_input),
             split_request.person_names,
             split_evenly_flag=split_request.split_evenly,
-            overall_subtotal_for_even_split=subtotal_for_even,
+            overall_subtotal_for_even_split=split_request.extracted_subtotal_from_gemini
+            or 0.0,
             total_discount_amount=split_request.extracted_total_discount,
         )
-
         if "Error" in calculated_split:
-            MONITORING_DATA["error_count"] += 1
             raise HTTPException(
                 status_code=500,
                 detail=f"Calculation error: {calculated_split['Error']}",
             )
 
-        # Cache the result
-        await cache_split_result(split_id, calculated_split)
-        logger.info(f"Cached result for split ID: {split_id}")
-
-        # Record business metrics
-        MONITORING_DATA["splits_calculated"] += 1
-
-        share_link = f"{APP_BASE_URL}/splits/view/{split_id}"
-
-        return CalculateSplitResponse(
+    split_id = uuid.uuid4().hex
+    db.add(
+        Split(
+            share_id=split_id,
+            receipt_data=split_request.model_dump(exclude={"client_results"}),
             split_results=calculated_split,
-            share_link=share_link,
-            split_id=split_id,
         )
+    )
+    await db.commit()
 
-    except Exception as e:
-        MONITORING_DATA["error_count"] += 1
-        logger.error(f"Split calculation error: {e}", exc_info=True)
-        raise
+    return CalculateSplitResponse(
+        split_results=calculated_split,
+        share_link=f"{APP_BASE_URL}/splits/view/{split_id}",
+        split_id=split_id,
+    )
 
 
+# Public share link: no API key, the uuid4 id is the capability.
 @splits_router.get("/view/{split_id}", response_model=SharedSplitDataResponse)
 @rate_limit(100)
 async def view_split(
     request: Request,
     split_id: str,
-    api_key: str = Depends(get_api_key),
+    db: AsyncSession = Depends(get_db),
 ):
-    """View shared split data."""
-    logger.info(f"Retrieving split data for ID: {split_id}")
+    split = await db.scalar(select(Split).where(Split.share_id == split_id))
+    if split is None:
+        raise HTTPException(status_code=404, detail="Split not found")
 
-    # Mock data for demonstration
-    mock_data = {
-        "split_id": split_id,
-        "original_parsed_data": {"mock": "data"},
-        "person_names": ["Alice", "Bob"],
-        "item_assignments": [],
-        "split_evenly_choice": True,
-        "total_discount_applied": 0.0,
-        "user_adjusted_tax": 2.50,
-        "user_adjusted_tip": 5.00,
-        "calculated_split_results": {"Alice": {"total": 15.0}, "Bob": {"total": 15.0}},
-        "creation_timestamp": time.time(),
-    }
-
-    return SharedSplitDataResponse(**mock_data)
+    req = split.receipt_data
+    return SharedSplitDataResponse(
+        split_id=split.share_id,
+        original_parsed_data={},
+        person_names=req["person_names"],
+        item_assignments=req["item_assignments"],
+        split_evenly_choice=req["split_evenly"],
+        total_discount_applied=req["extracted_total_discount"],
+        user_adjusted_tax=req["tax_amount_input"],
+        user_adjusted_tip=req["tip_amount_input"],
+        calculated_split_results=split.split_results,
+        creation_timestamp=split.created_at.timestamp(),
+    )
 
 
 @receipts_router.post("/upload")
@@ -585,21 +358,7 @@ async def upload_receipt(
     api_key: str = Depends(get_api_key),
 ):
     """Upload a receipt image, process it with OCR, and return extracted data."""
-    global MONITORING_DATA
-
-    MONITORING_DATA["request_count"] += 1
-
     try:
-        # Import services for processing
-        try:
-            from services.image_service import compress_image
-            from services.openrouter_ocr import extract_receipt_data
-        except ImportError as e:
-            logger.error(f"Failed to import receipt processing services: {e}")
-            raise HTTPException(
-                status_code=500, detail="Receipt processing service unavailable"
-            )
-
         logger.info(f"Processing receipt upload: {file.filename}")
 
         # Read file content
@@ -641,53 +400,17 @@ async def upload_receipt(
     except HTTPException:
         raise
     except Exception as e:
-        MONITORING_DATA["error_count"] += 1
         logger.error(f"Error processing receipt: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# =============================================================================
-# APPLICATION LIFESPAN
-# =============================================================================
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan management."""
-    logger.info("Starting Split Bill API...")
-
-    cache_service = get_cache_service()
-    if cache_service:
-        try:
-            await cache_service.connect()
-            logger.info("Cache service connected successfully")
-        except Exception as e:
-            logger.error(f"Failed to connect cache service: {e}")
-
-    yield
-
-    logger.info("Shutting down Split Bill API...")
-    cache_service = get_cache_service()
-    if cache_service:
-        try:
-            await cache_service.disconnect()
-            logger.info("Cache service disconnected successfully")
-        except Exception as e:
-            logger.error(f"Error disconnecting cache service: {e}")
-
-
-# =============================================================================
-# MAIN APPLICATION
-# =============================================================================
-
 app = FastAPI(
     title="Split Bill API",
-    description="Secure API with caching for bill splitting and receipt processing.",
+    description="Bill splitting and receipt processing.",
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
-    lifespan=lifespan,
 )
 
 # =============================================================================
@@ -733,111 +456,14 @@ app.add_middleware(
 )
 
 
-@app.middleware("http")
-async def log_requests_middleware(request: Request, call_next):
-    """Middleware to add correlation ID to all requests and log request details."""
-    corr_id = request.headers.get("X-Correlation-ID") or generate_correlation_id()
-    token = correlation_id_ctx.set(corr_id)
-    start = time.time()
-
-    try:
-        logger.info(
-            f"Incoming request: {request.method} {request.url.path}",
-            method=request.method,
-            path=request.url.path,
-            query_params=dict(request.query_params),
-            client_ip=request.client.host if request.client else None,
-        )
-
-        response = await call_next(request)
-        elapsed = time.time() - start
-
-        logger.info(
-            f"Request completed: {response.status_code}",
-            status_code=response.status_code,
-            elapsed_seconds=round(elapsed, 3),
-        )
-
-        response.headers["X-Correlation-ID"] = corr_id
-        return response
-
-    except Exception as exc:
-        elapsed = time.time() - start
-        logger.error(
-            f"Request failed: {str(exc)}",
-            status_code=500,
-            elapsed_seconds=round(elapsed, 3),
-            error_type=type(exc).__name__,
-            error_message=str(exc),
-            exc_info=True,
-        )
-        raise
-    finally:
-        correlation_id_ctx.reset(token)
-
-
-# Import new routers
-try:
-    currency_module = __import__("routers.currency", fromlist=["currency_router"])
-    currency_router = getattr(currency_module, "currency_router")
-    CURRENCY_ROUTER_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Currency router not available: {e}")
-    CURRENCY_ROUTER_AVAILABLE = False
-    currency_router = None
-
-try:
-    groups_module = __import__("routers.groups", fromlist=["groups_router"])
-    groups_router = getattr(groups_module, "groups_router")
-    GROUPS_ROUTER_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Groups router not available: {e}")
-    GROUPS_ROUTER_AVAILABLE = False
-    groups_router = None
-
-try:
-    templates_module = __import__("routers.templates", fromlist=["templates_router"])
-    templates_router = getattr(templates_module, "templates_router")
-    TEMPLATES_ROUTER_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Templates router not available: {e}")
-    TEMPLATES_ROUTER_AVAILABLE = False
-    templates_router = None
-
-try:
-    payments_module = __import__("routers.payments", fromlist=["payments_router"])
-    payments_router = getattr(payments_module, "payments_router")
-    PAYMENTS_ROUTER_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Payments router not available: {e}")
-    PAYMENTS_ROUTER_AVAILABLE = False
-    payments_router = None
-
-try:
-    analytics_module = __import__("routers.analytics", fromlist=["analytics_router"])
-    analytics_router = getattr(analytics_module, "analytics_router")
-    ANALYTICS_ROUTER_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Analytics router not available: {e}")
-    ANALYTICS_ROUTER_AVAILABLE = False
-    analytics_router = None
-
-# Register routers
 app.include_router(health_router)
-app.include_router(metrics_router)
 app.include_router(splits_router)
 app.include_router(receipts_router)
-
-if CURRENCY_ROUTER_AVAILABLE:
-    app.include_router(currency_router)
-if GROUPS_ROUTER_AVAILABLE:
-    app.include_router(groups_router)
-if TEMPLATES_ROUTER_AVAILABLE:
-    app.include_router(templates_router)
-if PAYMENTS_ROUTER_AVAILABLE:
-    app.include_router(payments_router)
-if ANALYTICS_ROUTER_AVAILABLE:
-    app.include_router(analytics_router)
+app.include_router(currency_router)
+app.include_router(groups_router)
+app.include_router(templates_router)
+app.include_router(payments_router)
+app.include_router(analytics_router)
 
 # =============================================================================
 # ROUTES
@@ -850,11 +476,6 @@ async def root():
     return {
         "message": "Split Bill API is running",
         "version": "2.0.0",
-        "security": "API Key authentication enabled",
-        "caching": (
-            "Redis caching enabled" if get_cache_service() else "Caching disabled"
-        ),
-        "monitoring": MONITORING_AVAILABLE,
         "docs": "/docs",
     }
 
@@ -903,7 +524,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "main:app",
+        "src.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,

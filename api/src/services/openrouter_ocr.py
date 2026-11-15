@@ -7,6 +7,7 @@ for receipt image processing using OpenRouter's API.
 import base64
 import io
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -14,8 +15,9 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 import PIL.Image
-from loguru import logger
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 OPENROUTER_API_BASE_URL = os.getenv(
     "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"

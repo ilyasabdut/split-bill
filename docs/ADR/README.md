@@ -16,12 +16,11 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
 | [001](001-fastapi-framework.md) | FastAPI as Backend Framework | ✅ Accepted | 2026-02 |
-| [002](002-redis-caching.md) | Redis for Caching | ✅ Accepted | 2026-02 |
-| [003](003-minio-storage.md) | MinIO for Object Storage | ✅ Accepted | 2026-02 |
-| [004](004-streamlit-frontend.md) | Streamlit for Frontend | ✅ Accepted | 2026-02 |
 | [005](005-openrouter-ocr.md) | OpenRouter for OCR | ✅ Accepted | 2026-02 |
 | [006](006-api-key-authentication.md) | API Key Authentication | ✅ Accepted | 2026-02 |
 | [007](007-docker-containerization.md) | Docker for Containerization | ✅ Accepted | 2026-02 |
+
+ADRs 002 (Redis caching), 003 (MinIO storage) and 004 (Streamlit frontend) were deleted in the 2026-11 cleanup together with the code they described; git history has them.
 
 ## Status Legend
 

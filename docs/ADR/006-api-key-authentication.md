@@ -15,7 +15,7 @@ We need to secure the API endpoints to:
 Requirements:
 - Simple to implement
 - Easy for clients to use
-- Works with frontend (Streamlit) and API clients
+- Works with frontend and API clients
 - No user management overhead (initially)
 
 ## Decision
@@ -153,7 +153,7 @@ async def calculate_split(api_key: str = Depends(get_api_key)):
 #### cURL
 ```bash
 curl -H "Authorization: Bearer my-secret-key" \
-     http://localhost:8000/health
+     http://localhost:18000/health
 ```
 
 #### Python
@@ -162,7 +162,7 @@ import requests
 
 headers = {"Authorization": "Bearer my-secret-key"}
 response = requests.post(
-    "http://localhost:8000/splits/calculate",
+    "http://localhost:18000/splits/calculate",
     headers=headers,
     json={"person_names": ["Alice", "Bob"], ...}
 )
@@ -170,7 +170,7 @@ response = requests.post(
 
 #### JavaScript
 ```javascript
-const response = await fetch('http://localhost:8000/health', {
+const response = await fetch('http://localhost:18000/health', {
     headers: {
         'Authorization': 'Bearer my-secret-key'
     }

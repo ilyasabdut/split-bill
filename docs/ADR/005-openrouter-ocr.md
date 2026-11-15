@@ -184,22 +184,6 @@ def extract_receipt_data(image_bytes: bytes) -> dict:
     return json.loads(result["choices"][0]["message"]["content"])
 ```
 
-### Caching Strategy
-
-To reduce costs and improve performance:
-
-```python
-# Cache OCR results for 30 minutes
-@cache_result(ttl=1800)  # 30 minutes
-def extract_receipt_data(image_bytes: bytes) -> dict:
-    # ... implementation
-```
-
-**Cost Impact**:
-- Without cache: Every upload costs API call
-- With cache: Same receipt = free (within 30 min)
-- **Savings**: ~60% reduction in API costs
-
 ### Error Handling
 
 ```python
@@ -262,7 +246,6 @@ If we exceed free limits:
 
 ## Related Decisions
 
-- ADR-002: Redis for Caching (reduces OCR costs)
 - ADR-001: FastAPI for backend
 
 ## References

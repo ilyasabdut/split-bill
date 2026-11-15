@@ -24,7 +24,7 @@ Three words that define our brand voice:
 4. **Trustworthy precision** - Numbers and financial data must be accurate, clear, and unambiguous.
 5. **Mobile-first touch** - 44px minimum tap targets, proper safe areas, responsive layouts.
 
-### Design System (Superdesign)
+### Design System
 
 **Location**: `/web/src/app.css` and `/web/tailwind.config.js`
 
@@ -249,15 +249,14 @@ Three words that define our brand voice:
 ### When Designing
 
 1. **Use existing tokens first** - Check `/web/src/app.css` before adding new values
-2. **Import from component-variants.ts** - Badge, button, input patterns already defined
-3. **Mobile-first** - Design for 375-430px width, then expand
-4. **Touch targets** - Minimum 44x44px for all interactive elements (`min-h-[44px]`, `h-11`)
-5. **Test dark mode** - Toggle class on `<html>` to verify
-6. **Use rounded-3xl for cards** - Primary card radius for premium iOS feel
-7. **Add press feedback** - Always include `active:scale-[0.99]` on interactive elements
-8. **Safe areas for headers** - Use `pt-14` for notch clearance
-9. **Padding for floating nav** - Use `pb-[120px]` on main content
-10. **Semantic color pairs** - Match icon container bg/text colors from the pairs list
+2. **Mobile-first** - Design for 375-430px width, then expand
+3. **Touch targets** - Minimum 44x44px for all interactive elements (`min-h-[44px]`, `h-11`)
+4. **Test dark mode** - Toggle class on `<html>` to verify
+5. **Use rounded-3xl for cards** - Primary card radius for premium iOS feel
+6. **Add press feedback** - Always include `active:scale-[0.99]` on interactive elements
+7. **Safe areas for headers** - Use `pt-14` for notch clearance
+8. **Padding for floating nav** - Use `pb-[120px]` on main content
+9. **Semantic color pairs** - Match icon container bg/text colors from the pairs list
 
 ### Component Guidelines
 

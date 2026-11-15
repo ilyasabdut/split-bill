@@ -2,10 +2,16 @@ FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
-COPY web/package.json bun.lock ./
-RUN bun install
+COPY web/package.json web/bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY web/ ./
+
+# Vite inlines these into the static bundle at build time
+ARG VITE_FASTAPI_API_URL
+ARG VITE_API_KEY
+ENV VITE_FASTAPI_API_URL=$VITE_FASTAPI_API_URL
+ENV VITE_API_KEY=$VITE_API_KEY
 RUN bun run build
 
 FROM oven/bun:slim AS final

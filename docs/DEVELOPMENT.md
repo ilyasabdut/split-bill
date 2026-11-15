@@ -13,101 +13,31 @@ This guide covers everything you need to know to develop, test, and contribute t
 
 - [Quick Start](#quick-start)
 - [Development Environment](#development-environment)
-- [Project Structure](#project-structure)
 - [Code Style](#code-style)
 - [Testing](#testing)
 - [Debugging](#debugging)
 - [Common Tasks](#common-tasks)
-- [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.12+
-- Docker & Docker Compose (optional but recommended)
-- Git
-- Make (for using Makefile commands)
-
-### 1. Clone and Setup
+Prerequisites: Python 3.12+ with [uv](https://docs.astral.sh/uv/), [Bun](https://bun.sh), Docker, Make.
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd split-bill
+cp .env.example .env   # then fill in API_KEY and OPENROUTER_API_KEY
+make install           # uv sync + bun install
 
-# Install dependencies
-make install
+# Option A: everything in Docker (web :15173, api :18000, postgres :15432)
+make up
 
-# Verify environment
-make check_dotenv
+# Option B: local dev servers against Dockerised postgres
+make infra-up
+cd api && uv run alembic upgrade head   # uses sqlalchemy.url from api/alembic.ini
+make start
 ```
 
-### 2. Configure Environment
-
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit with your credentials
-nano .env  # or use your preferred editor
-```
-
-**Required Environment Variables**:
-
-```bash
-# API Security
-API_KEY=your-secure-random-key-here
-
-# OCR Service
-OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL_NAME=mistralai/mistral-small-3.2-24b-instruct:free
-
-# Storage (MinIO)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET_NAME=split-bill
-MINIO_USE_SSL=False
-
-# Application URLs
-APP_BASE_URL=http://localhost:8501
-FASTAPI_API_URL=http://localhost:8000
-
-# Optional
-REDIS_URL=redis://localhost:6379
-```
-
-### 3. Run Development Servers
-
-**Option A: Local Development (Two Terminals)**
-
-Terminal 1 - Backend:
-```bash
-make run-api
-# API available at http://localhost:8000
-# Docs at http://localhost:8000/docs
-```
-
-Terminal 2 - Frontend:
-```bash
-make run-streamlit
-# App available at http://localhost:8501
-```
-
-**Option B: Docker (Single Command)**
-
-```bash
-# Start all services
-docker-compose -f docker/docker-compose.yml up --build
-
-# Access:
-# Frontend: http://localhost:8501
-# API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-```
+The api container applies alembic migrations on start (`alembic upgrade head`).
 
 ---
 
@@ -124,7 +54,6 @@ docker-compose -f docker/docker-compose.yml up --build
 - **VS Code**: IDE with Python extension
 - **Docker Desktop**: For containerized development
 - **Postman**: API testing
-- **Redis Insight**: Redis GUI (optional)
 
 ### VS Code Configuration
 
@@ -155,84 +84,6 @@ Recommended extensions:
 - Black Formatter
 - Docker
 - Markdown All in One
-
----
-
-## Project Structure
-
-```
-split-bill/
-├── api/                          # Backend (FastAPI)
-│   ├── src/
-│   │   ├── main.py              # Main application entry
-│   │   ├── core/                # Core utilities
-│   │   │   ├── cache.py        # Redis caching
-│   │   │   ├── config.py       # Configuration
-│   │   │   ├── logging.py      # Logging setup
-│   │   │   ├── metrics.py      # Prometheus metrics
-│   │   │   ├── monitoring.py   # Health checks
-│   │   │   └── security.py     # Security utilities
-│   │   ├── models/              # Data models
-│   │   │   └── schemas.py      # Pydantic models
-│   │   ├── routers/             # API routes
-│   │   │   └── monitoring.py   # Health/metrics endpoints
-│   │   ├── services/            # Business logic
-│   │   │   ├── image_service.py
-│   │   │   ├── storage_utils.py
-│   │   │   ├── openrouter_ocr.py
-│   │   │   └── split_logic.py
-│   │   └── utils/               # Utilities
-│   │       └── imports.py
-│   └── tests/                   # Test suite
-│       └── test_sample.py
-│
-├── app/                          # Frontend (Streamlit)
-│   └── src/
-│       ├── main.py              # Streamlit app entry
-│       ├── state.py             # Session state management
-│       ├── constants.py         # UI constants
-│       ├── components/          # UI components
-│       │   ├── steps/          # Wizard steps
-│       │   │   ├── step_0_upload.py
-│       │   │   ├── step_1_people.py
-│       │   │   ├── step_2_assign_items.py
-│       │   │   ├── step_3_tax_tip.py
-│       │   │   └── step_4_results.py
-│       │   └── ui.py           # Shared UI components
-│       └── utils/               # Utilities
-│           ├── api.py          # API client
-│           └── ui.py           # UI helpers
-│
-├── docker/                       # Docker configurations
-│   ├── Dockerfile               # Frontend Dockerfile
-│   ├── Dockerfile.api           # Backend Dockerfile
-│   ├── docker-compose.yml       # Development compose
-│   ├── docker-compose.prod.yml  # Production compose
-│   └── .dockerignore
-│
-├── documentation/                # Documentation
-│   ├── README.md               # Overview
-│   ├── ARCHITECTURE.md         # System architecture
-│   ├── API.md                  # API documentation
-│   ├── TODO.md                 # Roadmap and tasks
-│   ├── DEVELOPMENT.md          # This file
-│   ├── OPERATIONS.md           # Deployment guide
-│   └── ADR/                    # Architecture decisions
-│
-├── scripts/                      # Utility scripts
-│   └── demos/
-│       └── phase1_demo.py
-│
-├── .env.example                  # Environment template
-├── .gitignore
-├── .pre-commit-config.yaml      # Pre-commit hooks
-├── .streamlit/                  # Streamlit config
-│   └── config.toml
-├── AGENTS.md                    # AI coding guidelines
-├── Makefile                     # Build automation
-├── pyproject.toml              # Python dependencies
-└── README.md                    # Main project readme
-```
 
 ---
 
@@ -271,17 +122,12 @@ from typing import Dict, List, Optional
 # Third-party
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import redis
 
 # Local imports
-from core.config import settings
-from services.ocr import extract_receipt_data
+from services.openrouter_ocr import extract_receipt_data
 ```
 
-Use `isort` to automatically sort imports:
-```bash
-make sort-imports
-```
+`make format` (ruff) fixes import order.
 
 #### Naming Conventions
 
@@ -393,22 +239,6 @@ async def calculate_split(request: SplitRequest):
 
 ## Testing
 
-### Test Structure
-
-```
-api/tests/
-├── __init__.py
-├── conftest.py              # Pytest fixtures
-├── test_main.py            # Main API tests
-├── test_services/
-│   ├── test_ocr.py
-│   ├── test_split_logic.py
-│   └── test_minio.py
-└── test_routers/
-    ├── test_receipts.py
-    └── test_splits.py
-```
-
 ### Running Tests
 
 ```bash
@@ -416,10 +246,10 @@ api/tests/
 make test
 
 # Run specific test file
-uv run pytest api/tests/test_sample.py -v
+uv run pytest api/tests/test_splits.py -v
 
 # Run specific test
-uv run pytest api/tests/test_sample.py::test_function -v
+uv run pytest api/tests/test_splits.py::test_function -v
 
 # Run with coverage
 uv run pytest --cov=api/src --cov-report=html
@@ -600,7 +430,7 @@ Create `.vscode/launch.json`:
             "args": [
                 "api.src.main:app",
                 "--reload",
-                "--port", "8000"
+                "--port", "18000"
             ],
             "jinja": true,
             "justMyCode": true
@@ -628,47 +458,7 @@ logger.exception("Error with traceback")  # Includes exception info
 
 Enable debug logging:
 ```bash
-LOG_LEVEL=DEBUG make run-api
-```
-
-### Frontend Debugging
-
-#### Streamlit Debugging
-
-Enable debug mode:
-```bash
-streamlit run app/src/main.py --logger.level=debug
-```
-
-Print to Streamlit UI:
-```python
-import streamlit as st
-
-# Display debug info
-st.write("Debug:", variable)
-st.json(data)
-st.code(code_string)
-```
-
-#### API Client Debugging
-
-```python
-import requests
-import logging
-
-# Enable HTTP debugging
-logging.basicConfig(level=logging.DEBUG)
-
-# Or use requests hooks
-def log_request(response, *args, **kwargs):
-    print(f"Request: {response.request.method} {response.request.url}")
-    print(f"Response: {response.status_code}")
-
-response = requests.post(
-    "http://localhost:8000/splits/calculate",
-    json={...},
-    hooks={'response': log_request}
-)
+LOG_LEVEL=DEBUG make start
 ```
 
 ### Docker Debugging
@@ -707,62 +497,6 @@ docker-compose -f docker/docker-compose.yml exec api env
 
 ## Common Tasks
 
-### Adding a New API Endpoint
-
-1. **Define model** in `api/src/models/schemas.py`:
-```python
-class NewRequest(BaseModel):
-    field1: str
-    field2: int
-
-class NewResponse(BaseModel):
-    result: str
-```
-
-2. **Add endpoint** in `api/src/main.py`:
-```python
-@app.post("/new-endpoint", response_model=NewResponse)
-async def new_endpoint(request: NewRequest):
-    return NewResponse(result="success")
-```
-
-3. **Add tests** in `api/tests/test_main.py`:
-```python
-def test_new_endpoint(client):
-    response = client.post("/new-endpoint", json={"field1": "test", "field2": 42})
-    assert response.status_code == 200
-```
-
-4. **Run quality checks**:
-```bash
-make check-all
-```
-
-### Adding a New Frontend Component
-
-1. **Create component** in `app/src/components/`:
-```python
-import streamlit as st
-
-def new_component():
-    st.header("New Component")
-    value = st.text_input("Enter value")
-    return value
-```
-
-2. **Integrate** in `app/src/main.py`:
-```python
-from components.new_component import new_component
-
-# In your main flow
-value = new_component()
-```
-
-3. **Test manually**:
-```bash
-make run-streamlit
-```
-
 ### Adding Dependencies
 
 1. **Edit** `pyproject.toml`:
@@ -781,138 +515,6 @@ make install
 
 3. **Commit** both `pyproject.toml` and updated `uv.lock`
 
-### Database Migrations (Future)
-
-If we add a database layer:
-
-```bash
-# Create migration
-alembic revision --autogenerate -m "add users table"
-
-# Run migrations
-alembic upgrade head
-
-# Rollback
-alembic downgrade -1
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### Import Errors
-
-**Problem**: `ModuleNotFoundError: No module named 'api'`
-
-**Solution**: Ensure you're running from project root and Python path is set:
-```bash
-cd /path/to/split-bill
-export PYTHONPATH="${PYTHONPATH}:$(pwd)/api/src"
-make run-api
-```
-
-#### Port Already in Use
-
-**Problem**: `Address already in use` when starting API
-
-**Solution**: Kill existing process:
-```bash
-# Find process using port 8000
-lsof -ti:8000 | xargs kill -9
-
-# Or use the Makefile (which handles this)
-make run-api
-```
-
-#### Redis Connection Failed
-
-**Problem**: `Connection refused` to Redis
-
-**Solution**: Start Redis:
-```bash
-# With Docker
-docker-compose -f docker/docker-compose.yml up redis
-
-# Or locally
-redis-server
-```
-
-#### Environment Variables Not Loading
-
-**Problem**: `API_KEY` not found
-
-**Solution**:
-1. Check `.env` file exists
-2. Verify `python-dotenv` is installed
-3. Load explicitly:
-```python
-from dotenv import load_dotenv
-load_dotenv()  # Add at start of main.py
-```
-
-#### Pre-commit Hooks Failing
-
-**Problem**: Can't commit due to pre-commit errors
-
-**Solution**:
-```bash
-# Run auto-fixes
-make lint-fix
-make format
-make sort-imports
-
-# Or skip hooks (not recommended for production code)
-git commit --no-verify -m "message"
-```
-
-#### Type Checking Errors
-
-**Problem**: MyPy errors
-
-**Solution**:
-```bash
-# Run type check
-make type-check
-
-# Fix gradually - add type hints
-# Use `Any` temporarily for complex cases (add TODO to fix)
-from typing import Any
-
-def function(data: Any) -> Any:
-    # TODO: Add proper types
-    pass
-```
-
-### Getting Help
-
-1. **Check documentation**:
-   - [Architecture](ARCHITECTURE.md)
-   - [API Reference](API.md)
-   - [TODO/Roadmap](TODO.md)
-
-2. **Review error logs**:
-   - Backend logs: Check terminal running `make run-api`
-   - Frontend logs: Check terminal running `make run-streamlit`
-   - Docker logs: `docker-compose logs`
-
-3. **Test in isolation**:
-   ```bash
-   # Test just the backend
-   make run-api
-   curl http://localhost:8000/health
-
-   # Test just the frontend
-   make run-streamlit
-   ```
-
-4. **Create minimal reproduction**:
-   - Strip down to simplest case that shows the issue
-   - Share code snippet when asking for help
-
----
-
 ## Contributing
 
 ### Workflow
@@ -929,7 +531,7 @@ git checkout -b feature/my-feature
 
 3. **Run quality checks**:
 ```bash
-make check-all
+make check
 ```
 
 4. **Commit**:
@@ -980,7 +582,6 @@ Before submitting PR:
 - [ ] Code follows style guide
 - [ ] Tests added/updated
 - [ ] All tests pass (`make test`)
-- [ ] Type checking passes (`make type-check`)
 - [ ] Linting passes (`make lint`)
 - [ ] Documentation updated
 - [ ] Environment variables documented

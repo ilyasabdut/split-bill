@@ -149,3 +149,11 @@ Three honest observations:
 6. Only after that: reminders, server payments, sync.
 
 I would resist adding anything new until step 4 ships. It is the difference between a demo and the product described in section 1.
+
+---
+
+## 7. Status after cleanup
+
+Sections 3-5 describe the repository **before** the cleanup (checkpoint commit `3d5fe94`). The cleanup then removed the dead backend layer, Redis/Valkey, Garage/MinIO, the unused frontend code and tooling, and the stale docs listed in section 5, and fixed the Makefile, Docker and CI setup. The stack is now web + api + postgres.
+
+For what is still open, see [TODO.md](TODO.md). For whether the checks pass, run `make check`.
