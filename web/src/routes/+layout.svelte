@@ -19,6 +19,10 @@
     if (savedDarkMode === 'true') {
       document.documentElement.classList.add('dark');
     }
+    // vite-plugin-pwa cannot inject its register script into SvelteKit's HTML
+    if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
   });
 </script>
 

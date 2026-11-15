@@ -24,6 +24,7 @@ export default defineConfig({
 		VitePWA({
 
 			registerType: 'autoUpdate',
+			injectRegister: false, // registered in src/routes/+layout.svelte
 			includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
 			manifest: {
 				name: 'Split Bill',
