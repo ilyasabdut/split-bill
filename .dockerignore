@@ -52,7 +52,6 @@ Dockerfile*
 .superdesign/
 scripts/
 docs/
-lightpanda
 dark-screenshots.js
 visual-qa.js
 session-*.md

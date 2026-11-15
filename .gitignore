@@ -102,7 +102,6 @@ web/.svelte-kit/
 .env.local
 .env.*.local
 
-lightpanda
 
 
 # Screenshots (regenerated on demand)
