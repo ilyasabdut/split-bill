@@ -232,6 +232,21 @@
     if (amount < 0) return `-${symbol}${formatter.format(Math.abs(amount))}`;
     return `${symbol}${formatter.format(amount)}`;
   }
+
+  function getFoodIcon(itemName: string): string {
+    const icons: Record<string, string> = {
+      salmon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10Z"/></svg>`,
+      roll: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10Z"/></svg>`,
+      miso: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><path d="M4 6h16"/><path d="M4 6v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6"/><path d="M6 12h12"/><path d="M6 12v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-4"/></svg>`,
+      soup: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><path d="M4 6h16"/><path d="M4 6v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6"/><path d="M6 12h12"/><path d="M6 12v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-4"/></svg>`,
+      default: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10Z"/></svg>`
+    };
+
+    const lowerName = itemName.toLowerCase();
+    if (lowerName.includes('salmon') || lowerName.includes('roll')) return icons.salmon;
+    if (lowerName.includes('miso') || lowerName.includes('soup')) return icons.miso;
+    return icons.default;
+  }
 </script>
 
 <svelte:head>
@@ -374,10 +389,9 @@
                   {#if index < 2}
                     <div class="p-3 flex items-center justify-between">
                       <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
+                        <span class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                          <!-- getFoodIcon returns static SVG literals only; item.name is just matched, never injected -->
+                          {@html getFoodIcon(item.name)}
                         </span>
                         <div>
                           <p class="text-sm font-medium text-text-primary">{item.name}</p>
