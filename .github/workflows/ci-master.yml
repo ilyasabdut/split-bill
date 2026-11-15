@@ -74,10 +74,6 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: registry.ilyasabdut.loseyourip.com/split-bill-web:latest
-          # Baked into the static bundle; VITE_API_KEY must equal the API's API_KEY
-          build-args: |
-            VITE_FASTAPI_API_URL=${{ vars.VITE_FASTAPI_API_URL }}
-            VITE_API_KEY=${{ secrets.VITE_API_KEY }}
 
       - name: Build and Push FastAPI API Image
         uses: docker/build-push-action@v5

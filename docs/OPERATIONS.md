@@ -26,7 +26,7 @@ make down    # stop
 
 Runtime (`.env`, read by compose): `API_KEY`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL_NAME`, `APP_BASE_URL`, `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`.
 
-Build time (baked into the web bundle): `VITE_FASTAPI_API_URL`, `VITE_API_KEY`. In CI these come from the repository variable `VITE_FASTAPI_API_URL` and the secret `VITE_API_KEY`; locally compose passes `API_KEY` as `VITE_API_KEY`.
+The web image needs no build-time config: the app calls `/api` on its own origin and nginx in the web container (`docker/nginx.conf.template`) proxies it to the api container, adding `API_KEY` from the environment.
 
 See `.env.example` for the list.
 
@@ -62,7 +62,7 @@ gunzip -c splitbill-YYYYMMDD.sql.gz | docker exec -i split-bill-postgres psql -U
 - [ ] Strong `API_KEY` (32+ random chars) and non-default `POSTGRES_PASSWORD`
 - [ ] No secrets in logs
 
-Note: `VITE_API_KEY` ships in the public web bundle, so the API key is not a secret from users. See the identity/auth item in [TODO.md](TODO.md).
+Note: the API key no longer ships in the web bundle, but `/api` on the web origin is open to anyone who can reach the site. Per-device identity and rate limits are the only controls. See the identity/auth item in [TODO.md](TODO.md).
 
 ## Related Documentation
 

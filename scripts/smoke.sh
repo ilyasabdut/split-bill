@@ -29,7 +29,6 @@ WEB_IMAGE=${PROJECT}-web
 API_PORT=${API_PORT}
 WEB_PORT=${WEB_PORT}
 POSTGRES_PORT=${SMOKE_POSTGRES_PORT:-25432}
-VITE_FASTAPI_API_URL=${API}
 APP_BASE_URL=${WEB}
 ENV
 
@@ -92,5 +91,9 @@ status 200 GET "$WEB/"
 grep -q '<div' <<<"$BODY" && grep -q '_app/' <<<"$BODY" || fail "web root is not the app shell"
 pass "web root contains the app shell"
 status 200 GET "$WEB/split/$ID"
+
+# The browser only talks to the web origin: nginx proxies /api and adds the API key
+status 200 GET "$WEB/api/health/"
+status 200 POST "$WEB/api/splits/calculate" "${JSON[@]}" -H "X-Device-Id: $OTHER" -d '{"person_names":["A","B"],"client_results":{"A":{"total":1},"B":{"total":2}}}'
 
 echo "== all smoke checks passed"

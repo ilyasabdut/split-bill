@@ -11,5 +11,3 @@ What is still open after the 2026-11 cleanup. Background and evidence for each i
 - [ ] **Multi-device sync.** Splits and history live in one browser's IndexedDB.
 
 ## Infra follow-ups
-
-- [ ] CI web image build needs a repository variable `VITE_FASTAPI_API_URL` and a secret `VITE_API_KEY` in the `master` environment.

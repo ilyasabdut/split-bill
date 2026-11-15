@@ -33,7 +33,7 @@ Local dev servers instead of containers: `make install`, `make infra-up` (postgr
 | `APP_BASE_URL` | api (share links) |
 | `DATABASE_URL` | api |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | postgres container (optional) |
-| `VITE_FASTAPI_API_URL`, `VITE_API_KEY` | web, at build time |
+| `VITE_API_KEY` | web dev server only (production: nginx in the web container adds `API_KEY`) |
 
 ## Tests
 

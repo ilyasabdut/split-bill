@@ -1,0 +1,19 @@
+# Serves the static SvelteKit build and proxies /api to the API container.
+# The API key is added here, so it never ships in the browser bundle.
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    client_max_body_size 10m;  # matches the API's upload limit
+
+    location /api/ {
+        proxy_pass http://api:18000/;
+        proxy_set_header Authorization "Bearer ${API_KEY}";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 120s;  # receipt OCR can be slow
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

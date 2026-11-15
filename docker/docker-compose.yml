@@ -1,16 +1,18 @@
+# Fixed project name: without it compose names the project after this folder ("docker"),
+# and `up --remove-orphans` would touch any other stack that did the same.
+name: split-bill
+
 services:
   web:
     build:
       context: ..
       dockerfile: docker/Dockerfile.web
-      args:
-        # Baked into the static bundle at build time
-        - VITE_FASTAPI_API_URL=${VITE_FASTAPI_API_URL:-http://localhost:18000}
-        - VITE_API_KEY=${API_KEY}
     image: ${WEB_IMAGE:-registry.ilyasabdut.loseyourip.com/split-bill-web:latest}
     container_name: ${CONTAINER_PREFIX:-split-bill}-web
     ports:
-      - "${WEB_PORT:-15173}:3000"
+      - "${WEB_PORT:-15173}:80"
+    environment:
+      - API_KEY=${API_KEY}
     restart: unless-stopped
     depends_on:
       - api
@@ -42,7 +44,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-splitbill}
     ports:
-      - "${POSTGRES_PORT:-15432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"  # host-only: never expose the database publicly
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
