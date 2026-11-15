@@ -20,9 +20,9 @@
 		{ name: 'Ava', color: 'indigo' },
 		{ name: 'Ben', color: 'emerald' }
 	]);
-	let billAmount = $state(740000);
+	let billAmount = $state(0);
 	let tax = $state(0);
-	let tip = $state(50000);
+	let tip = $state(0);
 	let calculating = $state(false);
 	let selectedTip = $state<number | 'custom'>(20);
 	let roundingMode = $state<'down' | 'exact' | 'up'>('exact');
@@ -52,17 +52,14 @@
 		const receiptData = receiptStore.getReceipt() as import('$lib/types/receipt').ReceiptData | null;
 		if (receiptData && receiptData.items && receiptData.items.length > 0) {
 			// Pre-populate the bill amount with the receipt total
-			billAmount = (receiptData.total || 0) * 1000; // Convert to IDR if needed
-
-			// If tax was detected, add it
-			if (receiptData.tax && receiptData.tax > 0) {
-				tax = receiptData.tax * 1000;
-			}
+			// The receipt total already includes tax; the bill amount here is before tax
+			tax = receiptData.tax && receiptData.tax > 0 ? receiptData.tax : 0;
+			billAmount = (receiptData.total || 0) - tax;
 
 			// Populate receipt items for "By Item" split
 			receiptItems = receiptData.items.map(item => ({
 				name: item.name || 'Item',
-				price: (item.price || 0) * 1000,
+				price: item.price || 0,
 				assignedTo: []
 			}));
 		}

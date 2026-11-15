@@ -1,15 +1,29 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import { getIndexedDB, STORES } from '$lib/services/offline/indexeddb';
 
 	const groupId = $derived($page.url.searchParams.get('group'));
-	const groupName = $derived(groupId ? 'Roomies' : 'Split Bill');
 
-	// ponytail: placeholder members until groups carry real balances
-	let members = $state([
-		{ id: '2', name: 'Sarah', email: 'sarah@email.com', color: 'emerald', balance: -85000, selected: true },
-		{ id: '3', name: 'Mike', email: 'mike@email.com', color: 'rose', balance: -40000, selected: true },
-		{ id: '4', name: 'Alex', email: 'alex@email.com', color: 'amber', balance: 0, selected: false },
-	]);
+	type Member = { id: string; name: string; email: string; color: string; balance: number; selected: boolean };
+	let members = $state<Member[]>([]);
+	const colors = ['emerald', 'rose', 'amber', 'sky', 'violet'];
+
+	// Who still owes: everyone but the payer (first person) on this device's unpaid splits
+	onMount(async () => {
+		const db = await getIndexedDB();
+		const owed = new Map<string, number>();
+		for (const split of await db.getAll<any>(STORES.SPLITS)) {
+			const names = Object.keys(split.results || {});
+			for (const name of names.slice(1)) {
+				if (split.payments?.[name] === 'paid') continue;
+				owed.set(name, (owed.get(name) || 0) + (split.results[name]?.total || 0));
+			}
+		}
+		members = [...owed].filter(([, amount]) => amount > 0).map(([name, amount], i) => ({
+			id: name, name, email: '', color: colors[i % colors.length], balance: -amount, selected: true
+		}));
+	});
 
 	let customMessage = $state('');
 	let copied = $state(false);
@@ -18,7 +32,7 @@
 	const totalAmount = $derived(selectedMembers.reduce((sum, m) => sum + Math.abs(m.balance), 0));
 	const reminderText = $derived(
 		[
-			`Hi! A reminder about our split in "${groupName}":`,
+			'Hi! A reminder about our split bills:',
 			...selectedMembers.map(m => `${m.name}: ${formatCurrency(Math.abs(m.balance))}`),
 			customMessage.trim(),
 			'Please settle up when you get a chance!'
@@ -129,7 +143,6 @@
 							</div>
 							<div class="flex-1 min-w-0">
 								<p class="text-sm font-bold text-text-primary">{member.name}</p>
-								<p class="text-xs text-text-secondary truncate">{member.email}</p>
 							</div>
 							{#if member.balance < 0}
 								<div class="text-right">
@@ -145,6 +158,8 @@
 								<span class="text-xs font-medium text-text-tertiary">Settled</span>
 							{/if}
 						</button>
+					{:else}
+						<p class="p-4 text-sm text-text-secondary">Nobody owes you right now.</p>
 					{/each}
 				</div>
 			</section>

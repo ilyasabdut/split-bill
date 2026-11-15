@@ -18,11 +18,7 @@
 		message: string;
 	}
 
-	let items = $state<ReceiptItem[]>([
-		{ id: 1, name: 'Double Cheeseburger', price: 14.50 },
-		{ id: 2, name: 'Sweet Potato Fries', price: 6.00 },
-		{ id: 3, name: 'Vanilla Shake', price: 5.50 },
-	]);
+	let items = $state<ReceiptItem[]>([]);
 
 	let taxDetected = $state(10);
 	let taxEnabled = $state(true);
@@ -74,6 +70,15 @@
 			return { valid: false, error: 'Price exceeds maximum allowed' };
 		}
 		return { valid: true };
+	}
+
+	function formatCurrency(amount: number): string {
+		return new Intl.NumberFormat('id-ID', {
+			style: 'currency',
+			currency: 'IDR',
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0
+		}).format(amount);
 	}
 
 	async function handleFileUpload(event: Event) {
@@ -258,12 +263,12 @@
 				const total = items.reduce((sum, item) => sum + item.price, 0);
 				await navigator.share({
 					title: 'Split Bill Receipt',
-					text: `Total: $${total.toFixed(2)} - ${items.length} items`,
+					text: `Total: ${formatCurrency(total)} - ${items.length} items`,
 					url: window.location.href
 				});
 			} else {
 				// Fallback: copy to clipboard
-				const text = items.map(item => `${item.name}: $${item.price.toFixed(2)}`).join('\n');
+				const text = items.map(item => `${item.name}: ${formatCurrency(item.price)}`).join('\n');
 				await navigator.clipboard.writeText(text);
 				alert('Receipt copied to clipboard!');
 			}
@@ -504,7 +509,7 @@
 								{/if}
 							</div>
 							<div class="flex items-center gap-1">
-								<span class="text-caption text-text-tertiary">$</span>
+								<span class="text-caption text-text-tertiary">Rp</span>
 								<input
 									type="number"
 									value={item.price === 0 ? '' : item.price}
@@ -535,7 +540,7 @@
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
 							Add Item
 						</button>
-						<span class="text-caption font-medium text-text-tertiary">Subtotal: ${subtotal.toFixed(2)}</span>
+						<span class="text-caption font-medium text-text-tertiary">Subtotal: {formatCurrency(subtotal)}</span>
 					</div>
 				</div>
 
@@ -574,7 +579,7 @@
 						<span class="text-label font-semibold text-text-secondary">Total Amount</span>
 						<div class="flex items-baseline gap-1">
 							<span class="text-caption font-bold text-text-tertiary">USD</span>
-							<span class="text-subheading font-bold text-text-primary tabular-nums">${totalAmount.toFixed(2)}</span>
+							<span class="text-subheading font-bold text-text-primary tabular-nums">{formatCurrency(totalAmount)}</span>
 						</div>
 					</div>
 				</div>

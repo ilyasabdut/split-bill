@@ -41,8 +41,15 @@ export class CurrencyService {
     name: string;
     symbol: string;
   }>> {
-    const apiClient = getApiClient();
-    return apiClient.get('/currency/supported');
+    // ponytail: fixed list matching CurrencyCode; the API has no such endpoint
+    return [
+      { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp' },
+      { code: 'USD', name: 'US Dollar', symbol: '$' },
+      { code: 'EUR', name: 'Euro', symbol: '€' },
+      { code: 'GBP', name: 'British Pound', symbol: '£' },
+      { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
+      { code: 'NZD', name: 'New Zealand Dollar', symbol: '$' }
+    ];
   }
 }
 

@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { getApiClient } from '$lib/services/api/client';
 
 export type CurrencyCode = 'IDR' | 'USD' | 'EUR' | 'GBP' | 'JPY' | 'NZD';
 
@@ -98,18 +99,10 @@ function createCurrencyStore() {
     async init() {
       update(s => ({ ...s, loading: true }));
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-        const response = await fetch('/api/currency/rates?from_currency=USD&to_currency=IDR', { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!response.ok) throw new Error('Failed to load currency rates');
-
-        const data = await response.json();
-        update(s => ({
-          ...s,
-          rates: data.rates || {},
-          loading: false
-        }));
+        const data = await getApiClient().get<{ rate: number }>(
+          '/currency/rates?from_currency=USD&to_currency=IDR'
+        );
+        update(s => ({ ...s, exchangeRate: data.rate, loading: false }));
       } catch (err) {
         const error = err instanceof Error ? err.message : 'Unknown error';
         update(s => ({ ...s, error, loading: false }));
