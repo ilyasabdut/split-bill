@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$lib/stores/groups';
+	import { getApiClient } from '$lib/services/api/client';
 
 	interface Member {
 		id: string;
@@ -8,9 +9,6 @@
 		email: string;
 		color: 'indigo' | 'emerald' | 'rose' | 'amber' | 'sky' | 'violet' | 'slate';
 	}
-
-	// ponytail: no identity yet, everyone is user 1; replace when the auth/anonymous-link decision lands
-	const PLACEHOLDER_USER_ID = 1;
 
 	let groupName = $state('');
 	let groupDescription = $state('');
@@ -83,25 +81,18 @@
 		isCreating = true;
 
 		try {
-			const response = await fetch('/api/groups', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: groupName.trim(), owner_id: PLACEHOLDER_USER_ID })
-			});
-
-			if (!response.ok) {
-				const err = await response.json().catch(() => ({ detail: 'Failed to create group' }));
-				throw new Error(err.detail || 'Failed to create group');
-			}
-
-			const group = await response.json();
+			// owner is whoever this device is; the server reads it from X-Device-Id
+			const api = getApiClient();
+			const group = await api.post<{ id: number; name: string; created_at: string }>(
+				'/groups/',
+				{ name: groupName.trim() }
+			);
 
 			const memberAdds = members
 				.filter(m => m.name.trim() && m.name !== 'You')
-				.map(m => fetch(`/api/groups/${group.id}/members`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ user_id: PLACEHOLDER_USER_ID })
+				.map(m => api.post(`/groups/${group.id}/members`, {
+					name: m.name.trim(),
+					email: m.email.trim() || null
 				}).catch(() => null));
 
 			await Promise.all(memberAdds);

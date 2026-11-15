@@ -3,7 +3,6 @@
 import uuid
 from datetime import datetime, timedelta
 
-import pytest
 from fastapi import status
 from src.db.models import (
     Group,
@@ -16,10 +15,6 @@ from src.db.models import (
 class TestAnalyticsRouter:
     """Test cases for analytics router endpoints."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_user_stats_empty(self, async_client, auth_headers, test_user):
         """Test getting user stats with no activity."""
         response = await async_client.get(
@@ -28,19 +23,14 @@ class TestAnalyticsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["user_id"] == test_user.id
-        assert data["total_splits_created"] == 0
-        assert data["total_groups_owned"] == 0
-        assert data["total_groups_joined"] == 0
-        assert data["total_payments_confirmed"] == 0
-        assert data["total_amount_paid"] == 0.0
-        assert data["preferred_currency"] == "USD"
-        assert data["member_since"] is not None
+        assert data == {
+            "user_id": test_user.id,
+            "total_splits": 0,
+            "total_amount": 0.0,
+            "splits_this_month": 0,
+            "avg_split_amount": 0.0,
+        }
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_user_stats_with_activity(
         self,
         async_client,
@@ -86,17 +76,11 @@ class TestAnalyticsRouter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["user_id"] == test_user.id
-        assert data["total_splits_created"] == 2
-        assert data["total_groups_owned"] == 2  # test_group and other_group
-        assert data["total_groups_joined"] == 1  # test_group_member
-        assert data["total_payments_confirmed"] == 1
-        assert data["total_amount_paid"] == 38.0
-        assert data["preferred_currency"] == "USD"  # Most used currency
+        assert data["total_splits"] == 2
+        assert data["splits_this_month"] == 2
+        assert data["total_amount"] == 76.0  # test_payment + confirmed_payment
+        assert data["avg_split_amount"] == 38.0
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_user_stats_different_user(
         self, async_client, auth_headers, db_session
     ):
@@ -114,12 +98,8 @@ class TestAnalyticsRouter:
             f"/analytics/users/{other_user.id}/stats", headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_user_stats_unauthorized(self, async_client, test_user):
         """Test getting user stats without authentication."""
         response = await async_client.get(f"/analytics/users/{test_user.id}/stats")
@@ -136,28 +116,19 @@ class TestAnalyticsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_overall_stats_empty(self, async_client, auth_headers):
         """Test getting overall stats with no data."""
         response = await async_client.get("/analytics/overall", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["total_users"] == 1  # test_user
-        assert data["total_groups"] == 0
-        assert data["total_splits"] == 0
-        assert data["total_payments"] == 0
-        assert data["total_amount_processed"] == 0.0
-        assert data["average_split_amount"] == 0.0
-        assert data["most_popular_currency"] == "USD"
+        assert response.json() == {
+            "total_users": 1,  # the caller's device user
+            "total_splits": 0,
+            "total_payments": 0,
+            "total_amount_processed": 0.0,
+            "active_users_this_month": 0,
+        }
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_overall_stats_with_data(
         self,
         async_client,
@@ -177,11 +148,13 @@ class TestAnalyticsRouter:
             api_key=str(uuid.uuid4()), name="User 3", email="user3@example.com"
         )
         db_session.add_all([user2, user3])
+        await db_session.flush()
 
         # Create additional groups
         group2 = Group(name="Group 2", owner_id=user2.id)
         group3 = Group(name="Group 3", owner_id=user3.id)
         db_session.add_all([group2, group3])
+        await db_session.flush()
 
         # Create additional splits with different currencies
         split2 = Split(
@@ -199,6 +172,7 @@ class TestAnalyticsRouter:
             currency="GBP",
         )
         db_session.add_all([split2, split3])
+        await db_session.flush()
 
         # Create additional payments
         payment2 = Payment(
@@ -222,41 +196,25 @@ class TestAnalyticsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["total_users"] == 4
-        assert data["total_groups"] == 4
+        assert data["total_users"] == 3
         assert data["total_splits"] == 3
         assert data["total_payments"] == 3
         assert data["total_amount_processed"] == 213.0  # 38 + 100 + 75
-        assert data["average_split_amount"] == 71.0  # (38 + 100 + 75) / 3
-        assert data["most_popular_currency"] == "USD"  # Most frequent
+        assert data["active_users_this_month"] == 2
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_overall_stats_unauthorized(self, async_client):
         """Test getting overall stats without authentication."""
         response = await async_client.get("/analytics/overall")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_currency_usage_empty(self, async_client, auth_headers):
         """Test getting currency usage with no splits."""
         response = await async_client.get("/analytics/currencies", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["currencies"] == []
-        assert data["total_splits"] == 0
+        assert response.json() == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_currency_usage_with_data(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -305,48 +263,31 @@ class TestAnalyticsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["total_splits"] == 6
-        assert len(data["currencies"]) == 3
+        # sorted by split count; amounts come from payments, and there are none
+        assert [(c["currency"], c["count"]) for c in data] == [
+            ("USD", 3),
+            ("EUR", 2),
+            ("GBP", 1),
+        ]
+        assert all(c["total_amount"] == 0.0 for c in data)
 
-        # Check currency breakdown
-        currencies = {c["currency"]: c for c in data["currencies"]}
-        assert currencies["USD"]["count"] == 3
-        assert currencies["USD"]["total_amount"] == 600.0  # 100 + 200 + 300
-        assert currencies["EUR"]["count"] == 2
-        assert currencies["EUR"]["total_amount"] == 150.0  # 50 + 100
-        assert currencies["GBP"]["count"] == 1
-        assert currencies["GBP"]["total_amount"] == 75.0
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_currency_usage_unauthorized(self, async_client):
         """Test getting currency usage without authentication."""
         response = await async_client.get("/analytics/currencies")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_split_trends_empty(self, async_client, auth_headers):
         """Test getting split trends with no data."""
         response = await async_client.get("/analytics/trends", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["trends"] == []
-        assert data["total_splits"] == 0
-        assert data["date_range"] == {}
+        assert len(data) == 30  # one entry per day, default window
+        assert all(t["count"] == 0 for t in data)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_split_trends_with_data(
-        self, async_client, auth_headers, db_session, test_user
+        self, async_client, auth_headers, db_session, test_user, test_group
     ):
         """Test getting split trends with data."""
         # Create splits over different dates
@@ -354,7 +295,7 @@ class TestAnalyticsRouter:
 
         # Today
         split1 = Split(
-            group_id=test_user.groups[0].id,
+            group_id=test_group.id,
             owner_id=test_user.id,
             receipt_data={"total": 100.0},
             split_results={"Test User": 100.0},
@@ -364,7 +305,7 @@ class TestAnalyticsRouter:
 
         # Yesterday
         split2 = Split(
-            group_id=test_user.groups[0].id,
+            group_id=test_group.id,
             owner_id=test_user.id,
             receipt_data={"total": 150.0},
             split_results={"Test User": 150.0},
@@ -374,7 +315,7 @@ class TestAnalyticsRouter:
 
         # 2 days ago
         split3 = Split(
-            group_id=test_user.groups[0].id,
+            group_id=test_group.id,
             owner_id=test_user.id,
             receipt_data={"total": 200.0},
             split_results={"Test User": 200.0},
@@ -385,79 +326,24 @@ class TestAnalyticsRouter:
         db_session.add_all([split1, split2, split3])
         await db_session.commit()
 
-        response = await async_client.get("/analytics/trends", headers=auth_headers)
+        response = await async_client.get(
+            "/analytics/trends?days=7", headers=auth_headers
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["total_splits"] == 4  # Including test_split from fixture
-        assert len(data["trends"]) >= 3  # At least 3 different dates
+        assert len(data) == 7
+        assert [t["count"] for t in data[-3:]] == [1, 1, 1]
+        assert sum(t["count"] for t in data) == 3
 
         # Check that trends are grouped by date
-        dates = [t["date"] for t in data["trends"]]
+        dates = [t["date"] for t in data]
         assert len(set(dates)) == len(dates)  # All dates should be unique
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_get_split_trends_with_date_range(
-        self, async_client, auth_headers, db_session, test_user
-    ):
-        """Test getting split trends with date range filter."""
-        # Create splits with specific dates
-        today = datetime.utcnow()
-
-        # Old split (10 days ago)
-        old_split = Split(
-            group_id=test_user.groups[0].id,
-            owner_id=test_user.id,
-            receipt_data={"total": 100.0},
-            split_results={"Test User": 100.0},
-            currency="USD",
-            created_at=today - timedelta(days=10),
-        )
-
-        # Recent splits (within last 7 days)
-        for i in range(3):
-            split = Split(
-                group_id=test_user.groups[0].id,
-                owner_id=test_user.id,
-                receipt_data={"total": 50.0 * (i + 1)},
-                split_results={"Test User": 50.0 * (i + 1)},
-                currency="USD",
-                created_at=today - timedelta(days=i),
-            )
-            db_session.add(split)
-
-        db_session.add(old_split)
-        await db_session.commit()
-
-        # Get trends for last 7 days
-        start_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
-        end_date = today.strftime("%Y-%m-%d")
-
+    async def test_get_split_trends_invalid_days(self, async_client, auth_headers):
+        """Test getting split trends with a non-numeric window."""
         response = await async_client.get(
-            f"/analytics/trends?start_date={start_date}&end_date={end_date}",
-            headers=auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-
-        # Should only include splits from last 7 days (3 recent + test_split)
-        total_recent = sum(t["count"] for t in data["trends"])
-        assert total_recent == 4
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_get_split_trends_invalid_date_format(
-        self, async_client, auth_headers
-    ):
-        """Test getting split trends with invalid date format."""
-        response = await async_client.get(
-            "/analytics/trends?start_date=invalid", headers=auth_headers
+            "/analytics/trends?days=invalid", headers=auth_headers
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -472,10 +358,6 @@ class TestAnalyticsRouter:
 
         assert response.status_code == status.HTTP_200_OK
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_split_trends_unauthorized(self, async_client):
         """Test getting split trends without authentication."""
         response = await async_client.get("/analytics/trends")

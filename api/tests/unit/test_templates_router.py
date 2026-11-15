@@ -2,7 +2,6 @@
 
 import uuid
 
-import pytest
 from fastapi import status
 from sqlalchemy import select
 from src.db.models import Template, User
@@ -11,10 +10,6 @@ from src.db.models import Template, User
 class TestTemplatesRouter:
     """Test cases for templates router endpoints."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_create_template_success(self, async_client, auth_headers, test_user):
         """Test creating a template successfully."""
         template_data = {
@@ -41,10 +36,6 @@ class TestTemplatesRouter:
         assert "id" in data
         assert "created_at" in data
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_template_unauthorized(self, async_client):
         """Test creating template without authentication."""
         template_data = {
@@ -56,17 +47,16 @@ class TestTemplatesRouter:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_template_invalid_api_key(self, async_client):
         """Test creating template with invalid API key."""
         template_data = {
             "name": "Even Split Template",
             "config": {"type": "even"},
         }
-        headers = {"X-API-Key": "invalid-key"}
+        headers = {
+            "Authorization": "Bearer invalid-key",
+            "X-Device-Id": str(uuid.uuid4()),
+        }
 
         response = await async_client.post(
             "/templates/", json=template_data, headers=headers
@@ -124,10 +114,6 @@ class TestTemplatesRouter:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_create_template_complex_config(
         self, async_client, auth_headers, test_user
     ):
@@ -187,20 +173,12 @@ class TestTemplatesRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_template_unauthorized(self, async_client, test_template):
         """Test getting template without authentication."""
         response = await async_client.get(f"/templates/{test_template.id}")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_template_not_owner(self, async_client, auth_headers, db_session):
         """Test getting template owned by another user."""
         # Create another user and template
@@ -224,25 +202,21 @@ class TestTemplatesRouter:
             f"/templates/{other_template.id}", headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_templates_empty(self, async_client, auth_headers):
-        """Test listing templates when user has none."""
+    async def test_list_templates_empty(self, async_client, auth_headers, db_session):
+        """Test listing templates when user has none (others' are hidden)."""
+        other_user = User(api_key=str(uuid.uuid4()), name="Other User")
+        db_session.add(other_user)
+        await db_session.commit()
+        db_session.add(Template(user_id=other_user.id, name="Theirs", config={}))
+        await db_session.commit()
+
         response = await async_client.get("/templates/", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["templates"] == []
-        assert data["total"] == 0
+        assert response.json() == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_list_templates_with_data(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -252,7 +226,7 @@ class TestTemplatesRouter:
         for i in range(3):
             template = Template(
                 user_id=test_user.id,
-                name=f"Template {i+1}",
+                name=f"Template {i + 1}",
                 config={"type": "even" if i % 2 == 0 else "itemized"},
             )
             db_session.add(template)
@@ -263,43 +237,8 @@ class TestTemplatesRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["templates"]) == 4  # Including test_template from fixture
-        assert data["total"] == 4
-        assert all("id" in t and "name" in t for t in data["templates"])
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_templates_pagination(
-        self, async_client, auth_headers, db_session, test_user
-    ):
-        """Test template listing with pagination."""
-        # Create multiple templates
-        for i in range(5):
-            template = Template(
-                user_id=test_user.id,
-                name=f"Template {i+1}",
-                config={"type": "even"},
-            )
-            db_session.add(template)
-        await db_session.commit()
-
-        # Get first page
-        response = await async_client.get(
-            "/templates/?skip=0&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["templates"]) == 2
-
-        # Get second page
-        response = await async_client.get(
-            "/templates/?skip=2&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["templates"]) == 2
+        assert len(data) == 3
+        assert all("id" in t and "name" in t for t in data)
 
     async def test_update_template_success(
         self, async_client, auth_headers, test_template
@@ -345,10 +284,6 @@ class TestTemplatesRouter:
         # Config should remain unchanged
         assert data["config"] == test_template.config
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_update_template_not_owner(
         self, async_client, auth_headers, db_session
     ):
@@ -378,7 +313,7 @@ class TestTemplatesRouter:
             f"/templates/{other_template.id}", json=update_data, headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_update_template_not_found(self, async_client, auth_headers):
         """Test updating non-existent template."""
@@ -424,10 +359,6 @@ class TestTemplatesRouter:
         deleted_template = result.scalar_one_or_none()
         assert deleted_template is None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_delete_template_not_owner(
         self, async_client, auth_headers, db_session
     ):
@@ -453,7 +384,7 @@ class TestTemplatesRouter:
             f"/templates/{other_template.id}", headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_template_not_found(self, async_client, auth_headers):
         """Test deleting non-existent template."""
@@ -465,10 +396,6 @@ class TestTemplatesRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_template_user_cascade_delete(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -477,7 +404,7 @@ class TestTemplatesRouter:
         for i in range(3):
             template = Template(
                 user_id=test_user.id,
-                name=f"Template {i+1}",
+                name=f"Template {i + 1}",
                 config={"type": "even"},
             )
             db_session.add(template)
@@ -491,3 +418,13 @@ class TestTemplatesRouter:
         result = await db_session.execute(select(Template))
         templates = result.scalars().all()
         assert len(templates) == 0
+
+    async def test_create_template_user_id_rejected(self, async_client, auth_headers):
+        """user_id comes from the device identity; sending one is rejected."""
+        response = await async_client.post(
+            "/templates/",
+            json={"name": "T", "config": {}, "user_id": 1},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

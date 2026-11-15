@@ -1,3 +1,4 @@
+import { getApiClient } from '$lib/services/api/client';
 import { writable, derived, get } from 'svelte/store';
 
 export interface SpendingData {
@@ -51,13 +52,7 @@ function createAnalyticsStore() {
     async loadAnalytics() {
       update(s => ({ ...s, loading: true }));
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-        const response = await fetch('/api/analytics/overall', { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!response.ok) throw new Error('Failed to load analytics');
-
-        const data = await response.json();
+        const data = await getApiClient().get<{ total_amount_processed?: number }>('/analytics/overall');
         update(s => ({
           ...s,
           spending: [],

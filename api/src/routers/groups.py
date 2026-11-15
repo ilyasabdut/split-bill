@@ -4,18 +4,43 @@ This module handles group management CRUD operations.
 """
 
 import logging
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
-from sqlalchemy import select
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_db
+from src.db.deps import get_current_user, get_db
 from src.db.models import Group, GroupMember, User
 
 logger = logging.getLogger(__name__)
 
 groups_router = APIRouter(prefix="/groups", tags=["groups"])
+
+
+def _visible_to(user: User):
+    """Groups the user owns or is a member of."""
+    member_of = select(GroupMember.group_id).where(GroupMember.user_id == user.id)
+    return or_(Group.owner_id == user.id, Group.id.in_(member_of))
+
+
+async def _get_group(db: AsyncSession, group_id: int, user: User, owner_only=False):
+    """404 unless visible to the user; 403 if visible but owner_only and not owner."""
+    group = await db.scalar(
+        select(Group).where(Group.id == group_id, _visible_to(user))
+    )
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Group with ID {group_id} not found",
+        )
+    if owner_only and group.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the group owner can do this",
+        )
+    return group
 
 
 # ============================================================================
@@ -26,8 +51,9 @@ groups_router = APIRouter(prefix="/groups", tags=["groups"])
 class GroupCreate(BaseModel):
     """Request model for creating a group."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., min_length=1, max_length=255, description="Group name")
-    owner_id: int = Field(..., description="Owner user ID")
 
 
 class GroupUpdate(BaseModel):
@@ -52,9 +78,16 @@ class GroupResponse(BaseModel):
 
 
 class GroupMemberAdd(BaseModel):
-    """Request model for adding a member to a group."""
+    """Request model for adding a member to a group.
 
-    user_id: int = Field(..., description="User ID to add")
+    People are added by name (and optional email): without accounts there is
+    no other user id to point at. Each becomes a User row with no device_id.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(..., min_length=1, max_length=255)
+    email: Optional[str] = Field(None, max_length=255)
 
 
 class GroupMemberResponse(BaseModel):
@@ -80,6 +113,7 @@ async def create_group(
     request: Request,
     group_data: GroupCreate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> GroupResponse:
     """Create a new group.
 
@@ -97,20 +131,7 @@ async def create_group(
     try:
         logger.info(f"Creating group: {group_data.name}")
 
-        # Verify owner exists
-        owner_result = await db.execute(
-            select(User).where(User.id == group_data.owner_id)
-        )
-        owner = owner_result.scalar_one_or_none()
-
-        if not owner:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {group_data.owner_id} not found",
-            )
-
-        # Create group
-        group = Group(name=group_data.name, owner_id=group_data.owner_id)
+        group = Group(name=group_data.name, owner_id=user.id)
         db.add(group)
         await db.commit()
         await db.refresh(group)
@@ -144,6 +165,7 @@ async def get_group(
     request: Request,
     group_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> GroupResponse:
     """Get a group by ID.
 
@@ -161,14 +183,7 @@ async def get_group(
     try:
         logger.info(f"Fetching group: {group_id}")
 
-        result = await db.execute(select(Group).where(Group.id == group_id))
-        group = result.scalar_one_or_none()
-
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Group with ID {group_id} not found",
-            )
+        group = await _get_group(db, group_id, user)
 
         # Count members
         member_count_result = await db.execute(
@@ -201,27 +216,22 @@ async def get_group(
 )
 async def list_groups(
     request: Request,
-    owner_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[GroupResponse]:
-    """List all groups, optionally filtered by owner.
+    """List the groups the current user owns or belongs to.
 
     Args:
         request: FastAPI request object
-        owner_id: Optional filter for owner ID
         db: Database session
 
     Returns:
         List of GroupResponse objects
     """
     try:
-        logger.info(f"Listing groups (owner_id filter: {owner_id})")
+        logger.info(f"Listing groups for user {user.id}")
 
-        query = select(Group)
-        if owner_id is not None:
-            query = query.where(Group.owner_id == owner_id)
-
-        result = await db.execute(query)
+        result = await db.execute(select(Group).where(_visible_to(user)))
         groups = result.scalars().all()
 
         response = []
@@ -262,6 +272,7 @@ async def update_group(
     group_id: int,
     group_data: GroupUpdate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> GroupResponse:
     """Update a group.
 
@@ -280,14 +291,7 @@ async def update_group(
     try:
         logger.info(f"Updating group: {group_id}")
 
-        result = await db.execute(select(Group).where(Group.id == group_id))
-        group = result.scalar_one_or_none()
-
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Group with ID {group_id} not found",
-            )
+        group = await _get_group(db, group_id, user, owner_only=True)
 
         if group_data.name is not None:
             group.name = group_data.name
@@ -328,6 +332,7 @@ async def delete_group(
     request: Request,
     group_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Delete a group.
 
@@ -342,14 +347,7 @@ async def delete_group(
     try:
         logger.info(f"Deleting group: {group_id}")
 
-        result = await db.execute(select(Group).where(Group.id == group_id))
-        group = result.scalar_one_or_none()
-
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Group with ID {group_id} not found",
-            )
+        group = await _get_group(db, group_id, user, owner_only=True)
 
         await db.delete(group)
         await db.commit()
@@ -377,6 +375,7 @@ async def add_group_member(
     group_id: int,
     member_data: GroupMemberAdd,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> GroupMemberResponse:
     """Add a member to a group.
 
@@ -393,55 +392,48 @@ async def add_group_member(
         HTTPException: If group or user not found (404), or already member (400)
     """
     try:
-        logger.info(f"Adding member {member_data.user_id} to group {group_id}")
+        logger.info(f"Adding member to group {group_id}")
 
-        # Verify group exists
-        group_result = await db.execute(select(Group).where(Group.id == group_id))
-        group = group_result.scalar_one_or_none()
+        await _get_group(db, group_id, user, owner_only=True)
 
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Group with ID {group_id} not found",
+        # Same email = same person (email is unique on users); never a device user
+        person = None
+        if member_data.email:
+            person = await db.scalar(
+                select(User).where(
+                    User.email == member_data.email, User.device_id.is_(None)
+                )
             )
-
-        # Verify user exists
-        user_result = await db.execute(
-            select(User).where(User.id == member_data.user_id)
-        )
-        user = user_result.scalar_one_or_none()
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {member_data.user_id} not found",
+        if person is None:
+            person = User(
+                name=member_data.name,
+                email=member_data.email,
+                api_key=uuid.uuid4().hex,
             )
+            db.add(person)
+            await db.flush()
 
-        # Check if already a member
-        existing_result = await db.execute(
+        existing = await db.scalar(
             select(GroupMember).where(
                 GroupMember.group_id == group_id,
-                GroupMember.user_id == member_data.user_id,
+                GroupMember.user_id == person.id,
             )
         )
-        existing = existing_result.scalar_one_or_none()
-
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User is already a member of this group",
             )
 
-        # Add member
-        member = GroupMember(group_id=group_id, user_id=member_data.user_id)
+        member = GroupMember(group_id=group_id, user_id=person.id)
         db.add(member)
         await db.commit()
         await db.refresh(member)
 
         return GroupMemberResponse(
-            user_id=user.id,
-            user_name=user.name,
-            user_email=user.email,
+            user_id=person.id,
+            user_name=person.name,
+            user_email=person.email,
             joined_at=member.joined_at.isoformat(),
         )
 
@@ -465,6 +457,7 @@ async def list_group_members(
     request: Request,
     group_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[GroupMemberResponse]:
     """List all members of a group.
 
@@ -482,15 +475,7 @@ async def list_group_members(
     try:
         logger.info(f"Listing members for group: {group_id}")
 
-        # Verify group exists
-        group_result = await db.execute(select(Group).where(Group.id == group_id))
-        group = group_result.scalar_one_or_none()
-
-        if not group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Group with ID {group_id} not found",
-            )
+        await _get_group(db, group_id, user)
 
         # Get members
         result = await db.execute(
@@ -501,17 +486,14 @@ async def list_group_members(
         response = []
         for member in members:
             # Get user details
-            user_result = await db.execute(
-                select(User).where(User.id == member.user_id)
-            )
-            user = user_result.scalar_one_or_none()
+            person = await db.get(User, member.user_id)
 
-            if user:
+            if person:
                 response.append(
                     GroupMemberResponse(
-                        user_id=user.id,
-                        user_name=user.name,
-                        user_email=user.email,
+                        user_id=person.id,
+                        user_name=person.name,
+                        user_email=person.email,
                         joined_at=member.joined_at.isoformat(),
                     )
                 )
@@ -537,6 +519,7 @@ async def remove_group_member(
     group_id: int,
     user_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Remove a member from a group.
 
@@ -551,6 +534,8 @@ async def remove_group_member(
     """
     try:
         logger.info(f"Removing member {user_id} from group {group_id}")
+
+        await _get_group(db, group_id, user, owner_only=True)
 
         # Find membership
         result = await db.execute(

@@ -1,4 +1,4 @@
-import { getApiClient } from './client';
+import { getApiClient, getDeviceId } from './client';
 import { compressImage } from '$lib/utils/image';
 import type { UploadReceiptResponse } from '$lib/types/api';
 
@@ -54,6 +54,7 @@ export class ReceiptsService {
 
         xhr.open('POST', `${apiClient['config'].baseURL}/receipts/upload`);
         xhr.setRequestHeader('Authorization', `Bearer ${apiClient['config'].apiKey}`);
+        xhr.setRequestHeader('X-Device-Id', getDeviceId());
         xhr.send(formData);
       });
     }

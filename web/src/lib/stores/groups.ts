@@ -1,3 +1,4 @@
+import { getApiClient } from '$lib/services/api/client';
 import { writable, derived } from 'svelte/store';
 
 export interface GroupMember {
@@ -68,10 +69,7 @@ function createGroupsStore() {
     async loadGroups() {
       update(s => ({ ...s, loading: true }));
       try {
-        const response = await fetch('/api/groups');
-        if (!response.ok) throw new Error('Failed to load groups');
-
-        const data = await response.json();
+        const data = await getApiClient().get<any[]>('/groups/');
         update(s => ({
           ...s,
           groups: data || [],

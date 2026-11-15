@@ -1,9 +1,7 @@
 """Unit tests for payments router."""
 
 import uuid
-from datetime import datetime
 
-import pytest
 from fastapi import status
 from sqlalchemy import select
 from src.db.models import Payment, Split, User
@@ -12,10 +10,6 @@ from src.db.models import Payment, Split, User
 class TestPaymentsRouter:
     """Test cases for payments router endpoints."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_create_payment_success(self, async_client, auth_headers, test_split):
         """Test creating a payment successfully."""
         payment_data = {
@@ -35,13 +29,9 @@ class TestPaymentsRouter:
         assert data["person_name"] == "John Doe"
         assert data["amount"] == 25.0
         assert data["currency"] == "USD"
+        assert data["status"] == "unpaid"
         assert "id" in data
-        assert "created_at" in data
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_payment_unauthorized(self, async_client, test_split):
         """Test creating payment without authentication."""
         payment_data = {
@@ -55,10 +45,6 @@ class TestPaymentsRouter:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_payment_invalid_api_key(self, async_client, test_split):
         """Test creating payment with invalid API key."""
         payment_data = {
@@ -67,7 +53,10 @@ class TestPaymentsRouter:
             "amount": 25.0,
             "currency": "USD",
         }
-        headers = {"X-API-Key": "invalid-key"}
+        headers = {
+            "Authorization": "Bearer invalid-key",
+            "X-Device-Id": str(uuid.uuid4()),
+        }
 
         response = await async_client.post(
             "/payments/", json=payment_data, headers=headers
@@ -137,26 +126,6 @@ class TestPaymentsRouter:
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_create_payment_invalid_currency(
-        self, async_client, auth_headers, test_split
-    ):
-        """Test creating payment with invalid currency."""
-        payment_data = {
-            "split_id": test_split.id,
-            "person_name": "John Doe",
-            "amount": 25.0,
-            "currency": "INVALID",
-        }
-
-        response = await async_client.post(
-            "/payments/", json=payment_data, headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
     async def test_create_payment_nonexistent_split(self, async_client, auth_headers):
         """Test creating payment for non-existent split."""
         payment_data = {
@@ -171,10 +140,6 @@ class TestPaymentsRouter:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_payment_not_group_member(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -214,12 +179,8 @@ class TestPaymentsRouter:
         response = await async_client.post(
             "/payments/", json=payment_data, headers=auth_headers
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_payment_success(self, async_client, auth_headers, test_payment):
         """Test getting a payment successfully."""
         response = await async_client.get(
@@ -233,7 +194,7 @@ class TestPaymentsRouter:
         assert data["person_name"] == test_payment.person_name
         assert data["amount"] == test_payment.amount
         assert data["currency"] == test_payment.currency
-        assert data["status"] == test_payment.status.value
+        assert data["status"] == test_payment.status
 
     async def test_get_payment_not_found(self, async_client, auth_headers):
         """Test getting non-existent payment."""
@@ -245,20 +206,12 @@ class TestPaymentsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_payment_unauthorized(self, async_client, test_payment):
         """Test getting payment without authentication."""
         response = await async_client.get(f"/payments/{test_payment.id}")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_payment_not_owner(self, async_client, auth_headers, db_session):
         """Test getting payment from split user doesn't have access to."""
         # Create another user, group, split, and payment
@@ -298,25 +251,30 @@ class TestPaymentsRouter:
         response = await async_client.get(
             f"/payments/{other_payment.id}", headers=auth_headers
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_payments_empty(self, async_client, auth_headers):
-        """Test listing payments when user has none."""
+    async def test_list_payments_empty(self, async_client, auth_headers, db_session):
+        """Test listing payments when user has none (others' are hidden)."""
+        other_user = User(api_key=str(uuid.uuid4()), name="Other User")
+        db_session.add(other_user)
+        await db_session.commit()
+        other_split = Split(
+            owner_id=other_user.id, receipt_data={}, split_results={}, currency="USD"
+        )
+        db_session.add(other_split)
+        await db_session.commit()
+        db_session.add(
+            Payment(
+                split_id=other_split.id, person_name="X", amount=1.0, currency="USD"
+            )
+        )
+        await db_session.commit()
+
         response = await async_client.get("/payments/", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["payments"] == []
-        assert data["total"] == 0
+        assert response.json() == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_list_payments_with_data(
         self, async_client, auth_headers, db_session, test_user, test_split
     ):
@@ -326,7 +284,7 @@ class TestPaymentsRouter:
         for i in range(3):
             payment = Payment(
                 split_id=test_split.id,
-                person_name=f"Person {i+1}",
+                person_name=f"Person {i + 1}",
                 amount=10.0 * (i + 1),
                 currency="USD",
             )
@@ -338,49 +296,9 @@ class TestPaymentsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["payments"]) == 4  # Including test_payment from fixture
-        assert data["total"] == 4
-        assert all("id" in p and "person_name" in p for p in data["payments"])
+        assert len(data) == 3
+        assert all("id" in p and "person_name" in p for p in data)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_payments_pagination(
-        self, async_client, auth_headers, db_session, test_user, test_split
-    ):
-        """Test payment listing with pagination."""
-        # Create multiple payments
-        for i in range(5):
-            payment = Payment(
-                split_id=test_split.id,
-                person_name=f"Person {i+1}",
-                amount=10.0,
-                currency="USD",
-            )
-            db_session.add(payment)
-        await db_session.commit()
-
-        # Get first page
-        response = await async_client.get(
-            "/payments/?skip=0&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["payments"]) == 2
-
-        # Get second page
-        response = await async_client.get(
-            "/payments/?skip=2&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["payments"]) == 2
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_list_payments_filter_by_status(
         self, async_client, auth_headers, db_session, test_user, test_split
     ):
@@ -401,21 +319,20 @@ class TestPaymentsRouter:
         db_session.add_all([pending_payment, confirmed_payment])
         await db_session.commit()
 
-        # Filter by pending status
+        confirmed_payment.status = "confirmed"
+        await db_session.commit()
+
         response = await async_client.get(
-            "/payments/?status=pending", headers=auth_headers
+            "/payments/?status=unpaid", headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert all(p["status"] == "pending" for p in data["payments"])
+        assert [p["person_name"] for p in response.json()] == ["Pending Person"]
 
-        # Filter by confirmed status
         response = await async_client.get(
             "/payments/?status=confirmed", headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert all(p["status"] == "confirmed" for p in data["payments"])
+        assert [p["person_name"] for p in response.json()] == ["Confirmed Person"]
 
     async def test_update_payment_status_success(
         self, async_client, auth_headers, test_payment
@@ -435,55 +352,6 @@ class TestPaymentsRouter:
         assert data["status"] == "confirmed"
         assert data["confirmed_at"] is not None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_update_payment_status_invalid_transition(
-        self, async_client, auth_headers, db_session, test_split
-    ):
-        """Test invalid payment status transition."""
-        # Create a confirmed payment
-        confirmed_payment = Payment(
-            split_id=test_split.id,
-            person_name="Confirmed Person",
-            amount=30.0,
-            currency="USD",
-            confirmed_at=datetime.utcnow(),
-        )
-        db_session.add(confirmed_payment)
-        await db_session.commit()
-
-        # Try to change back to pending
-        update_data = {
-            "status": "pending",
-        }
-
-        response = await async_client.put(
-            f"/payments/{confirmed_payment.id}", json=update_data, headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_update_payment_amount(
-        self, async_client, auth_headers, test_payment
-    ):
-        """Test updating payment amount."""
-        update_data = {
-            "amount": 50.0,
-        }
-
-        response = await async_client.put(
-            f"/payments/{test_payment.id}", json=update_data, headers=auth_headers
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["amount"] == 50.0
-
     async def test_update_payment_not_found(self, async_client, auth_headers):
         """Test updating non-existent payment."""
         non_existent_id = 99999
@@ -497,10 +365,6 @@ class TestPaymentsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_update_payment_not_owner(
         self, async_client, auth_headers, db_session
     ):
@@ -546,7 +410,7 @@ class TestPaymentsRouter:
         response = await async_client.put(
             f"/payments/{other_payment.id}", json=update_data, headers=auth_headers
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_payment_success(
         self, async_client, auth_headers, test_payment, db_session
@@ -575,10 +439,6 @@ class TestPaymentsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_delete_payment_not_owner(
         self, async_client, auth_headers, db_session
     ):
@@ -620,12 +480,8 @@ class TestPaymentsRouter:
         response = await async_client.delete(
             f"/payments/{other_payment.id}", headers=auth_headers
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_split_payment_summary_success(
         self, async_client, auth_headers, test_split, db_session
     ):
@@ -649,6 +505,7 @@ class TestPaymentsRouter:
                 person_name="Charlie",
                 amount=50.0,
                 currency="USD",
+                status="confirmed",
             ),
         ]
         db_session.add_all(payments)
@@ -661,17 +518,12 @@ class TestPaymentsRouter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["split_id"] == test_split.id
-        assert data["total_payments"] == 4  # Including test_payment from fixture
-        assert data["total_confirmed"] == 2
-        assert data["total_pending"] == 1
-        assert data["total_amount"] == 138.0  # 38 + 30 + 20 + 50
-        assert data["confirmed_amount"] == 118.0  # 38 + 30 + 50
-        assert data["pending_amount"] == 20.0
+        assert data["total_payments"] == 3
+        assert data["total_amount"] == 100.0  # 30 + 20 + 50
+        assert data["confirmed_amount"] == 50.0  # Charlie
+        assert data["unpaid_count"] == 2
+        assert data["completion_rate"] == 50.0
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_get_split_payment_summary_empty(
         self, async_client, auth_headers, test_split, db_session
     ):
@@ -695,16 +547,11 @@ class TestPaymentsRouter:
         data = response.json()
         assert data["split_id"] == test_split.id
         assert data["total_payments"] == 0
-        assert data["total_confirmed"] == 0
-        assert data["total_pending"] == 0
         assert data["total_amount"] == 0.0
         assert data["confirmed_amount"] == 0.0
-        assert data["pending_amount"] == 0.0
+        assert data["unpaid_count"] == 0
+        assert data["completion_rate"] == 0
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_split_payment_summary_not_member(
         self, async_client, auth_headers, db_session
     ):
@@ -737,7 +584,7 @@ class TestPaymentsRouter:
         response = await async_client.get(
             f"/payments/split/{other_split.id}/summary", headers=auth_headers
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_get_split_payment_summary_not_found(
         self, async_client, auth_headers

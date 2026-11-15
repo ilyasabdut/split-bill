@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ApiClient, ApiError, initApiClient, getApiClient } from '../api/client';
+import { ApiClient, ApiError, initApiClient, getApiClient, getDeviceId } from '../api/client';
 
 describe('ApiClient', () => {
   beforeEach(() => {
@@ -234,5 +234,38 @@ describe('ApiClient', () => {
       expect(callArgs[1].headers).toHaveProperty('Content-Type');
       expect(callArgs[1].headers['Content-Type']).toBe('application/json');
     });
+  });
+});
+
+describe('device identity', () => {
+  it('creates one uuid and keeps it in localStorage', () => {
+    localStorage.clear();
+    const id = getDeviceId();
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(getDeviceId()).toBe(id);
+    expect(localStorage.getItem('deviceId')).toBe(id);
+  });
+
+  it('still returns a stable id when localStorage throws', () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    const id = getDeviceId();
+    expect(getDeviceId()).toBe(id);
+    spy.mockRestore();
+  });
+
+  it('sends X-Device-Id with every request', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ApiClient({ baseURL: '/api', apiKey: 'k', timeout: 1000 });
+
+    await client.get('/groups/');
+    await client.postForm('/receipts/upload', new FormData());
+
+    for (const [, init] of fetchMock.mock.calls) {
+      expect((init.headers as Record<string, string>)['X-Device-Id']).toBe(getDeviceId());
+    }
+    vi.unstubAllGlobals();
   });
 });

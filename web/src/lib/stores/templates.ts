@@ -1,3 +1,4 @@
+import { getApiClient } from '$lib/services/api/client';
 import { writable, derived } from 'svelte/store';
 
 export interface Template {
@@ -51,10 +52,7 @@ function createTemplatesStore() {
     async loadTemplates() {
       update(s => ({ ...s, loading: true }));
       try {
-        const response = await fetch('/api/templates');
-        if (!response.ok) throw new Error('Failed to load templates');
-
-        const data = await response.json();
+        const data = await getApiClient().get<any[]>('/templates/');
         update(s => ({
           ...s,
           templates: data || [],

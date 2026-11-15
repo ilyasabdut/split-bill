@@ -18,6 +18,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
+import src.db.models  # noqa: E402,F401  (registers tables for autogenerate)
 from src.db.database import DATABASE_URL, Base  # noqa: E402
 
 # One source of truth for the URL: the app's settings, not alembic.ini

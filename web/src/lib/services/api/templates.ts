@@ -21,7 +21,7 @@ export class TemplatesService {
   /** Get all templates */
   async getTemplates(): Promise<Template[]> {
     const apiClient = getApiClient();
-    return apiClient.get<Template[]>('/templates');
+    return apiClient.get<Template[]>('/templates/');
   }
 
   /** Get single template by ID */
@@ -33,7 +33,7 @@ export class TemplatesService {
   /** Create new template */
   async createTemplate(request: CreateTemplateRequest): Promise<Template> {
     const apiClient = getApiClient();
-    return apiClient.post<Template>('/templates', request);
+    return apiClient.post<Template>('/templates/', request);
   }
 
   /** Update template */

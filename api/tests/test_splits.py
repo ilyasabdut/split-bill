@@ -84,7 +84,7 @@ def test_calculate_then_view_round_trip(client):
     assert calc.status_code == 200
     data = calc.json()
     assert len(data["split_id"]) == 32
-    assert data["share_link"].endswith(f"/splits/view/{data['split_id']}")
+    assert data["share_link"].endswith(f"/split/{data['split_id']}")
 
     view = client.get(f"/splits/view/{data['split_id']}")  # no API key: public link
     assert view.status_code == 200
@@ -122,3 +122,29 @@ def test_calculate_requires_api_key(client):
     assert client.post(
         "/splits/calculate", json={"person_names": ["A"]}
     ).status_code in (401, 403)
+
+
+async def test_calculate_records_owner_from_device_id(
+    async_client, db_session, test_user, auth_headers
+):
+    body = {"person_names": ["A"], "split_evenly": True}
+    res = await async_client.post("/splits/calculate", json=body, headers=auth_headers)
+    assert res.status_code == 200
+
+    anon = await async_client.post(
+        "/splits/calculate",
+        json=body,
+        headers={"Authorization": auth_headers["Authorization"]},
+    )
+    assert anon.status_code == 200
+
+    from sqlalchemy import select
+    from src.db.models import Split
+
+    owners = {
+        s.share_id: s.owner_id for s in (await db_session.scalars(select(Split))).all()
+    }
+    assert owners == {
+        res.json()["split_id"]: test_user.id,
+        anon.json()["split_id"]: None,
+    }

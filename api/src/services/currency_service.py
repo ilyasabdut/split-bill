@@ -3,11 +3,13 @@
 This module handles currency conversion and rate caching.
 """
 
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
 import httpx
+from sqlalchemy.exc import IntegrityError
 from src.db.database import async_session_maker
 from src.db.models import CurrencyRate
 
@@ -23,6 +25,9 @@ class CurrencyService:
 
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=10.0)
+        # ponytail: per-process lock around the read-then-write; the unique
+        # (from, to) constraint is the guard across processes.
+        self._cache_lock = asyncio.Lock()
 
     async def close(self):
         """Close HTTP client."""
@@ -102,7 +107,7 @@ class CurrencyService:
         self, from_currency: str, to_currency: str, rate: float
     ) -> None:
         """Cache exchange rate in database."""
-        async with async_session_maker() as session:
+        async with self._cache_lock, async_session_maker() as session:
             from sqlalchemy import select
 
             stmt = select(CurrencyRate).where(
@@ -125,7 +130,11 @@ class CurrencyService:
                 )
                 session.add(rate_record)
 
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError:
+                # a concurrent request cached the same pair first; its rate is as good
+                await session.rollback()
 
     async def _fetch_rate_from_api(
         self, from_currency: str, to_currency: str

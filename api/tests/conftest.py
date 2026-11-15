@@ -19,7 +19,7 @@ from src.db.models import (
     Template,
     User,
 )
-from src.main import app
+from src.main import API_KEY, app
 
 
 @pytest_asyncio.fixture
@@ -65,7 +65,12 @@ async def _save(session, obj):
 async def test_user(db_session):
     return await _save(
         db_session,
-        User(api_key=str(uuid.uuid4()), name="Test User", email="test@example.com"),
+        User(
+            api_key=str(uuid.uuid4()),
+            name="Test User",
+            email="test@example.com",
+            device_id=str(uuid.uuid4()),
+        ),
     )
 
 
@@ -137,4 +142,4 @@ async def test_template(db_session, test_user):
 
 @pytest.fixture
 def auth_headers(test_user):
-    return {"X-API-Key": test_user.api_key}
+    return {"Authorization": f"Bearer {API_KEY}", "X-Device-Id": test_user.device_id}

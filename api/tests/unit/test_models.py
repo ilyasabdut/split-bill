@@ -585,10 +585,6 @@ class TestTemplateModel:
         assert template.user is not None
         assert template.user.id == test_template.user_id
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: User.templates has no delete cascade, deleting a user with templates fails",
-    )
     async def test_template_user_cascade(
         self, db_session: AsyncSession, test_user: User
     ):
@@ -669,10 +665,6 @@ class TestCurrencyRateModel:
         assert saved_rate.rate == 0.85
         assert saved_rate.updated_at is not None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: currency_rates has no unique (from, to) constraint, duplicate pairs are accepted",
-    )
     async def test_currency_rate_unique_pair(
         self, db_session: AsyncSession, test_currency_rate: CurrencyRate
     ):

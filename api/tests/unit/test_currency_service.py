@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 import pytest_asyncio
 from sqlalchemy import select
 from src.db.models import CurrencyRate
@@ -228,10 +227,6 @@ class TestCurrencyService:
         rate = await currency_service._get_cached_rate("USD", "GBP")
         assert rate == 0.73
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: currency_rates has no unique (from, to) constraint, concurrent cache writes insert duplicates",
-    )
     async def test_rate_caching_concurrent(
         self, db_session, currency_service, mock_rate_response
     ):

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_db
+from src.db.deps import get_current_user, get_db
 from src.db.models import Payment, Split, User
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,7 @@ async def get_user_stats(
     request: Request,
     user_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> UserStatsResponse:
     """Get statistics for a specific user.
 
@@ -90,11 +91,8 @@ async def get_user_stats(
     try:
         logger.info(f"Fetching stats for user: {user_id}")
 
-        # Verify user exists
-        user_result = await db.execute(select(User).where(User.id == user_id))
-        user = user_result.scalar_one_or_none()
-
-        if not user:
+        # Self only; other ids look the same as missing ones
+        if user_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User with ID {user_id} not found",
@@ -165,6 +163,7 @@ async def get_user_stats(
 async def get_overall_stats(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> OverallStatsResponse:
     """Get overall application statistics.
 
@@ -230,6 +229,7 @@ async def get_currency_usage(
     request: Request,
     days: int = 30,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[CurrencyUsageResponse]:
     """Get currency usage statistics.
 
@@ -314,6 +314,7 @@ async def get_split_trends(
     request: Request,
     days: int = 30,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[SplitTrendResponse]:
     """Get split creation trends over time.
 

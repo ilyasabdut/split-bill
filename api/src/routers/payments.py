@@ -9,14 +9,52 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_db
-from src.db.models import Payment, Split
+from src.db.deps import get_current_user, get_db
+from src.db.models import Group, Payment, Split, User
+from src.routers.groups import _visible_to
 
 logger = logging.getLogger(__name__)
 
 payments_router = APIRouter(prefix="/payments", tags=["payments"])
+
+
+def _visible_split_ids(user: User):
+    """Splits the user owns, or that belong to a group the user owns or is in."""
+    groups = select(Group.id).where(_visible_to(user))
+    return select(Split.id).where(
+        or_(Split.owner_id == user.id, Split.group_id.in_(groups))
+    )
+
+
+async def _get_visible_split(db: AsyncSession, split_id: int, user: User):
+    split = await db.scalar(
+        select(Split).where(
+            Split.id == split_id, Split.id.in_(_visible_split_ids(user))
+        )
+    )
+    if not split:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Split with ID {split_id} not found",
+        )
+    return split
+
+
+async def _get_visible_payment(db: AsyncSession, payment_id: int, user: User):
+    payment = await db.scalar(
+        select(Payment).where(
+            Payment.id == payment_id,
+            Payment.split_id.in_(_visible_split_ids(user)),
+        )
+    )
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Payment with ID {payment_id} not found",
+        )
+    return payment
 
 
 # ============================================================================
@@ -72,6 +110,7 @@ async def create_payment(
     request: Request,
     payment_data: PaymentCreate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> PaymentResponse:
     """Create a new payment record.
 
@@ -92,17 +131,7 @@ async def create_payment(
             f"{payment_data.person_name} - {payment_data.amount} {payment_data.currency}"
         )
 
-        # Verify split exists
-        split_result = await db.execute(
-            select(Split).where(Split.id == payment_data.split_id)
-        )
-        split = split_result.scalar_one_or_none()
-
-        if not split:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Split with ID {payment_data.split_id} not found",
-            )
+        await _get_visible_split(db, payment_data.split_id, user)
 
         # Create payment
         payment = Payment(
@@ -149,6 +178,7 @@ async def get_payment(
     request: Request,
     payment_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> PaymentResponse:
     """Get a payment by ID.
 
@@ -166,14 +196,7 @@ async def get_payment(
     try:
         logger.info(f"Fetching payment: {payment_id}")
 
-        result = await db.execute(select(Payment).where(Payment.id == payment_id))
-        payment = result.scalar_one_or_none()
-
-        if not payment:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Payment with ID {payment_id} not found",
-            )
+        payment = await _get_visible_payment(db, payment_id, user)
 
         return PaymentResponse(
             id=payment.id,
@@ -207,6 +230,7 @@ async def list_payments(
     split_id: Optional[int] = None,
     status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[PaymentResponse]:
     """List all payments, optionally filtered by split or status.
 
@@ -222,7 +246,7 @@ async def list_payments(
     try:
         logger.info(f"Listing payments (split_id: {split_id}, status: {status})")
 
-        query = select(Payment)
+        query = select(Payment).where(Payment.split_id.in_(_visible_split_ids(user)))
         if split_id is not None:
             query = query.where(Payment.split_id == split_id)
         if status is not None:
@@ -262,6 +286,7 @@ async def update_payment(
     payment_id: int,
     payment_data: PaymentUpdate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> PaymentResponse:
     """Update a payment status.
 
@@ -280,14 +305,7 @@ async def update_payment(
     try:
         logger.info(f"Updating payment: {payment_id}")
 
-        result = await db.execute(select(Payment).where(Payment.id == payment_id))
-        payment = result.scalar_one_or_none()
-
-        if not payment:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Payment with ID {payment_id} not found",
-            )
+        payment = await _get_visible_payment(db, payment_id, user)
 
         if payment_data.status is not None:
             payment.status = payment_data.status
@@ -329,6 +347,7 @@ async def delete_payment(
     request: Request,
     payment_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Delete a payment.
 
@@ -343,14 +362,7 @@ async def delete_payment(
     try:
         logger.info(f"Deleting payment: {payment_id}")
 
-        result = await db.execute(select(Payment).where(Payment.id == payment_id))
-        payment = result.scalar_one_or_none()
-
-        if not payment:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Payment with ID {payment_id} not found",
-            )
+        payment = await _get_visible_payment(db, payment_id, user)
 
         await db.delete(payment)
         await db.commit()
@@ -376,6 +388,7 @@ async def get_split_payment_summary(
     request: Request,
     split_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> dict:
     """Get payment summary for a split.
 
@@ -393,15 +406,7 @@ async def get_split_payment_summary(
     try:
         logger.info(f"Getting payment summary for split: {split_id}")
 
-        # Verify split exists
-        split_result = await db.execute(select(Split).where(Split.id == split_id))
-        split = split_result.scalar_one_or_none()
-
-        if not split:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Split with ID {split_id} not found",
-            )
+        await _get_visible_split(db, split_id, user)
 
         # Get all payments for split
         result = await db.execute(select(Payment).where(Payment.split_id == split_id))

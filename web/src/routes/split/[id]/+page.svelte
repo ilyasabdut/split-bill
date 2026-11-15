@@ -322,7 +322,7 @@
                     {getPersonInitials(name)}
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-sm font-medium text-text-primary">{name} owes you</span>
+                    <span class="text-sm font-medium text-text-primary">{name} owes {splitData.people[0]}</span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -336,7 +336,7 @@
           {/each}
         </div>
         <div class="bg-surface-50 px-4 py-2 border-t border-surface-200 text-center">
-           <p class="text-xs text-text-secondary">Total receivable: <span class="font-semibold text-text-primary">{formatCurrency(totalReceivable())}</span></p>
+           <p class="text-xs text-text-secondary">Owed to {splitData.people[0]}: <span class="font-semibold text-text-primary">{formatCurrency(totalReceivable())}</span></p>
         </div>
       </Card>
     </section>

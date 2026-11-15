@@ -7,15 +7,28 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_db
+from src.db.deps import get_current_user, get_db
 from src.db.models import Template, User
 
 logger = logging.getLogger(__name__)
 
 templates_router = APIRouter(prefix="/templates", tags=["templates"])
+
+
+async def _get_own_template(db: AsyncSession, template_id: int, user: User):
+    """404 for missing templates and for other users' templates alike."""
+    template = await db.scalar(
+        select(Template).where(Template.id == template_id, Template.user_id == user.id)
+    )
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Template with ID {template_id} not found",
+        )
+    return template
 
 
 # ============================================================================
@@ -26,8 +39,9 @@ templates_router = APIRouter(prefix="/templates", tags=["templates"])
 class TemplateCreate(BaseModel):
     """Request model for creating a template."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., min_length=1, max_length=255, description="Template name")
-    user_id: int = Field(..., description="Owner user ID")
     config: dict = Field(..., description="Template configuration (split settings)")
 
 
@@ -67,6 +81,7 @@ async def create_template(
     request: Request,
     template_data: TemplateCreate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> TemplateResponse:
     """Create a new split template.
 
@@ -84,22 +99,10 @@ async def create_template(
     try:
         logger.info(f"Creating template: {template_data.name}")
 
-        # Verify user exists
-        user_result = await db.execute(
-            select(User).where(User.id == template_data.user_id)
-        )
-        user = user_result.scalar_one_or_none()
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {template_data.user_id} not found",
-            )
-
         # Create template
         template = Template(
             name=template_data.name,
-            user_id=template_data.user_id,
+            user_id=user.id,
             config=template_data.config,
         )
         db.add(template)
@@ -135,6 +138,7 @@ async def get_template(
     request: Request,
     template_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> TemplateResponse:
     """Get a template by ID.
 
@@ -152,14 +156,7 @@ async def get_template(
     try:
         logger.info(f"Fetching template: {template_id}")
 
-        result = await db.execute(select(Template).where(Template.id == template_id))
-        template = result.scalar_one_or_none()
-
-        if not template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Template with ID {template_id} not found",
-            )
+        template = await _get_own_template(db, template_id, user)
 
         return TemplateResponse(
             id=template.id,
@@ -186,27 +183,22 @@ async def get_template(
 )
 async def list_templates(
     request: Request,
-    user_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> List[TemplateResponse]:
-    """List all templates, optionally filtered by user.
+    """List the current user's templates.
 
     Args:
         request: FastAPI request object
-        user_id: Optional filter for user ID
         db: Database session
 
     Returns:
         List of TemplateResponse objects
     """
     try:
-        logger.info(f"Listing templates (user_id filter: {user_id})")
+        logger.info(f"Listing templates for user {user.id}")
 
-        query = select(Template)
-        if user_id is not None:
-            query = query.where(Template.user_id == user_id)
-
-        result = await db.execute(query)
+        result = await db.execute(select(Template).where(Template.user_id == user.id))
         templates = result.scalars().all()
 
         return [
@@ -238,6 +230,7 @@ async def update_template(
     template_id: int,
     template_data: TemplateUpdate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> TemplateResponse:
     """Update a template.
 
@@ -256,14 +249,7 @@ async def update_template(
     try:
         logger.info(f"Updating template: {template_id}")
 
-        result = await db.execute(select(Template).where(Template.id == template_id))
-        template = result.scalar_one_or_none()
-
-        if not template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Template with ID {template_id} not found",
-            )
+        template = await _get_own_template(db, template_id, user)
 
         if template_data.name is not None:
             template.name = template_data.name
@@ -300,6 +286,7 @@ async def delete_template(
     request: Request,
     template_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Delete a template.
 
@@ -314,14 +301,7 @@ async def delete_template(
     try:
         logger.info(f"Deleting template: {template_id}")
 
-        result = await db.execute(select(Template).where(Template.id == template_id))
-        template = result.scalar_one_or_none()
-
-        if not template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Template with ID {template_id} not found",
-            )
+        template = await _get_own_template(db, template_id, user)
 
         await db.delete(template)
         await db.commit()

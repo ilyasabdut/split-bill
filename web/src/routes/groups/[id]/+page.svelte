@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { getApiClient } from '$lib/services/api/client';
 
 	const groupId = $derived($page.params.id);
 
@@ -23,16 +24,13 @@
 	async function loadGroup() {
 		loading = true;
 		try {
-			const [groupRes, membersRes] = await Promise.all([
-				fetch(`/api/groups/${groupId}`),
-				fetch(`/api/groups/${groupId}/members`).catch(() => null)
+			const api = getApiClient();
+			const [data, members] = await Promise.all([
+				api.get<any>(`/groups/${groupId}`).catch(() => {
+					throw new Error('Group not found');
+				}),
+				api.get<any[]>(`/groups/${groupId}/members`).catch(() => [])
 			]);
-
-			if (!groupRes.ok) throw new Error('Group not found');
-			const data = await groupRes.json();
-
-			let members: any[] = [];
-			if (membersRes?.ok) members = await membersRes.json();
 
 			group = {
 				id: data.id,

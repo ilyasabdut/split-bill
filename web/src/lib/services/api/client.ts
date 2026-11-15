@@ -14,6 +14,30 @@ export interface ApiConfig {
   timeout: number;
 }
 
+const DEVICE_ID_KEY = 'deviceId';
+let memoryDeviceId: string | null = null;
+
+/**
+ * Anonymous identity: one random id per browser, sent as X-Device-Id.
+ * ponytail: clearing site data or switching device loses it (and the user's
+ * groups/templates); upgrade path is a real login. crypto.randomUUID needs a
+ * secure context (https or localhost).
+ */
+export function getDeviceId(): string {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    // no localStorage (prerender, tests, blocked storage): keep it for this page load
+    memoryDeviceId ??= crypto.randomUUID();
+    return memoryDeviceId;
+  }
+}
+
 /** Custom API error class */
 export class ApiError extends Error {
   constructor(
@@ -49,6 +73,7 @@ export class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.config.apiKey}`,
+          'X-Device-Id': getDeviceId(),
           ...options.headers,
         },
         signal: controller.signal,
@@ -92,6 +117,7 @@ export class ApiClient {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
+        'X-Device-Id': getDeviceId(),
       },
       body: formData,
     });

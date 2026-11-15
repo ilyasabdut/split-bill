@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, String
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -14,10 +14,16 @@ class User(Base):
     api_key: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
+    # ponytail: identity is per device (random id in the browser's localStorage);
+    # clearing storage or switching device loses it. Upgrade path: real login.
+    # NULL for people added to a group by name, who can never act as themselves.
+    device_id: Mapped[Optional[str]] = mapped_column(String(36), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     groups: Mapped[List["Group"]] = relationship(back_populates="owner")
-    templates: Mapped[List["Template"]] = relationship(back_populates="user")
+    templates: Mapped[List["Template"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Group(Base):
@@ -76,7 +82,7 @@ class Template(Base):
     __tablename__ = "templates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(255))
     config: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -86,6 +92,9 @@ class Template(Base):
 
 class CurrencyRate(Base):
     __tablename__ = "currency_rates"
+    __table_args__ = (
+        UniqueConstraint("from_currency", "to_currency", name="uq_currency_rates_pair"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     from_currency: Mapped[str] = mapped_column(String(10))

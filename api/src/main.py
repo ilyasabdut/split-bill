@@ -23,12 +23,11 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db.deps import get_db
-from src.db.models import Split
+from src.db.deps import get_api_key, get_db, get_optional_user
+from src.db.models import Split, User
 from src.routers.analytics import analytics_router
 from src.routers.currency import currency_router
 from src.routers.groups import groups_router
@@ -49,20 +48,6 @@ APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:8000")
 # =============================================================================
 # SECURITY COMPONENTS
 # =============================================================================
-
-# API Key Authentication
-security = HTTPBearer()
-
-
-async def get_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify API key from Bearer token."""
-    if credentials.scheme != "Bearer" or credentials.credentials != API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API Key",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return credentials.credentials
 
 
 # Rate Limiting Implementation
@@ -277,6 +262,7 @@ async def calculate_split_endpoint(
     request: Request,
     split_request: CalculateSplitRequest,
     api_key: str = Depends(get_api_key),
+    user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Calculate a bill split and persist it behind an unguessable share id."""
@@ -310,6 +296,7 @@ async def calculate_split_endpoint(
     db.add(
         Split(
             share_id=split_id,
+            owner_id=user.id if user else None,
             receipt_data=split_request.model_dump(exclude={"client_results"}),
             split_results=calculated_split,
         )
@@ -318,7 +305,7 @@ async def calculate_split_endpoint(
 
     return CalculateSplitResponse(
         split_results=calculated_split,
-        share_link=f"{APP_BASE_URL}/splits/view/{split_id}",
+        share_link=f"{APP_BASE_URL}/split/{split_id}",
         split_id=split_id,
     )
 

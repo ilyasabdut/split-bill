@@ -35,6 +35,19 @@ curl -H "Authorization: Bearer my-secret-api-key" \
      http://localhost:18000/health
 ```
 
+### Device identity
+
+Groups, templates, payments and analytics also need an `X-Device-Id` header: a UUID the client generates once and keeps (the web app stores it in localStorage). The API creates a user for an unseen id on first use and takes `owner_id`/`user_id` from it; those fields are not accepted in request bodies or query strings. Rows belonging to other users return 404. A missing or non-UUID `X-Device-Id` returns 401.
+
+```http
+Authorization: Bearer YOUR_API_KEY
+X-Device-Id: 2f1c9a1e-6b0e-4c55-9d7e-0d1f3b6a8c42
+```
+
+`POST /splits/calculate` accepts the header optionally and records the split owner when present. `GET /splits/view/{id}` and `/currency/*` need neither.
+
+Group members are added by name: `POST /groups/{id}/members` takes `{"name": "...", "email": null}`; only the group owner can add, remove, rename or delete. Members can read the group.
+
 ### Security Notes
 
 - API keys should be kept secret and never exposed in client-side code

@@ -157,3 +157,9 @@ I would resist adding anything new until step 4 ships. It is the difference betw
 Sections 3-5 describe the repository **before** the cleanup (checkpoint commit `3d5fe94`). The cleanup then removed the dead backend layer, Redis/Valkey, Garage/MinIO, the unused frontend code and tooling, and the stale docs listed in section 5, and fixed the Makefile, Docker and CI setup. The stack is now web + api + postgres.
 
 For what is still open, see [TODO.md](TODO.md). For whether the checks pass, run `make check`.
+
+---
+
+## 8. Identity (device id)
+
+Chosen: anonymous per-device identity rather than sign-up. The web client sends `X-Device-Id` (random UUID in localStorage) with the shared API key; `get_current_user` get-or-creates a `users` row keyed by the new nullable unique `users.device_id` (migration `b7e1c2d3f4a5`). The groups, templates, payments and analytics routers take ownership from that user and return 404 for other users' rows. The same migration adds a unique `(from_currency, to_currency)` on `currency_rates` and `ON DELETE CASCADE` from `templates.user_id`. Ceiling: identity lives in one browser; the upgrade path is real login. Known gap: `load_dotenv()` in `api/src/main.py` stops at a local `api/.env` if one exists, so `API_KEY` from the root `.env` is not picked up when that file is present.

@@ -2,19 +2,15 @@
 
 import uuid
 
-import pytest
 from fastapi import status
 from sqlalchemy import select
 from src.db.models import Group, GroupMember, User
+from src.main import API_KEY
 
 
 class TestGroupsRouter:
     """Test cases for groups router endpoints."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_create_group_success(self, async_client, auth_headers, test_user):
         """Test creating a group successfully."""
         group_data = {
@@ -32,10 +28,6 @@ class TestGroupsRouter:
         assert "id" in data
         assert "created_at" in data
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_group_unauthorized(self, async_client):
         """Test creating group without authentication."""
         group_data = {
@@ -46,16 +38,15 @@ class TestGroupsRouter:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_create_group_invalid_api_key(self, async_client):
         """Test creating group with invalid API key."""
         group_data = {
             "name": "Weekend Trip",
         }
-        headers = {"X-API-Key": "invalid-key"}
+        headers = {
+            "Authorization": "Bearer invalid-key",
+            "X-Device-Id": str(uuid.uuid4()),
+        }
 
         response = await async_client.post("/groups/", json=group_data, headers=headers)
 
@@ -108,33 +99,25 @@ class TestGroupsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_get_group_unauthorized(self, async_client, test_group):
         """Test getting group without authentication."""
         response = await async_client.get(f"/groups/{test_group.id}")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_groups_empty(self, async_client, auth_headers):
-        """Test listing groups when user has none."""
+    async def test_list_groups_empty(self, async_client, auth_headers, db_session):
+        """Test listing groups when user has none (others' groups are hidden)."""
+        other_user = User(api_key=str(uuid.uuid4()), name="Other User")
+        db_session.add(other_user)
+        await db_session.commit()
+        db_session.add(Group(name="Other Group", owner_id=other_user.id))
+        await db_session.commit()
+
         response = await async_client.get("/groups/", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["groups"] == []
-        assert data["total"] == 0
+        assert response.json() == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_list_groups_with_data(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -142,7 +125,7 @@ class TestGroupsRouter:
         # Create multiple groups
         groups = []
         for i in range(3):
-            group = Group(name=f"Group {i+1}", owner_id=test_user.id)
+            group = Group(name=f"Group {i + 1}", owner_id=test_user.id)
             db_session.add(group)
             groups.append(group)
         await db_session.commit()
@@ -151,39 +134,8 @@ class TestGroupsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["groups"]) == 4  # Including test_group from fixture
-        assert data["total"] == 4
-        assert all("id" in g and "name" in g for g in data["groups"])
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_list_groups_pagination(
-        self, async_client, auth_headers, db_session, test_user
-    ):
-        """Test group listing with pagination."""
-        # Create multiple groups
-        for i in range(5):
-            group = Group(name=f"Group {i+1}", owner_id=test_user.id)
-            db_session.add(group)
-        await db_session.commit()
-
-        # Get first page
-        response = await async_client.get(
-            "/groups/?skip=0&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["groups"]) == 2
-
-        # Get second page
-        response = await async_client.get(
-            "/groups/?skip=2&limit=2", headers=auth_headers
-        )
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert len(data["groups"]) == 2
+        assert len(data) == 3
+        assert all("id" in g and "name" in g for g in data)
 
     async def test_update_group_success(self, async_client, auth_headers, test_group):
         """Test updating a group successfully."""
@@ -200,10 +152,6 @@ class TestGroupsRouter:
         assert data["id"] == test_group.id
         assert data["name"] == "Updated Group Name"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_update_group_not_owner(self, async_client, auth_headers, db_session):
         """Test updating a group when not the owner."""
         # Create another user and group
@@ -227,7 +175,7 @@ class TestGroupsRouter:
             f"/groups/{other_group.id}", json=update_data, headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_update_group_not_found(self, async_client, auth_headers):
         """Test updating non-existent group."""
@@ -259,10 +207,6 @@ class TestGroupsRouter:
         deleted_group = result.scalar_one_or_none()
         assert deleted_group is None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_delete_group_not_owner(self, async_client, auth_headers, db_session):
         """Test deleting a group when not the owner."""
         # Create another user and group
@@ -282,7 +226,7 @@ class TestGroupsRouter:
             f"/groups/{other_group.id}", headers=auth_headers
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_group_not_found(self, async_client, auth_headers):
         """Test deleting non-existent group."""
@@ -294,39 +238,28 @@ class TestGroupsRouter:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_add_group_member_success(
         self, async_client, auth_headers, test_group, db_session
     ):
-        """Test adding a member to a group."""
-        # Create another user
-        new_user = User(
-            api_key=str(uuid.uuid4()),
-            name="New Member",
-            email="new@example.com",
-        )
-        db_session.add(new_user)
-        await db_session.commit()
-
+        """Test adding a member to a group by name and email."""
         response = await async_client.post(
             f"/groups/{test_group.id}/members",
-            json={"user_id": new_user.id},
+            json={"name": "New Member", "email": "new@example.com"},
             headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        assert data["group_id"] == test_group.id
-        assert data["user_id"] == new_user.id
+        assert data["user_name"] == "New Member"
+        assert data["user_email"] == "new@example.com"
         assert "joined_at" in data
+        member = await db_session.get(User, data["user_id"])
+        assert member.device_id is None
+        assert (
+            await db_session.get(GroupMember, (test_group.id, data["user_id"]))
+            is not None
+        )
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_add_group_member_not_owner(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -346,46 +279,40 @@ class TestGroupsRouter:
 
         response = await async_client.post(
             f"/groups/{other_group.id}/members",
-            json={"user_id": test_user.id},
-            headers=auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
-    async def test_add_duplicate_member(
-        self, async_client, auth_headers, test_group, test_user
-    ):
-        """Test adding same member twice."""
-        response = await async_client.post(
-            f"/groups/{test_group.id}/members",
-            json={"user_id": test_user.id},
-            headers=auth_headers,
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    async def test_add_member_invalid_user(
-        self, async_client, auth_headers, test_group
-    ):
-        """Test adding non-existent user."""
-        non_existent_id = 99999
-
-        response = await async_client.post(
-            f"/groups/{test_group.id}/members",
-            json={"user_id": non_existent_id},
+            json={"name": "Sneaky"},
             headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
+    async def test_add_duplicate_member(
+        self, async_client, auth_headers, test_group, test_user
+    ):
+        """Test adding same member (same email) twice."""
+        member = {"name": "Bob", "email": "bob@example.com"}
+        first = await async_client.post(
+            f"/groups/{test_group.id}/members", json=member, headers=auth_headers
+        )
+        assert first.status_code == status.HTTP_201_CREATED
+
+        response = await async_client.post(
+            f"/groups/{test_group.id}/members", json=member, headers=auth_headers
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    async def test_add_member_by_user_id_rejected(
+        self, async_client, auth_headers, test_group
+    ):
+        """Members are added by name; a client-supplied user id is rejected."""
+        response = await async_client.post(
+            f"/groups/{test_group.id}/members",
+            json={"name": "X", "user_id": 99999},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
     async def test_list_group_members(
         self, async_client, auth_headers, test_group, test_group_member
     ):
@@ -396,15 +323,10 @@ class TestGroupsRouter:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["members"]) == 1
-        assert data["total"] == 1
-        assert data["members"][0]["user_id"] == test_group_member.user_id
-        assert "user" in data["members"][0]
+        assert len(data) == 1
+        assert data[0]["user_id"] == test_group_member.user_id
+        assert data[0]["user_name"] == "Test User"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="STALE: asserts an unimplemented API (per-user scoping, paginated envelope or response fields the router does not return)",
-    )
     async def test_list_group_members_empty(
         self, async_client, auth_headers, db_session, test_user
     ):
@@ -419,9 +341,7 @@ class TestGroupsRouter:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["members"] == []
-        assert data["total"] == 0
+        assert response.json() == []
 
     async def test_remove_group_member_success(
         self, async_client, auth_headers, test_group, db_session
@@ -459,10 +379,6 @@ class TestGroupsRouter:
         removed_member = result.scalar_one_or_none()
         assert removed_member is None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="BUG: router has no authentication; it ignores X-API-Key and trusts client-supplied user ids",
-    )
     async def test_remove_group_member_not_owner(
         self, async_client, auth_headers, db_session
     ):
@@ -485,7 +401,7 @@ class TestGroupsRouter:
             headers=auth_headers,
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_remove_non_member(self, async_client, auth_headers, test_group):
         """Test removing user who is not a member."""
@@ -508,3 +424,69 @@ class TestGroupsRouter:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_create_group_owner_id_rejected(self, async_client, auth_headers):
+        """owner_id comes from the device identity; sending one is rejected."""
+        response = await async_client.post(
+            "/groups/", json={"name": "Trip", "owner_id": 1}, headers=auth_headers
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    async def test_create_group_missing_device_id(self, async_client):
+        response = await async_client.post(
+            "/groups/",
+            json={"name": "Trip"},
+            headers={"Authorization": f"Bearer {API_KEY}"},
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_create_group_invalid_device_id(self, async_client):
+        response = await async_client.post(
+            "/groups/",
+            json={"name": "Trip"},
+            headers={"Authorization": f"Bearer {API_KEY}", "X-Device-Id": "nope"},
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_new_device_gets_own_user(self, async_client, test_group):
+        """An unseen device id becomes a fresh user that cannot see others' groups."""
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "X-Device-Id": str(uuid.uuid4()),
+        }
+
+        created = await async_client.post(
+            "/groups/", json={"name": "Mine"}, headers=headers
+        )
+        assert created.status_code == status.HTTP_201_CREATED
+        assert created.json()["owner_id"] != test_group.owner_id
+
+        listed = await async_client.get("/groups/", headers=headers)
+        assert [g["name"] for g in listed.json()] == ["Mine"]
+
+        other = await async_client.get(f"/groups/{test_group.id}", headers=headers)
+        assert other.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_member_can_read_but_not_update(
+        self, async_client, auth_headers, db_session, test_user
+    ):
+        """A member sees the group but only the owner may change it."""
+        owner = User(api_key=str(uuid.uuid4()), name="Owner")
+        db_session.add(owner)
+        await db_session.commit()
+        group = Group(name="Shared", owner_id=owner.id)
+        db_session.add(group)
+        await db_session.commit()
+        db_session.add(GroupMember(group_id=group.id, user_id=test_user.id))
+        await db_session.commit()
+
+        got = await async_client.get(f"/groups/{group.id}", headers=auth_headers)
+        assert got.status_code == status.HTTP_200_OK
+
+        put = await async_client.put(
+            f"/groups/{group.id}", json={"name": "Mine now"}, headers=auth_headers
+        )
+        assert put.status_code == status.HTTP_403_FORBIDDEN
